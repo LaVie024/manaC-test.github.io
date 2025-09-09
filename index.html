@@ -373,29 +373,11 @@
       return obj;
     }
 
-    function randomSeed32(){
-      if (window.crypto && window.crypto.getRandomValues){
-        const arr = new Uint32Array(1);
-        window.crypto.getRandomValues(arr);
-        return (arr[0] >>> 0);
-      }
-      return (Math.floor(Math.random() * 4294967296) >>> 0);
-    }
-
     function buildPlaceholderMap(){
       const [w,h] = el.dims.value.split('x').map(n => parseInt(n,10));
       const negZero = !!el.negZero.checked;
       const hiresOn = !!el.hiresToggle.checked;
-
-      const uiSeed = parseInt(el.seed.value || '-1', 10);
-      const resolvedSeed = (uiSeed === -1) ? randomSeed32() : uiSeed;
-
-      let resolvedHiresSeed = resolvedSeed;
-      if (hiresOn && el.hiresSeedCustom.checked){
-        const uiHiresSeed = parseInt(el.hiresSeed.value || '-1', 10);
-        resolvedHiresSeed = (uiHiresSeed === -1) ? randomSeed32() : uiHiresSeed;
-      }
-
+      const hiresSeed = el.hiresSeedCustom.checked ? parseInt(el.hiresSeed.value || '-1', 10) : parseInt(el.seed.value || '-1', 10);
       return {
         model: el.model.value,
         prompt: el.prompt.value || '',
@@ -404,21 +386,20 @@
         width: w, height: h,
         rescalecfg_multiplier: parseFloat(el.rescale.value || '0.7'),
         remove_bg: !!el.rmbg.checked,
-        seed: resolvedSeed,
+        seed: parseInt(el.seed.value || '-1', 10),
         steps: parseInt(el.steps.value || '25', 10),
         cfg: parseFloat(el.cfg.value || '5.0'),
         sampler: el.sampler.value,
         scheduler: el.scheduler.value,
         use_hiresfix: hiresOn,
         hiresfix_scale_by: parseFloat(el.hiresScale.value || '1.50'),
-        hiresfix_seed: resolvedHiresSeed,
+        hiresfix_seed: hiresSeed,
         hiresfix_steps: parseInt(el.hiresSteps.value || '20', 10),
         hiresfix_cfg: parseFloat(el.hiresCfg.value || '5.0'),
         hiresfix_sampler: el.hiresSampler.value,
         hiresfix_scheduler: el.hiresScheduler.value,
         hiresfix_denoise: parseFloat(el.hiresDenoise.value || '0.56'),
       };
-    };
     }
 
     function buildPayload(){
