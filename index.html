@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RunPod ComfyUI Frontend</title>
+  <style>
+    :root{
+      --bg: #0f1116; --panel:#171923; --muted:#a0abc0; --text:#e6eefc; --accent:#5aa9ff; --danger:#ff5964; --ok:#61d095; --border:#262b3a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font:14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:var(--text); background:var(--bg);}    
+    header{position:sticky; top:0; z-index:5; background:rgba(15,17,22,.85); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--border);}    
+    header .wrap{max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    header h1{font-size:16px; margin:0; font-weight:650}
+    header .desc{color:var(--muted); font-size:12px}
+    main{max-width:1100px; margin:0 auto; padding:16px; display:grid; grid-template-columns: 360px 1fr; gap:16px}
+    @media (max-width: 880px){ main{grid-template-columns: 1fr;} }
+
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden}
+    .card header{position:unset; background:none; border:0}
+    .card .body{padding:14px}
+
+    .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .row-3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px}
+    .row-4{display:grid; grid-template-columns: repeat(4,1fr); gap:10px}
+
+    label{display:block; margin:10px 0 4px; font-weight:600; font-size:12px; color:#cdd6eb}
+    input[type="text"], input[type="number"], select, textarea{
+      width:100%; padding:10px 12px; border-radius:9px; border:1px solid var(--border); background:#0c0e14; color:var(--text);
+      outline:none; transition:border .15s ease;
+    }
+    textarea{min-height:120px; resize:vertical}
+    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus{border-color:#33406b}
+
+    .hint{color:var(--muted); font-size:12px}
+    .muted{color:var(--muted)}
+
+    .switch{display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none}
+    .switch input{display:none}
+    .switch .track{width:40px; height:22px; background:#0c0e14; border:1px solid var(--border); border-radius:999px; position:relative; transition:all .2s}
+    .switch .thumb{position:absolute; top:1px; left:1px; width:18px; height:18px; border-radius:50%; background:#7b85a3; transition:left .2s}
+    .switch input:checked + .track{background:#0d213c; border-color:#284e8a}
+    .switch input:checked + .track .thumb{left:21px; background:var(--accent)}
+
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--border); background:#0d1320; color:var(--text); padding:10px 12px; border-radius:10px; cursor:pointer; text-decoration:none}
+    .btn:hover{border-color:#2f3b5f}
+    .btn.primary{background:#11305a}
+    .btn.danger{background:#2a1114}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+
+    .status{font-size:12px; color:var(--muted)}
+
+    .gallery{display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; padding:12px}
+    .shot{border:1px solid var(--border); background:#0c0e14; border-radius:10px; overflow:hidden}
+    .shot header{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border)}
+    .shot img{display:block; width:100%; height:auto}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px}
+    details pre{max-height:300px; overflow:auto; background:#0b0e14; border:1px solid var(--border); border-radius:8px; padding:12px}
+    .error{color:var(--danger)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>RunPod ComfyUI Frontend</h1>
+      <div class="desc">Static client for /runsync. No backend. API key stays in-memory.</div>
+    </div>
+  </header>
+  <main>
+    <section class="card" id="controls">
+      <header class="body" style="border-bottom:1px solid var(--border)">
+        <strong>Controls</strong>
+        <div class="status" id="status">Idle</div>
+      </header>
+      <div class="body">
+        <label for="apiKey">RunPod API Key</label>
+        <input id="apiKey" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
+        <div class="hint">Used only in this page, not stored.</div>
+
+        <label for="model">Model</label>
+        <select id="model">
+          <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
+          <option value="ΣΙΗ-1.5.safetensors">ΣΙΗ-1.5.safetensors</option>
+          <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
+        </select>
+
+        <label for="prompt">Prompt</label>
+        <textarea id="prompt" placeholder="Describe the image..."></textarea>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Zero out negative prompt</span>
+        </div>
+
+        <div id="negWrap">
+          <label for="negative">Negative prompt</label>
+          <textarea id="negative" placeholder="Things to avoid..."></textarea>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="dims">Dimensions</label>
+            <select id="dims">
+              <option>704x1408</option>
+              <option>768x1344</option>
+              <option>768x1280</option>
+              <option>896x1152</option>
+              <option>1024x1024</option>
+              <option>1152x896</option>
+              <option>1280x768</option>
+              <option>1344x768</option>
+              <option>1408x704</option>
+            </select>
+          </div>
+          <div>
+            <label for="rescale">RescaleCFG multiplier</label>
+            <input id="rescale" type="number" min="0" max="2" step="0.1" value="0.7" />
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Remove background (BiRefNet)</span>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+        <strong>Sampler</strong>
+        <div class="row-3">
+          <div>
+            <label for="seed">Seed</label>
+            <input id="seed" type="number" step="1" value="-1" />
+            <div class="hint">Use -1 for random</div>
+          </div>
+          <div>
+            <label for="steps">Steps</label>
+            <input id="steps" type="number" min="15" max="35" step="1" value="25" />
+          </div>
+          <div>
+            <label for="cfg">CFG</label>
+            <input id="cfg" type="number" step="0.1" value="5.0" />
+            <div class="hint" id="cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="sampler">Sampler</label>
+            <select id="sampler">
+              <option>euler</option>
+              <option>euler_ancestral</option>
+              <option>euler_cfg_pp</option>
+              <option>euler_ancestral_cfg_pp</option>
+              <option>dpmpp_2m</option>
+              <option>dpmpp_2s_ancestral</option>
+              <option>dpmpp_2s_ancestral_cfg_pp</option>
+              <option>res_multistep</option>
+              <option>res_multistep_cfg_pp</option>
+              <option>sa_solver_pece</option>
+              <option>gradient_estimation</option>
+              <option>gradient_estimation_cfg_pp</option>
+            </select>
+          </div>
+          <div>
+            <label for="scheduler">Scheduler</label>
+            <select id="scheduler">
+              <option>normal</option>
+              <option>simple</option>
+              <option>sgm_uniform</option>
+              <option>beta</option>
+              <option>kl_optimal</option>
+            </select>
+          </div>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+        <div style="display:flex; align-items:center; justify-content:space-between; margin:8px 0">
+          <strong>HiresFix</strong>
+          <label class="switch"><input id="hiresToggle" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div id="hiresWrap" style="display:none">
+          <div class="row-4">
+            <div>
+              <label for="hiresScale">Scale by</label>
+              <input id="hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
+            </div>
+            <div>
+              <label for="hiresSteps">Steps</label>
+              <input id="hiresSteps" type="number" min="15" max="25" step="1" value="20" />
+            </div>
+            <div>
+              <label for="hiresCfg">CFG</label>
+              <input id="hiresCfg" type="number" step="0.1" value="5.0" />
+              <div class="hint" id="hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+            </div>
+            <div>
+              <label for="hiresDenoise">Denoise</label>
+              <input id="hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="hiresSampler">Sampler</label>
+              <select id="hiresSampler">
+                <option>euler</option>
+                <option>euler_ancestral</option>
+                <option>euler_cfg_pp</option>
+                <option>euler_ancestral_cfg_pp</option>
+                <option>dpmpp_2m</option>
+                <option>dpmpp_2s_ancestral</option>
+                <option>dpmpp_2s_ancestral_cfg_pp</option>
+                <option>res_multistep</option>
+                <option>res_multistep_cfg_pp</option>
+                <option>sa_solver_pece</option>
+                <option>gradient_estimation</option>
+                <option>gradient_estimation_cfg_pp</option>
+              </select>
+            </div>
+            <div>
+              <label for="hiresScheduler">Scheduler</label>
+              <select id="hiresScheduler">
+                <option>normal</option>
+                <option>simple</option>
+                <option>sgm_uniform</option>
+                <option>beta</option>
+                <option>kl_optimal</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="hiresSeedCustom" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Use custom HiresFix seed</span>
+          </div>
+          <div id="hiresSeedWrap" style="display:none">
+            <label for="hiresSeed">HiresFix seed</label>
+            <input id="hiresSeed" type="number" step="1" value="-1" />
+          </div>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+        <div class="row">
+          <button class="btn primary" id="runBtn">Generate</button>
+          <button class="btn" id="curlBtn" type="button">Copy cURL</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="resetBtn" type="button">Reset to defaults</button>
+          <button class="btn danger" id="clearBtn" type="button">Clear gallery</button>
+        </div>
+        <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output</strong></header>
+      <div class="gallery" id="gallery"></div>
+      <div class="body">
+        <details>
+          <summary class="mono">Request payload (debug)</summary>
+          <pre class="mono" id="debugReq"></pre>
+        </details>
+        <details>
+          <summary class="mono">Raw response (debug)</summary>
+          <pre class="mono" id="debugResp"></pre>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <!-- Workflow template embedded as JSON for robust placeholder replacement -->
+  <script id="workflow-template" type="application/json">{
+  "3": {"inputs": {"seed": "%seed%", "steps": "%steps%", "cfg": "%cfg%", "sampler_name": "%sampler%", "scheduler": "%scheduler%", "denoise": 1, "model": ["13", 0], "positive": ["6", 0], "negative": ["11", 0], "latent_image": ["5", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler (Initial)"}},
+  "4": {"inputs": {"ckpt_name": "%model%"}, "class_type": "CheckpointLoaderSimple", "_meta": {"title": "Load Checkpoint"}},
+  "5": {"inputs": {"width": "%width%", "height": "%height%", "batch_size": 1}, "class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent Image"}},
+  "6": {"inputs": {"text": "%prompt%", "clip": ["4", 1]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Prompt)"}},
+  "8": {"inputs": {"samples": ["15", 0], "vae": ["4", 2]}, "class_type": "VAEDecode", "_meta": {"title": "VAE Decode"}},
+  "9": {"inputs": {"filename_prefix": "ComfyUI", "images": ["18", 0]}, "class_type": "SaveImage", "_meta": {"title": "Save Image"}},
+  "10": {"inputs": {"conditioning": ["6", 0]}, "class_type": "ConditioningZeroOut", "_meta": {"title": "ConditioningZeroOut"}},
+  "11": {"inputs": {"boolean": "%neg_zero_out%", "on_true": ["10", 0], "on_false": ["12", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Zero Out Negative"}},
+  "12": {"inputs": {"text": "%negative_prompt%", "clip": ["4", 1]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Prompt)"}},
+  "13": {"inputs": {"multiplier": "%rescalecfg_multiplier%", "model": ["14", 0]}, "class_type": "RescaleCFG", "_meta": {"title": "RescaleCFG"}},
+  "14": {"inputs": {"model": ["4", 0]}, "class_type": "Mahiro", "_meta": {"title": "Mahiro"}},
+  "15": {"inputs": {"boolean": "%use_hiresfix%", "on_true": ["17", 0], "on_false": ["3", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Use HiresFix"}},
+  "16": {"inputs": {"upscale_method": "nearest-exact", "scale_by": "%hiresfix_scale_by%", "samples": ["3", 0]}, "class_type": "LatentUpscaleBy", "_meta": {"title": "Upscale Latent By"}},
+  "17": {"inputs": {"seed": "%hiresfix_seed%", "steps": "%hiresfix_steps%", "cfg": "%hiresfix_cfg%", "sampler_name": "%hiresfix_sampler%", "scheduler": "%hiresfix_scheduler%", "denoise": "%hiresfix_denoise%", "model": ["13", 0], "positive": ["6", 0], "negative": ["11", 0], "latent_image": ["16", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler"}},
+  "18": {"inputs": {"boolean": "%remove_bg%", "on_true": ["19", 0], "on_false": ["8", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Remove Background"}},
+  "19": {"inputs": {"model": "BiRefNet_dynamic", "mask_blur": 0, "mask_offset": 0, "invert_output": false, "refine_foreground": false, "background": "Alpha", "background_color": "#000000", "image": ["8", 0]}, "class_type": "BiRefNetRMBG", "_meta": {"title": "BiRefNet Remove Background (RMBG)"}}
+}
+  </script>
+
+  <script>
+    const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
+
+    const qs = id => document.getElementById(id);
+    const el = {
+      apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
+      negZero: qs('negZero'), negative: qs('negative'), negWrap: qs('negWrap'),
+      dims: qs('dims'), rescale: qs('rescale'), rmbg: qs('rmbg'),
+      seed: qs('seed'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
+      sampler: qs('sampler'), scheduler: qs('scheduler'),
+      hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
+      runBtn: qs('runBtn'), curlBtn: qs('curlBtn'), resetBtn: qs('resetBtn'), clearBtn: qs('clearBtn'),
+      status: qs('status'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
+    };
+
+    function setCfgRangeForSampler(samplerSel, cfgInput, hintEl){
+      const isCfgPP = samplerSel.value.includes('cfg_pp');
+      if(isCfgPP){
+        cfgInput.min = 0.5; cfgInput.max = 3.0; cfgInput.step = 0.1;
+        if(+cfgInput.value < 0.5 || +cfgInput.value > 3.0) cfgInput.value = 1.0;
+        hintEl.textContent = 'Range 0.5–3.0 (cfg_pp)';
+      } else {
+        cfgInput.min = 4.0; cfgInput.max = 6.0; cfgInput.step = 0.1;
+        if(+cfgInput.value < 4.0 || +cfgInput.value > 6.0) cfgInput.value = 5.0;
+        hintEl.textContent = 'Range 4.0–6.0 (non cfg_pp)';
+      }
+    }
+
+    setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
+    setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
+
+    el.sampler.addEventListener('change', () => setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint));
+    el.hiresSampler.addEventListener('change', () => setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint));
+
+    el.negZero.addEventListener('change', () => {
+      el.negWrap.style.display = el.negZero.checked ? 'none' : '';
+    });
+
+    el.hiresToggle.addEventListener('change', () => {
+      el.hiresWrap.style.display = el.hiresToggle.checked ? '' : 'none';
+    });
+
+    el.hiresSeedCustom.addEventListener('change', () => {
+      el.hiresSeedWrap.style.display = el.hiresSeedCustom.checked ? '' : 'none';
+    });
+
+    el.resetBtn.addEventListener('click', () => {
+      // Minimal reset to spec defaults
+      el.prompt.value = '';
+      el.negative.value = '';
+      el.negZero.checked = false; el.negWrap.style.display = '';
+      el.dims.value = '1024x1024';
+      el.rescale.value = 0.7; el.rmbg.checked = false;
+      el.seed.value = -1; el.steps.value = 25; el.cfg.value = 5.0; el.sampler.value = 'euler'; el.scheduler.value = 'normal'; setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
+      el.hiresToggle.checked = false; el.hiresWrap.style.display = 'none'; el.hiresScale.value = 1.50; el.hiresSteps.value = 20; el.hiresCfg.value = 5.0; el.hiresDenoise.value = 0.56; el.hiresSampler.value='euler'; el.hiresScheduler.value='normal'; setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
+      el.hiresSeedCustom.checked = false; el.hiresSeedWrap.style.display = 'none'; el.hiresSeed.value=-1;
+      el.status.textContent = 'Reset to defaults';
+    });
+
+    el.clearBtn.addEventListener('click', () => { el.gallery.innerHTML = ''; el.status.textContent = 'Gallery cleared'; });
+
+    function getWorkflowTemplate(){
+      const raw = document.getElementById('workflow-template').textContent.trim();
+      return JSON.parse(raw);
+    }
+
+    function deepReplacePlaceholders(obj, map){
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj === 'string'){
+        // Replace only if the entire string is a placeholder like %name%
+        const m = obj.match(/^%([a-zA-Z0-9_]+)%$/);
+        if (m){
+          const key = m[1];
+          if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
+          return map[key];
+        }
+        return obj;
+      } else if (Array.isArray(obj)){
+        return obj.map(v => deepReplacePlaceholders(v, map));
+      } else if (typeof obj === 'object'){
+        const out = Array.isArray(obj) ? [] : {};
+        for (const k of Object.keys(obj)) out[k] = deepReplacePlaceholders(obj[k], map);
+        return out;
+      }
+      return obj;
+    }
+
+    function buildPlaceholderMap(){
+      const [w,h] = el.dims.value.split('x').map(n => parseInt(n,10));
+      const negZero = !!el.negZero.checked;
+      const hiresOn = !!el.hiresToggle.checked;
+      const hiresSeed = el.hiresSeedCustom.checked ? parseInt(el.hiresSeed.value || '-1', 10) : parseInt(el.seed.value || '-1', 10);
+      return {
+        model: el.model.value,
+        prompt: el.prompt.value || '',
+        neg_zero_out: negZero,
+        negative_prompt: negZero ? '' : (el.negative.value || ''),
+        width: w, height: h,
+        rescalecfg_multiplier: parseFloat(el.rescale.value || '0.7'),
+        remove_bg: !!el.rmbg.checked,
+        seed: parseInt(el.seed.value || '-1', 10),
+        steps: parseInt(el.steps.value || '25', 10),
+        cfg: parseFloat(el.cfg.value || '5.0'),
+        sampler: el.sampler.value,
+        scheduler: el.scheduler.value,
+        use_hiresfix: hiresOn,
+        hiresfix_scale_by: parseFloat(el.hiresScale.value || '1.50'),
+        hiresfix_seed: hiresSeed,
+        hiresfix_steps: parseInt(el.hiresSteps.value || '20', 10),
+        hiresfix_cfg: parseFloat(el.hiresCfg.value || '5.0'),
+        hiresfix_sampler: el.hiresSampler.value,
+        hiresfix_scheduler: el.hiresScheduler.value,
+        hiresfix_denoise: parseFloat(el.hiresDenoise.value || '0.56'),
+      };
+    }
+
+    function buildPayload(){
+      const template = getWorkflowTemplate();
+      const map = buildPlaceholderMap();
+      // Map keys used in placeholders are without % per deepReplacePlaceholders
+      const resolved = deepReplacePlaceholders(template, map);
+      return { input: { workflow: resolved } };
+    }
+
+    function makeCurl(payload){
+      const key = el.apiKey.value.trim() || '<api_key>';
+      return [
+        'curl -sX POST',
+        `  -H "Authorization: Bearer ${key}"`,
+        '  -H "Content-Type: application/json"',
+        `  -d '${JSON.stringify(payload)}'`,
+        `  ${ENDPOINT}`
+      ].join(' \n');
+    }
+
+    function setBusy(b){ el.runBtn.disabled = b; el.status.textContent = b? 'Running…' : 'Idle'; }
+
+    async function run(){
+      const key = el.apiKey.value.trim();
+      if (!key){ el.status.textContent = 'API key required'; return; }
+      try{
+        setBusy(true);
+        const payload = buildPayload();
+        el.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        el.debugResp.textContent = JSON.stringify(data, null, 2);
+
+        if (!resp.ok){ throw new Error(`HTTP ${resp.status}`); }
+        if (data.status !== 'COMPLETED'){ throw new Error(`Job status: ${data.status}`); }
+        if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0){ throw new Error('No images in response'); }
+
+        for (const item of data.output.images){
+          if (item.type === 'base64' && item.data){
+            const imgUrl = `data:image/png;base64,${item.data}`;
+            addShot(imgUrl, item.filename || 'image.png');
+          } else if (item.type === 's3_url' && item.data){
+            addShot(item.data, item.filename || 'image.png');
+          }
+        }
+        el.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      } catch(err){
+        console.error(err);
+        el.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      } finally{ setBusy(false); }
+    }
+
+    function addShot(url, name){
+      const wrap = document.createElement('div');
+      wrap.className = 'shot';
+      const header = document.createElement('div'); header.className = 'header';
+      header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+      wrap.appendChild(header);
+      const img = new Image(); img.loading = 'lazy'; img.src = url; wrap.appendChild(img);
+      el.gallery.prepend(wrap);
+    }
+
+    el.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); run(); });
+
+    el.curlBtn.addEventListener('click', ()=>{
+      const payload = buildPayload();
+      const text = makeCurl(payload);
+      navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
+    });
+
+    // Initialize
+    (function(){
+      el.dims.value = '1024x1024';
+    })();
+  </script>
+</body>
+</html>
