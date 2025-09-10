@@ -21,6 +21,13 @@
     .card header{position:unset; background:none; border:0}
     .card .body{padding:14px}
 
+    .tabs{display:flex; justify-content:center; background:var(--panel); border-bottom:1px solid var(--border)}
+    .tabs button{background:none; border:0; padding:12px 16px; color:var(--text); cursor:pointer}
+    .tabs button.active{color:var(--accent); border-bottom:2px solid var(--accent)}
+
+    .tab-content{display:none}
+    .tab-content.active{display:grid}
+
     .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
     .row-3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px}
     .row-4{display:grid; grid-template-columns: repeat(4,1fr); gap:10px}
@@ -67,15 +74,19 @@
       <div class="desc">Static client for /runsync. No backend. API key stays in-memory.</div>
     </div>
   </header>
-  <main>
-    <section class="card" id="controls">
+  <nav class="tabs">
+    <button class="active" data-tab="sdxl">SDXL</button>
+    <button data-tab="qwen">Qwen-Image</button>
+  </nav>
+  <main id="sdxlTab" class="tab-content active">
+    <section class="card" id="sdxlControls">
       <header class="body" style="border-bottom:1px solid var(--border)">
         <strong>Controls</strong>
-        <div class="status" id="status">Idle</div>
+        <div class="status" id="statusSDXL">Idle</div>
       </header>
       <div class="body">
-        <label for="apiKey">RunPod API Key</label>
-        <input id="apiKey" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
+        <label for="apiKeySDXL">RunPod API Key</label>
+        <input id="apiKeySDXL" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
         <div class="hint">Used only in this page, not stored.</div>
 
         <label for="model">Model</label>
@@ -238,12 +249,12 @@
 
         <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
         <div class="row">
-          <button class="btn primary" id="runBtn">Generate</button>
-          <button class="btn" id="curlBtn" type="button">Copy cURL</button>
+          <button class="btn primary" id="sdxlRunBtn">Generate</button>
+          <button class="btn" id="sdxlCurlBtn" type="button">Copy cURL</button>
         </div>
         <div class="row" style="margin-top:10px">
-          <button class="btn" id="resetBtn" type="button">Reset to defaults</button>
-          <button class="btn danger" id="clearBtn" type="button">Clear gallery</button>
+          <button class="btn" id="sdxlResetBtn" type="button">Reset to defaults</button>
+          <button class="btn danger" id="sdxlClearBtn" type="button">Clear gallery</button>
         </div>
         <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
       </div>
@@ -251,22 +262,135 @@
 
     <section class="card">
       <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output</strong></header>
-      <div class="gallery" id="gallery"></div>
+      <div class="gallery" id="sdxlGallery"></div>
       <div class="body">
         <details>
           <summary class="mono">Request payload (debug)</summary>
-          <pre class="mono" id="debugReq"></pre>
+          <pre class="mono" id="sdxlDebugReq"></pre>
         </details>
         <details>
           <summary class="mono">Raw response (debug)</summary>
-          <pre class="mono" id="debugResp"></pre>
+          <pre class="mono" id="sdxlDebugResp"></pre>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <main id="qwenTab" class="tab-content">
+    <section class="card" id="qwenControls">
+      <header class="body" style="border-bottom:1px solid var(--border)">
+        <strong>Controls</strong>
+        <div class="status" id="statusQwen">Idle</div>
+      </header>
+      <div class="body">
+        <label for="apiKeyQwen">RunPod API Key</label>
+        <input id="apiKeyQwen" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
+        <div class="hint">Used only in this page, not stored.</div>
+
+        <label for="qPrompt">Prompt</label>
+        <textarea id="qPrompt" placeholder="Describe the image..."></textarea>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="qLowStep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Use Low Step</span>
+        </div>
+
+        <div id="qNegWrap">
+          <label for="qNegative">Negative prompt</label>
+          <textarea id="qNegative" placeholder="Things to avoid..."></textarea>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="qWidth">Width</label>
+            <input id="qWidth" type="number" min="1" max="1920" value="1024" />
+          </div>
+          <div>
+            <label for="qHeight">Height</label>
+            <input id="qHeight" type="number" min="1" max="1920" value="1024" />
+          </div>
+        </div>
+
+        <div class="row-3">
+          <div>
+            <label for="qSeed">Seed</label>
+            <input id="qSeed" type="number" step="1" value="-1" />
+            <div class="hint">Use -1 for random</div>
+          </div>
+          <div id="qStepsWrap">
+            <label for="qSteps">Steps</label>
+            <input id="qSteps" type="number" min="10" max="30" step="1" value="20" />
+          </div>
+          <div id="qCfgWrap">
+            <label for="qCfg">CFG</label>
+            <input id="qCfg" type="number" min="1.0" max="3.5" step="0.1" value="2.0" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="qSampler">Sampler</label>
+            <select id="qSampler">
+              <option>euler</option>
+              <option>euler_ancestral</option>
+              <option>euler_cfg_pp</option>
+              <option>euler_ancestral_cfg_pp</option>
+              <option>dpmpp_2m</option>
+              <option>dpmpp_2s_ancestral</option>
+              <option>dpmpp_2s_ancestral_cfg_pp</option>
+              <option>res_multistep</option>
+              <option>res_multistep_cfg_pp</option>
+              <option>sa_solver_pece</option>
+              <option>gradient_estimation</option>
+              <option>gradient_estimation_cfg_pp</option>
+            </select>
+          </div>
+          <div>
+            <label for="qScheduler">Scheduler</label>
+            <select id="qScheduler">
+              <option>normal</option>
+              <option>simple</option>
+              <option>sgm_uniform</option>
+              <option>beta</option>
+              <option>kl_optimal</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="qModelShift">Model shift</label>
+        <input id="qModelShift" type="number" min="0" step="0.01" value="3.10" />
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+        <div class="row">
+          <button class="btn primary" id="qRunBtn">Generate</button>
+          <button class="btn" id="qCurlBtn" type="button">Copy cURL</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="qResetBtn" type="button">Reset to defaults</button>
+          <button class="btn danger" id="qClearBtn" type="button">Clear gallery</button>
+        </div>
+        <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output</strong></header>
+      <div class="gallery" id="qwenGallery"></div>
+      <div class="body">
+        <details>
+          <summary class="mono">Request payload (debug)</summary>
+          <pre class="mono" id="qDebugReq"></pre>
+        </details>
+        <details>
+          <summary class="mono">Raw response (debug)</summary>
+          <pre class="mono" id="qDebugResp"></pre>
         </details>
       </div>
     </section>
   </main>
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
-  <script id="workflow-template" type="application/json">{
+  <script id="sdxl-workflow-template" type="application/json">{
   "3": {"inputs": {"seed": "%seed%", "steps": "%steps%", "cfg": "%cfg%", "sampler_name": "%sampler%", "scheduler": "%scheduler%", "denoise": 1, "model": ["13", 0], "positive": ["6", 0], "negative": ["11", 0], "latent_image": ["5", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler (Initial)"}},
   "4": {"inputs": {"ckpt_name": "%model%"}, "class_type": "CheckpointLoaderSimple", "_meta": {"title": "Load Checkpoint"}},
   "5": {"inputs": {"width": "%width%", "height": "%height%", "batch_size": 1}, "class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent Image"}},
@@ -286,20 +410,66 @@
 }
   </script>
 
+  <script id="qwen-workflow-template" type="application/json">{
+  "1": {"inputs": {"unet_name": "qwen_image_fp8_e4m3fn.safetensors", "weight_dtype": "fp8_e4m3fn"}, "class_type": "UNETLoader", "_meta": {"title": "Load Diffusion Model"}},
+  "2": {"inputs": {"clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors", "type": "qwen_image", "device": "default"}, "class_type": "CLIPLoader", "_meta": {"title": "Load CLIP"}},
+  "3": {"inputs": {"vae_name": "qwen_image_vae.safetensors"}, "class_type": "VAELoader", "_meta": {"title": "Load VAE"}},
+  "5": {"inputs": {"value": "%use_low_step%"}, "class_type": "PrimitiveBoolean", "_meta": {"title": "Low Step"}},
+  "6": {"inputs": {"text": "%prompt%", "clip": ["2", 0]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Positive Prompt)"}},
+  "7": {"inputs": {"text": "%negative_prompt%", "clip": ["2", 0]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Negative Prompt)"}},
+  "8": {"inputs": {"width": "%width%", "height": "%height%", "batch_size": 1}, "class_type": "EmptySD3LatentImage", "_meta": {"title": "EmptySD3LatentImage"}},
+  "9": {"inputs": {"seed": "%seed%", "steps": "%steps%", "cfg": ["20", 0], "sampler_name": "%sampler%", "scheduler": "%scheduler%", "denoise": 1, "model": ["10", 0], "positive": ["6", 0], "negative": ["14", 0], "latent_image": ["8", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler"}},
+  "10": {"inputs": {"shift": "%model_shift%", "model": ["12", 0]}, "class_type": "ModelSamplingAuraFlow", "_meta": {"title": "ModelSamplingAuraFlow"}},
+  "11": {"inputs": {"lora_name": "Qwen-Image-Lightning-8steps-V1.1.safetensors", "strength_model": 1, "model": ["1", 0]}, "class_type": "LoraLoaderModelOnly", "_meta": {"title": "LoraLoaderModelOnly"}},
+  "12": {"inputs": {"boolean": ["5", 0], "on_true": ["11", 0], "on_false": ["1", 0]}, "class_type": "easy ifElse", "_meta": {"title": "If else"}},
+  "13": {"inputs": {"conditioning": ["6", 0]}, "class_type": "ConditioningZeroOut", "_meta": {"title": "ConditioningZeroOut"}},
+  "14": {"inputs": {"boolean": ["5", 0], "on_true": ["13", 0], "on_false": ["7", 0]}, "class_type": "easy ifElse", "_meta": {"title": "If else"}},
+  "15": {"inputs": {"samples": ["9", 0], "vae": ["3", 0]}, "class_type": "VAEDecode", "_meta": {"title": "VAE Decode"}},
+  "16": {"inputs": {"filename_prefix": "Qwen", "filename_keys": "", "foldername_prefix": "", "foldername_keys": "", "delimiter": "-", "save_job_data": "disabled", "job_data_per_image": false, "job_custom_text": "", "save_metadata": true, "counter_digits": 4, "counter_position": "last", "one_counter_per_folder": true, "image_preview": true, "output_ext": ".avif", "quality": 99, "images": ["15", 0]}, "class_type": "SaveImageExtended", "_meta": {"title": "💾 Save Image Extended"}},
+  "20": {"inputs": {"boolean": ["5", 0], "on_true": ["21", 0], "on_false": ["22", 0]}, "class_type": "easy ifElse", "_meta": {"title": "If else"}},
+  "21": {"inputs": {"value": 1}, "class_type": "PrimitiveFloat", "_meta": {"title": "LSCFG"}},
+  "22": {"inputs": {"value": "%cfg%"}, "class_type": "PrimitiveFloat", "_meta": {"title": "Standard CFG"}}
+}
+  </script>
+
   <script>
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
 
     const qs = id => document.getElementById(id);
     const el = {
-      apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
+      apiKey: qs('apiKeySDXL'), model: qs('model'), prompt: qs('prompt'),
       negZero: qs('negZero'), negative: qs('negative'), negWrap: qs('negWrap'),
       dims: qs('dims'), rescale: qs('rescale'), rmbg: qs('rmbg'),
       seed: qs('seed'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
       sampler: qs('sampler'), scheduler: qs('scheduler'),
       hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
-      runBtn: qs('runBtn'), curlBtn: qs('curlBtn'), resetBtn: qs('resetBtn'), clearBtn: qs('clearBtn'),
-      status: qs('status'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
+      runBtn: qs('sdxlRunBtn'), curlBtn: qs('sdxlCurlBtn'), resetBtn: qs('sdxlResetBtn'), clearBtn: qs('sdxlClearBtn'),
+      status: qs('statusSDXL'), gallery: qs('sdxlGallery'), debugReq: qs('sdxlDebugReq'), debugResp: qs('sdxlDebugResp'),
     };
+
+    const qEl = {
+      apiKey: qs('apiKeyQwen'), prompt: qs('qPrompt'),
+      lowStep: qs('qLowStep'), negative: qs('qNegative'), negWrap: qs('qNegWrap'),
+      width: qs('qWidth'), height: qs('qHeight'),
+      seed: qs('qSeed'), steps: qs('qSteps'), cfg: qs('qCfg'),
+      sampler: qs('qSampler'), scheduler: qs('qScheduler'),
+      modelShift: qs('qModelShift'),
+      stepsWrap: qs('qStepsWrap'), cfgWrap: qs('qCfgWrap'),
+      runBtn: qs('qRunBtn'), curlBtn: qs('qCurlBtn'), resetBtn: qs('qResetBtn'), clearBtn: qs('qClearBtn'),
+      status: qs('statusQwen'), gallery: qs('qwenGallery'), debugReq: qs('qDebugReq'), debugResp: qs('qDebugResp'),
+    };
+
+    const tabButtons = document.querySelectorAll('.tabs button');
+    const tabs = { sdxl: qs('sdxlTab'), qwen: qs('qwenTab') };
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        Object.keys(tabs).forEach(key => {
+          tabs[key].classList.toggle('active', btn.dataset.tab === key);
+        });
+      });
+    });
 
     function setCfgRangeForSampler(samplerSel, cfgInput, hintEl){
       const isCfgPP = samplerSel.value.includes('cfg_pp');
@@ -347,8 +517,8 @@
 
     el.clearBtn.addEventListener('click', () => { el.gallery.innerHTML = ''; el.status.textContent = 'Gallery cleared'; });
 
-    function getWorkflowTemplate(){
-      const raw = document.getElementById('workflow-template').textContent.trim();
+    function getWorkflowTemplate(id){
+      const raw = document.getElementById(id).textContent.trim();
       return JSON.parse(raw);
     }
 
@@ -403,15 +573,15 @@
     }
 
     function buildPayload(){
-      const template = getWorkflowTemplate();
+      const template = getWorkflowTemplate('sdxl-workflow-template');
       const map = buildPlaceholderMap();
       // Map keys used in placeholders are without % per deepReplacePlaceholders
       const resolved = deepReplacePlaceholders(template, map);
       return { input: { workflow: resolved } };
     }
 
-    function makeCurl(payload){
-      const key = el.apiKey.value.trim() || '<api_key>';
+    function makeCurl(payload, keyRaw){
+      const key = (keyRaw || '').trim() || '<api_key>';
       return [
         'curl -sX POST',
         `  -H "Authorization: Bearer ${key}"`,
@@ -445,9 +615,9 @@
         for (const item of data.output.images){
           if (item.type === 'base64' && item.data){
             const imgUrl = `data:image/png;base64,${item.data}`;
-            addShot(imgUrl, item.filename || 'image.png');
+            addShot(el.gallery, imgUrl, item.filename || 'image.png');
           } else if (item.type === 's3_url' && item.data){
-            addShot(item.data, item.filename || 'image.png');
+            addShot(el.gallery, item.data, item.filename || 'image.png');
           }
         }
         el.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
@@ -457,21 +627,112 @@
       } finally{ setBusy(false); }
     }
 
-    function addShot(url, name){
+    function addShot(gallery, url, name){
       const wrap = document.createElement('div');
       wrap.className = 'shot';
       const header = document.createElement('div'); header.className = 'header';
       header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
       wrap.appendChild(header);
       const img = new Image(); img.loading = 'lazy'; img.src = url; wrap.appendChild(img);
-      el.gallery.prepend(wrap);
+      gallery.prepend(wrap);
     }
+
+    qEl.lowStep.addEventListener('change', () => {
+      const on = qEl.lowStep.checked;
+      qEl.negWrap.style.display = on ? 'none' : '';
+      qEl.stepsWrap.style.display = on ? 'none' : '';
+      qEl.cfgWrap.style.display = on ? 'none' : '';
+    });
+
+    qEl.resetBtn.addEventListener('click', () => {
+      qEl.prompt.value = '';
+      qEl.lowStep.checked = false; qEl.negWrap.style.display = ''; qEl.stepsWrap.style.display=''; qEl.cfgWrap.style.display='';
+      qEl.negative.value = '';
+      qEl.width.value = 1024; qEl.height.value = 1024;
+      qEl.seed.value = -1; qEl.steps.value = 20; qEl.cfg.value = 2.0;
+      qEl.sampler.value = 'euler'; qEl.scheduler.value = 'normal';
+      qEl.modelShift.value = 3.10;
+      qEl.status.textContent = 'Reset to defaults';
+    });
+
+    qEl.clearBtn.addEventListener('click', () => { qEl.gallery.innerHTML=''; qEl.status.textContent='Gallery cleared'; });
+
+    function buildPlaceholderMapQwen(){
+      const useLS = !!qEl.lowStep.checked;
+      const w = Math.min(parseInt(qEl.width.value || '0',10),1920);
+      const h = Math.min(parseInt(qEl.height.value || '0',10),1920);
+      let seed = parseInt(qEl.seed.value || '-1',10);
+      if(seed === -1){ seed = Math.floor(Math.random()*2147483647); qEl.seed.value = seed; }
+      const steps = useLS ? 8 : Math.min(Math.max(parseInt(qEl.steps.value || '20',10),10),30);
+      return {
+        prompt: qEl.prompt.value || '',
+        use_low_step: useLS,
+        negative_prompt: useLS ? '' : (qEl.negative.value || ''),
+        width: w,
+        height: h,
+        seed: seed,
+        steps: steps,
+        cfg: parseFloat(qEl.cfg.value || '2.0'),
+        sampler: qEl.sampler.value,
+        scheduler: qEl.scheduler.value,
+        model_shift: parseFloat(qEl.modelShift.value || '3.10'),
+      };
+    }
+
+    function buildPayloadQwen(){
+      const template = getWorkflowTemplate('qwen-workflow-template');
+      const map = buildPlaceholderMapQwen();
+      const resolved = deepReplacePlaceholders(template, map);
+      return { input: { workflow: resolved } };
+    }
+
+    function setBusyQ(b){ qEl.runBtn.disabled = b; qEl.status.textContent = b? 'Running…' : 'Idle'; }
+
+    async function runQwen(){
+      const key = qEl.apiKey.value.trim();
+      if(!key){ qEl.status.textContent = 'API key required'; return; }
+      try{
+        setBusyQ(true);
+        const payload = buildPayloadQwen();
+        qEl.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(ENDPOINT, {
+          method:'POST',
+          headers:{ 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        qEl.debugResp.textContent = JSON.stringify(data, null, 2);
+        if(!resp.ok){ throw new Error(`HTTP ${resp.status}`); }
+        if(data.status !== 'COMPLETED'){ throw new Error(`Job status: ${data.status}`); }
+        if(!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0){ throw new Error('No images in response'); }
+        for(const item of data.output.images){
+          if(item.type === 'base64' && item.data){
+            const imgUrl = `data:image/avif;base64,${item.data}`;
+            addShot(qEl.gallery, imgUrl, item.filename || 'image.avif');
+          } else if(item.type === 's3_url' && item.data){
+            addShot(qEl.gallery, item.data, item.filename || 'image.avif');
+          }
+        }
+        qEl.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      }catch(err){
+        console.error(err);
+        qEl.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      }finally{ setBusyQ(false); }
+    }
+
+    qEl.runBtn.addEventListener('click', e=>{ e.preventDefault(); runQwen(); });
+
+    qEl.curlBtn.addEventListener('click', () => {
+      const payload = buildPayloadQwen();
+      const text = makeCurl(payload, qEl.apiKey.value);
+      navigator.clipboard.writeText(text).then(()=>{ qEl.status.textContent = 'cURL copied'; });
+    });
 
     el.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); run(); });
 
     el.curlBtn.addEventListener('click', ()=>{
       const payload = buildPayload();
-      const text = makeCurl(payload);
+      const text = makeCurl(payload, el.apiKey.value);
       navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
     });
 
