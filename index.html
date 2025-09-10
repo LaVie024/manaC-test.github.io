@@ -5,28 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RunPod ComfyUI Frontend</title>
   <style>
-    :root{
-      --bg: #0f1116; --panel:#171923; --muted:#a0abc0; --text:#e6eefc; --accent:#5aa9ff; --danger:#ff5964; --ok:#61d095; --border:#262b3a;
-    }
+    :root{ --bg:#0f1116; --panel:#171923; --muted:#a0abc0; --text:#e6eefc; --accent:#5aa9ff; --danger:#ff5964; --ok:#61d095; --border:#262b3a; }
     *{box-sizing:border-box}
     body{margin:0; font:14px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:var(--text); background:var(--bg);}    
-    header{position:sticky; top:0; z-index:5; background:rgba(15,17,22,.85); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--border);}    
-    header .wrap{max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap}
-    header h1{font-size:16px; margin:0; font-weight:650}
-    header .desc{color:var(--muted); font-size:12px}
-    main{max-width:1100px; margin:0 auto; padding:16px; display:grid; grid-template-columns: 360px 1fr; gap:16px}
-    @media (max-width: 880px){ main{grid-template-columns: 1fr;} }
+    header.top{position:sticky; top:0; z-index:5; background:rgba(15,17,22,.85); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--border);}    
+    header.top .wrap{max-width:1200px; margin:0 auto; padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    header.top h1{font-size:16px; margin:0; font-weight:650}
+    header.top .desc{color:var(--muted); font-size:12px}
+
+    main{max-width:1200px; margin:0 auto; padding:16px}
+
+    .tabs{display:flex; gap:8px; border-bottom:1px solid var(--border); margin-bottom:12px}
+    .tab-btn{appearance:none; background:#0d1320; border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:10px 10px 0 0; cursor:pointer}
+    .tab-btn[aria-selected="true"]{background:#132646; border-bottom-color:#132646; font-weight:600}
+
+    .grid{display:grid; grid-template-columns: 380px 1fr; gap:16px}
+    @media (max-width: 980px){ .grid{grid-template-columns: 1fr;} }
 
     .card{background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden}
     .card header{position:unset; background:none; border:0}
     .card .body{padding:14px}
-
-    .tabs{display:flex; justify-content:center; background:var(--panel); border-bottom:1px solid var(--border)}
-    .tabs button{background:none; border:0; padding:12px 16px; color:var(--text); cursor:pointer}
-    .tabs button.active{color:var(--accent); border-bottom:2px solid var(--accent)}
-
-    .tab-content{display:none}
-    .tab-content.active{display:grid}
 
     .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
     .row-3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px}
@@ -65,332 +63,347 @@
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px}
     details pre{max-height:300px; overflow:auto; background:#0b0e14; border:1px solid var(--border); border-radius:8px; padding:12px}
     .error{color:var(--danger)}
+    .hidden{display:none !important}
   </style>
 </head>
 <body>
-  <header>
+  <header class="top">
     <div class="wrap">
       <h1>RunPod ComfyUI Frontend</h1>
       <div class="desc">Static client for /runsync. No backend. API key stays in-memory.</div>
+      <div style="margin-left:auto; min-width:280px; display:flex; align-items:center; gap:8px">
+        <label for="apiKey" style="margin:0; font-size:12px; color:#cdd6eb; white-space:nowrap">API Key</label>
+        <input id="apiKey" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
+      </div>
     </div>
   </header>
-  <nav class="tabs">
-    <button class="active" data-tab="sdxl">SDXL</button>
-    <button data-tab="qwen">Qwen-Image</button>
-  </nav>
-  <main id="sdxlTab" class="tab-content active">
-    <section class="card" id="sdxlControls">
-      <header class="body" style="border-bottom:1px solid var(--border)">
-        <strong>Controls</strong>
-        <div class="status" id="statusSDXL">Idle</div>
-      </header>
-      <div class="body">
-        <label for="apiKeySDXL">RunPod API Key</label>
-        <input id="apiKeySDXL" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
-        <div class="hint">Used only in this page, not stored.</div>
 
-        <label for="model">Model</label>
-        <select id="model">
-          <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
-          <option value="ΣΙΗ-1.5.safetensors">ΣΙΗ-1.5.safetensors</option>
-          <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
-        </select>
+  <main>
+    <nav class="tabs" role="tablist" aria-label="Mode">
+      <button class="tab-btn" id="tab-sdxl" role="tab" aria-selected="true" aria-controls="panel-sdxl">SDXL</button>
+      <button class="tab-btn" id="tab-qwen" role="tab" aria-selected="false" aria-controls="panel-qwen">Qwen-Image</button>
+    </nav>
 
-        <label for="prompt">Prompt</label>
-        <textarea id="prompt" placeholder="Describe the image..."></textarea>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-          <label class="switch"><input id="negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-          <span class="hint">Zero out negative prompt</span>
-        </div>
-
-        <div id="negWrap">
-          <label for="negative">Negative prompt</label>
-          <textarea id="negative" placeholder="Things to avoid..."></textarea>
-        </div>
-
-        <div class="row">
-          <div>
-            <label for="dims">Dimensions</label>
-            <select id="dims">
-              <option>704x1408</option>
-              <option>768x1344</option>
-              <option>768x1280</option>
-              <option>896x1152</option>
-              <option>1024x1024</option>
-              <option>1152x896</option>
-              <option>1280x768</option>
-              <option>1344x768</option>
-              <option>1408x704</option>
+    <!-- SDXL PANEL -->
+    <section id="panel-sdxl" role="tabpanel" aria-labelledby="tab-sdxl">
+      <div class="grid">
+        <section class="card">
+          <header class="body" style="border-bottom:1px solid var(--border)">
+            <strong>Controls · SDXL</strong>
+            <div class="status" id="sdxl_status">Idle</div>
+          </header>
+          <div class="body">
+            <label for="sdxl_model">Model</label>
+            <select id="sdxl_model">
+              <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
+              <option value="ΣΙΗ-1.5.safetensors">ΣΙΗ-1.5.safetensors</option>
+              <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
             </select>
-          </div>
-          <div>
-            <label for="rescale">RescaleCFG multiplier</label>
-            <input id="rescale" type="number" min="0" max="2" step="0.1" value="0.7" />
-          </div>
-        </div>
 
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-          <label class="switch"><input id="rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-          <span class="hint">Remove background (BiRefNet)</span>
-        </div>
+            <label for="sdxl_prompt">Prompt</label>
+            <textarea id="sdxl_prompt" placeholder="Describe the image..."></textarea>
 
-        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <strong>Sampler</strong>
-        <div class="row-3">
-          <div>
-            <label for="seed">Seed</label>
-            <input id="seed" type="number" step="1" value="-1" />
-            <div class="hint">Use -1 for random</div>
-          </div>
-          <div>
-            <label for="steps">Steps</label>
-            <input id="steps" type="number" min="15" max="35" step="1" value="25" />
-          </div>
-          <div>
-            <label for="cfg">CFG</label>
-            <input id="cfg" type="number" step="0.1" value="5.0" />
-            <div class="hint" id="cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label for="sampler">Sampler</label>
-            <select id="sampler">
-              <option>euler</option>
-              <option>euler_ancestral</option>
-              <option>euler_cfg_pp</option>
-              <option>euler_ancestral_cfg_pp</option>
-              <option>dpmpp_2m</option>
-              <option>dpmpp_2s_ancestral</option>
-              <option>dpmpp_2s_ancestral_cfg_pp</option>
-              <option>res_multistep</option>
-              <option>res_multistep_cfg_pp</option>
-              <option>sa_solver_pece</option>
-              <option>gradient_estimation</option>
-              <option>gradient_estimation_cfg_pp</option>
-            </select>
-          </div>
-          <div>
-            <label for="scheduler">Scheduler</label>
-            <select id="scheduler">
-              <option>normal</option>
-              <option>simple</option>
-              <option>sgm_uniform</option>
-              <option>beta</option>
-              <option>kl_optimal</option>
-            </select>
-          </div>
-        </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+              <label class="switch"><input id="sdxl_negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Zero out negative prompt</span>
+            </div>
 
-        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <div style="display:flex; align-items:center; justify-content:space-between; margin:8px 0">
-          <strong>HiresFix</strong>
-          <label class="switch"><input id="hiresToggle" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-        </div>
-        <div id="hiresWrap" style="display:none">
-          <div class="row-4">
-            <div>
-              <label for="hiresScale">Scale by</label>
-              <input id="hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
+            <div id="sdxl_negWrap">
+              <label for="sdxl_negative">Negative prompt</label>
+              <textarea id="sdxl_negative" placeholder="Things to avoid..."></textarea>
             </div>
-            <div>
-              <label for="hiresSteps">Steps</label>
-              <input id="hiresSteps" type="number" min="15" max="25" step="1" value="20" />
-            </div>
-            <div>
-              <label for="hiresCfg">CFG</label>
-              <input id="hiresCfg" type="number" step="0.1" value="5.0" />
-              <div class="hint" id="hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
-            </div>
-            <div>
-              <label for="hiresDenoise">Denoise</label>
-              <input id="hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
-            </div>
-          </div>
-          <div class="row">
-            <div>
-              <label for="hiresSampler">Sampler</label>
-              <select id="hiresSampler">
-                <option>euler</option>
-                <option>euler_ancestral</option>
-                <option>euler_cfg_pp</option>
-                <option>euler_ancestral_cfg_pp</option>
-                <option>dpmpp_2m</option>
-                <option>dpmpp_2s_ancestral</option>
-                <option>dpmpp_2s_ancestral_cfg_pp</option>
-                <option>res_multistep</option>
-                <option>res_multistep_cfg_pp</option>
-                <option>sa_solver_pece</option>
-                <option>gradient_estimation</option>
-                <option>gradient_estimation_cfg_pp</option>
-              </select>
-            </div>
-            <div>
-              <label for="hiresScheduler">Scheduler</label>
-              <select id="hiresScheduler">
-                <option>normal</option>
-                <option>simple</option>
-                <option>sgm_uniform</option>
-                <option>beta</option>
-                <option>kl_optimal</option>
-              </select>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-            <label class="switch"><input id="hiresSeedCustom" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-            <span class="hint">Use custom HiresFix seed</span>
-          </div>
-          <div id="hiresSeedWrap" style="display:none">
-            <label for="hiresSeed">HiresFix seed</label>
-            <input id="hiresSeed" type="number" step="1" value="-1" />
-          </div>
-        </div>
 
-        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <div class="row">
-          <button class="btn primary" id="sdxlRunBtn">Generate</button>
-          <button class="btn" id="sdxlCurlBtn" type="button">Copy cURL</button>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn" id="sdxlResetBtn" type="button">Reset to defaults</button>
-          <button class="btn danger" id="sdxlClearBtn" type="button">Clear gallery</button>
-        </div>
-        <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
+            <div class="row">
+              <div>
+                <label for="sdxl_dims">Dimensions</label>
+                <select id="sdxl_dims">
+                  <option>704x1408</option>
+                  <option>768x1344</option>
+                  <option>768x1280</option>
+                  <option>896x1152</option>
+                  <option>1024x1024</option>
+                  <option>1152x896</option>
+                  <option>1280x768</option>
+                  <option>1344x768</option>
+                  <option>1408x704</option>
+                </select>
+              </div>
+              <div>
+                <label for="sdxl_rescale">RescaleCFG multiplier</label>
+                <input id="sdxl_rescale" type="number" min="0" max="2" step="0.1" value="0.7" />
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+              <label class="switch"><input id="sdxl_rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Remove background (BiRefNet)</span>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+            <strong>Sampler</strong>
+            <div class="row-3">
+              <div>
+                <label for="sdxl_seed">Seed</label>
+                <input id="sdxl_seed" type="number" step="1" value="-1" />
+                <div class="hint">Use -1 for random</div>
+              </div>
+              <div>
+                <label for="sdxl_steps">Steps</label>
+                <input id="sdxl_steps" type="number" min="15" max="35" step="1" value="25" />
+              </div>
+              <div>
+                <label for="sdxl_cfg">CFG</label>
+                <input id="sdxl_cfg" type="number" step="0.1" value="5.0" />
+                <div class="hint" id="sdxl_cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="sdxl_sampler">Sampler</label>
+                <select id="sdxl_sampler">
+                  <option>euler</option>
+                  <option>euler_ancestral</option>
+                  <option>euler_cfg_pp</option>
+                  <option>euler_ancestral_cfg_pp</option>
+                  <option>dpmpp_2m</option>
+                  <option>dpmpp_2s_ancestral</option>
+                  <option>dpmpp_2s_ancestral_cfg_pp</option>
+                  <option>res_multistep</option>
+                  <option>res_multistep_cfg_pp</option>
+                  <option>sa_solver_pece</option>
+                  <option>gradient_estimation</option>
+                  <option>gradient_estimation_cfg_pp</option>
+                </select>
+              </div>
+              <div>
+                <label for="sdxl_scheduler">Scheduler</label>
+                <select id="sdxl_scheduler">
+                  <option>normal</option>
+                  <option>simple</option>
+                  <option>sgm_uniform</option>
+                  <option>beta</option>
+                  <option>kl_optimal</option>
+                </select>
+              </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:8px 0">
+              <strong>HiresFix</strong>
+              <label class="switch"><input id="sdxl_hiresToggle" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            </div>
+            <div id="sdxl_hiresWrap" style="display:none">
+              <div class="row-4">
+                <div>
+                  <label for="sdxl_hiresScale">Scale by</label>
+                  <input id="sdxl_hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
+                </div>
+                <div>
+                  <label for="sdxl_hiresSteps">Steps</label>
+                  <input id="sdxl_hiresSteps" type="number" min="15" max="25" step="1" value="20" />
+                </div>
+                <div>
+                  <label for="sdxl_hiresCfg">CFG</label>
+                  <input id="sdxl_hiresCfg" type="number" step="0.1" value="5.0" />
+                  <div class="hint" id="sdxl_hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+                </div>
+                <div>
+                  <label for="sdxl_hiresDenoise">Denoise</label>
+                  <input id="sdxl_hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
+                </div>
+              </div>
+              <div class="row">
+                <div>
+                  <label for="sdxl_hiresSampler">Sampler</label>
+                  <select id="sdxl_hiresSampler">
+                    <option>euler</option>
+                    <option>euler_ancestral</option>
+                    <option>euler_cfg_pp</option>
+                    <option>euler_ancestral_cfg_pp</option>
+                    <option>dpmpp_2m</option>
+                    <option>dpmpp_2s_ancestral</option>
+                    <option>dpmpp_2s_ancestral_cfg_pp</option>
+                    <option>res_multistep</option>
+                    <option>res_multistep_cfg_pp</option>
+                    <option>sa_solver_pece</option>
+                    <option>gradient_estimation</option>
+                    <option>gradient_estimation_cfg_pp</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="sdxl_hiresScheduler">Scheduler</label>
+                  <select id="sdxl_hiresScheduler">
+                    <option>normal</option>
+                    <option>simple</option>
+                    <option>sgm_uniform</option>
+                    <option>beta</option>
+                    <option>kl_optimal</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+                <label class="switch"><input id="sdxl_hiresSeedCustom" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+                <span class="hint">Use custom HiresFix seed</span>
+              </div>
+              <div id="sdxl_hiresSeedWrap" style="display:none">
+                <label for="sdxl_hiresSeed">HiresFix seed</label>
+                <input id="sdxl_hiresSeed" type="number" step="1" value="-1" />
+              </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+            <div class="row">
+              <button class="btn primary" id="sdxl_runBtn">Generate</button>
+              <button class="btn" id="sdxl_curlBtn" type="button">Copy cURL</button>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="sdxl_resetBtn" type="button">Reset to defaults</button>
+              <button class="btn danger" id="sdxl_clearBtn" type="button">Clear gallery</button>
+            </div>
+            <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output · SDXL</strong></header>
+          <div class="gallery" id="sdxl_gallery"></div>
+          <div class="body">
+            <details>
+              <summary class="mono">Request payload (debug)</summary>
+              <pre class="mono" id="sdxl_debugReq"></pre>
+            </details>
+            <details>
+              <summary class="mono">Raw response (debug)</summary>
+              <pre class="mono" id="sdxl_debugResp"></pre>
+            </details>
+          </div>
+        </section>
       </div>
     </section>
 
-    <section class="card">
-      <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output</strong></header>
-      <div class="gallery" id="sdxlGallery"></div>
-      <div class="body">
-        <details>
-          <summary class="mono">Request payload (debug)</summary>
-          <pre class="mono" id="sdxlDebugReq"></pre>
-        </details>
-        <details>
-          <summary class="mono">Raw response (debug)</summary>
-          <pre class="mono" id="sdxlDebugResp"></pre>
-        </details>
+    <!-- QWEN-IMAGE PANEL -->
+    <section id="panel-qwen" role="tabpanel" aria-labelledby="tab-qwen" class="hidden">
+      <div class="grid">
+        <section class="card">
+          <header class="body" style="border-bottom:1px solid var(--border)">
+            <strong>Controls · Qwen-Image</strong>
+            <div class="status" id="qwen_status">Idle</div>
+          </header>
+          <div class="body">
+            <label for="qwen_prompt">Prompt</label>
+            <textarea id="qwen_prompt" placeholder="Describe the image..."></textarea>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+              <label class="switch"><input id="qwen_lowstep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Use low step (forces 8 steps, hides Negative & Steps)</span>
+            </div>
+
+            <div id="qwen_negWrap">
+              <label for="qwen_negative">Negative prompt</label>
+              <textarea id="qwen_negative" placeholder="Things to avoid..."></textarea>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="qwen_width">Width</label>
+                <input id="qwen_width" type="number" min="64" max="1920" step="8" value="1024" />
+              </div>
+              <div>
+                <label for="qwen_height">Height</label>
+                <input id="qwen_height" type="number" min="64" max="1920" step="8" value="1024" />
+              </div>
+            </div>
+
+            <div class="row-3" id="qwen_stepsRow">
+              <div>
+                <label for="qwen_seed">Seed</label>
+                <input id="qwen_seed" type="number" step="1" value="-1" />
+                <div class="hint">Use -1 for random</div>
+              </div>
+              <div>
+                <label for="qwen_steps">Steps</label>
+                <input id="qwen_steps" type="number" min="10" max="30" step="1" value="20" />
+              </div>
+              <div>
+                <label for="qwen_cfg">CFG</label>
+                <input id="qwen_cfg" type="number" min="1.0" max="3.5" step="0.1" value="2.0" />
+                <div class="hint">Range 1.0–3.5</div>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="qwen_sampler">Sampler</label>
+                <select id="qwen_sampler">
+                  <option>euler</option>
+                  <option>euler_ancestral</option>
+                  <option>euler_cfg_pp</option>
+                  <option>euler_ancestral_cfg_pp</option>
+                  <option>dpmpp_2m</option>
+                  <option>dpmpp_2s_ancestral</option>
+                  <option>dpmpp_2s_ancestral_cfg_pp</option>
+                  <option>res_multistep</option>
+                  <option>res_multistep_cfg_pp</option>
+                  <option>sa_solver_pece</option>
+                  <option>gradient_estimation</option>
+                  <option>gradient_estimation_cfg_pp</option>
+                </select>
+              </div>
+              <div>
+                <label for="qwen_scheduler">Scheduler</label>
+                <select id="qwen_scheduler">
+                  <option>normal</option>
+                  <option>simple</option>
+                  <option>sgm_uniform</option>
+                  <option>beta</option>
+                  <option>kl_optimal</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="qwen_modelShift">Model shift</label>
+                <input id="qwen_modelShift" type="number" min="0.00" max="32.00" step="0.01" value="3.10" />
+                <div class="hint">Two decimals, default 3.10</div>
+              </div>
+              <div style="align-self:end">
+                <div class="hint">Output format: AVIF</div>
+              </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+            <div class="row">
+              <button class="btn primary" id="qwen_runBtn">Generate</button>
+              <button class="btn" id="qwen_curlBtn" type="button">Copy cURL</button>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="qwen_resetBtn" type="button">Reset to defaults</button>
+              <button class="btn danger" id="qwen_clearBtn" type="button">Clear gallery</button>
+            </div>
+            <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output · Qwen-Image</strong></header>
+          <div class="gallery" id="qwen_gallery"></div>
+          <div class="body">
+            <details>
+              <summary class="mono">Request payload (debug)</summary>
+              <pre class="mono" id="qwen_debugReq"></pre>
+            </details>
+            <details>
+              <summary class="mono">Raw response (debug)</summary>
+              <pre class="mono" id="qwen_debugResp"></pre>
+            </details>
+          </div>
+        </section>
       </div>
     </section>
   </main>
 
-  <main id="qwenTab" class="tab-content">
-    <section class="card" id="qwenControls">
-      <header class="body" style="border-bottom:1px solid var(--border)">
-        <strong>Controls</strong>
-        <div class="status" id="statusQwen">Idle</div>
-      </header>
-      <div class="body">
-        <label for="apiKeyQwen">RunPod API Key</label>
-        <input id="apiKeyQwen" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
-        <div class="hint">Used only in this page, not stored.</div>
-
-        <label for="qPrompt">Prompt</label>
-        <textarea id="qPrompt" placeholder="Describe the image..."></textarea>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-          <label class="switch"><input id="qLowStep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-          <span class="hint">Use Low Step</span>
-        </div>
-
-        <div id="qNegWrap">
-          <label for="qNegative">Negative prompt</label>
-          <textarea id="qNegative" placeholder="Things to avoid..."></textarea>
-        </div>
-
-        <div class="row">
-          <div>
-            <label for="qWidth">Width</label>
-            <input id="qWidth" type="number" min="1" max="1920" value="1024" />
-          </div>
-          <div>
-            <label for="qHeight">Height</label>
-            <input id="qHeight" type="number" min="1" max="1920" value="1024" />
-          </div>
-        </div>
-
-        <div class="row-3">
-          <div>
-            <label for="qSeed">Seed</label>
-            <input id="qSeed" type="number" step="1" value="-1" />
-            <div class="hint">Use -1 for random</div>
-          </div>
-          <div id="qStepsWrap">
-            <label for="qSteps">Steps</label>
-            <input id="qSteps" type="number" min="10" max="30" step="1" value="20" />
-          </div>
-          <div id="qCfgWrap">
-            <label for="qCfg">CFG</label>
-            <input id="qCfg" type="number" min="1.0" max="3.5" step="0.1" value="2.0" />
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label for="qSampler">Sampler</label>
-            <select id="qSampler">
-              <option>euler</option>
-              <option>euler_ancestral</option>
-              <option>euler_cfg_pp</option>
-              <option>euler_ancestral_cfg_pp</option>
-              <option>dpmpp_2m</option>
-              <option>dpmpp_2s_ancestral</option>
-              <option>dpmpp_2s_ancestral_cfg_pp</option>
-              <option>res_multistep</option>
-              <option>res_multistep_cfg_pp</option>
-              <option>sa_solver_pece</option>
-              <option>gradient_estimation</option>
-              <option>gradient_estimation_cfg_pp</option>
-            </select>
-          </div>
-          <div>
-            <label for="qScheduler">Scheduler</label>
-            <select id="qScheduler">
-              <option>normal</option>
-              <option>simple</option>
-              <option>sgm_uniform</option>
-              <option>beta</option>
-              <option>kl_optimal</option>
-            </select>
-          </div>
-        </div>
-
-        <label for="qModelShift">Model shift</label>
-        <input id="qModelShift" type="number" min="0" step="0.01" value="3.10" />
-
-        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <div class="row">
-          <button class="btn primary" id="qRunBtn">Generate</button>
-          <button class="btn" id="qCurlBtn" type="button">Copy cURL</button>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn" id="qResetBtn" type="button">Reset to defaults</button>
-          <button class="btn danger" id="qClearBtn" type="button">Clear gallery</button>
-        </div>
-        <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
-      </div>
-    </section>
-
-    <section class="card">
-      <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output</strong></header>
-      <div class="gallery" id="qwenGallery"></div>
-      <div class="body">
-        <details>
-          <summary class="mono">Request payload (debug)</summary>
-          <pre class="mono" id="qDebugReq"></pre>
-        </details>
-        <details>
-          <summary class="mono">Raw response (debug)</summary>
-          <pre class="mono" id="qDebugResp"></pre>
-        </details>
-      </div>
-    </section>
-  </main>
-
-  <!-- Workflow template embedded as JSON for robust placeholder replacement -->
-  <script id="sdxl-workflow-template" type="application/json">{
+  <!-- SDXL WORKFLOW TEMPLATE -->
+  <script id="workflow-sdxl-template" type="application/json">{
   "3": {"inputs": {"seed": "%seed%", "steps": "%steps%", "cfg": "%cfg%", "sampler_name": "%sampler%", "scheduler": "%scheduler%", "denoise": 1, "model": ["13", 0], "positive": ["6", 0], "negative": ["11", 0], "latent_image": ["5", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler (Initial)"}},
   "4": {"inputs": {"ckpt_name": "%model%"}, "class_type": "CheckpointLoaderSimple", "_meta": {"title": "Load Checkpoint"}},
   "5": {"inputs": {"width": "%width%", "height": "%height%", "batch_size": 1}, "class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent Image"}},
@@ -410,7 +423,8 @@
 }
   </script>
 
-  <script id="qwen-workflow-template" type="application/json">{
+  <!-- QWEN-IMAGE WORKFLOW TEMPLATE -->
+  <script id="workflow-qwen-template" type="application/json">{
   "1": {"inputs": {"unet_name": "qwen_image_fp8_e4m3fn.safetensors", "weight_dtype": "fp8_e4m3fn"}, "class_type": "UNETLoader", "_meta": {"title": "Load Diffusion Model"}},
   "2": {"inputs": {"clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors", "type": "qwen_image", "device": "default"}, "class_type": "CLIPLoader", "_meta": {"title": "Load CLIP"}},
   "3": {"inputs": {"vae_name": "qwen_image_vae.safetensors"}, "class_type": "VAELoader", "_meta": {"title": "Load VAE"}},
@@ -435,311 +449,215 @@
   <script>
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
 
+    // --- helpers
     const qs = id => document.getElementById(id);
-    const el = {
-      apiKey: qs('apiKeySDXL'), model: qs('model'), prompt: qs('prompt'),
-      negZero: qs('negZero'), negative: qs('negative'), negWrap: qs('negWrap'),
-      dims: qs('dims'), rescale: qs('rescale'), rmbg: qs('rmbg'),
-      seed: qs('seed'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
-      sampler: qs('sampler'), scheduler: qs('scheduler'),
-      hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
-      runBtn: qs('sdxlRunBtn'), curlBtn: qs('sdxlCurlBtn'), resetBtn: qs('sdxlResetBtn'), clearBtn: qs('sdxlClearBtn'),
-      status: qs('statusSDXL'), gallery: qs('sdxlGallery'), debugReq: qs('sdxlDebugReq'), debugResp: qs('sdxlDebugResp'),
-    };
-
-    const qEl = {
-      apiKey: qs('apiKeyQwen'), prompt: qs('qPrompt'),
-      lowStep: qs('qLowStep'), negative: qs('qNegative'), negWrap: qs('qNegWrap'),
-      width: qs('qWidth'), height: qs('qHeight'),
-      seed: qs('qSeed'), steps: qs('qSteps'), cfg: qs('qCfg'),
-      sampler: qs('qSampler'), scheduler: qs('qScheduler'),
-      modelShift: qs('qModelShift'),
-      stepsWrap: qs('qStepsWrap'), cfgWrap: qs('qCfgWrap'),
-      runBtn: qs('qRunBtn'), curlBtn: qs('qCurlBtn'), resetBtn: qs('qResetBtn'), clearBtn: qs('qClearBtn'),
-      status: qs('statusQwen'), gallery: qs('qwenGallery'), debugReq: qs('qDebugReq'), debugResp: qs('qDebugResp'),
-    };
-
-    const tabButtons = document.querySelectorAll('.tabs button');
-    const tabs = { sdxl: qs('sdxlTab'), qwen: qs('qwenTab') };
-    tabButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        Object.keys(tabs).forEach(key => {
-          tabs[key].classList.toggle('active', btn.dataset.tab === key);
-        });
-      });
-    });
-
-    function setCfgRangeForSampler(samplerSel, cfgInput, hintEl){
-      const isCfgPP = samplerSel.value.includes('cfg_pp');
-      if(isCfgPP){
-        cfgInput.min = 0.5; cfgInput.max = 3.0; cfgInput.step = 0.1;
-        if(+cfgInput.value < 0.5 || +cfgInput.value > 3.0) cfgInput.value = 1.0;
-        hintEl.textContent = 'Range 0.5–3.0 (cfg_pp)';
-      } else {
-        cfgInput.min = 4.0; cfgInput.max = 6.0; cfgInput.step = 0.1;
-        if(+cfgInput.value < 4.0 || +cfgInput.value > 6.0) cfgInput.value = 5.0;
-        hintEl.textContent = 'Range 4.0–6.0 (non cfg_pp)';
-      }
+    function randomSeed32(){
+      if (window.crypto && window.crypto.getRandomValues){ const arr = new Uint32Array(1); window.crypto.getRandomValues(arr); return (arr[0] >>> 0); }
+      return (Math.floor(Math.random() * 4294967296) >>> 0);
     }
-
-    setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
-    setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
-
-    el.sampler.addEventListener('change', () => setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint));
-    el.hiresSampler.addEventListener('change', () => setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint));
-
-    el.negZero.addEventListener('change', () => {
-      el.negWrap.style.display = el.negZero.checked ? 'none' : '';
-    });
-
-    el.hiresToggle.addEventListener('change', () => {
-      el.hiresWrap.style.display = el.hiresToggle.checked ? '' : 'none';
-    });
-
-    el.hiresSeedCustom.addEventListener('change', () => {
-      el.hiresSeedWrap.style.display = el.hiresSeedCustom.checked ? '' : 'none';
-    });
-
-    el.resetBtn.addEventListener('click', () => {
-      // Minimal reset to spec defaults
-      el.prompt.value = '';
-      el.negative.value = '';
-      el.negZero.checked = false; el.negWrap.style.display = '';
-      el.dims.value = '1024x1024';
-      el.rescale.value = 0.7; el.rmbg.checked = false;
-      el.seed.value = -1; el.steps.value = 25; el.cfg.value = 5.0; el.sampler.value = 'euler'; el.scheduler.value = 'normal'; setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
-      el.hiresToggle.checked = false; el.hiresWrap.style.display = 'none'; el.hiresScale.value = 1.50; el.hiresSteps.value = 20; el.hiresCfg.value = 5.0; el.hiresDenoise.value = 0.56; el.hiresSampler.value='euler'; el.hiresScheduler.value='normal'; setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
-      el.hiresSeedCustom.checked = false; el.hiresSeedWrap.style.display = 'none'; el.hiresSeed.value=-1;
-      el.status.textContent = 'Reset to defaults';
-    });
-
-    el.clearBtn.addEventListener('click', () => { el.gallery.innerHTML = ''; el.status.textContent = 'Gallery cleared'; });
-
-    function getWorkflowTemplate(id){
-      const raw = document.getElementById(id).textContent.trim();
-      return JSON.parse(raw);
-    }
-
     function deepReplacePlaceholders(obj, map){
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'string'){
-        // Replace only if the entire string is a placeholder like %name%
         const m = obj.match(/^%([a-zA-Z0-9_]+)%$/);
-        if (m){
-          const key = m[1];
-          if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
-          return map[key];
-        }
+        if (m){ const key = m[1]; if (!(key in map)) throw new Error(`Missing placeholder: ${key}`); return map[key]; }
         return obj;
       } else if (Array.isArray(obj)){
         return obj.map(v => deepReplacePlaceholders(v, map));
       } else if (typeof obj === 'object'){
-        const out = Array.isArray(obj) ? [] : {};
-        for (const k of Object.keys(obj)) out[k] = deepReplacePlaceholders(obj[k], map);
-        return out;
+        const out = {}; for (const k of Object.keys(obj)) out[k] = deepReplacePlaceholders(obj[k], map); return out;
       }
       return obj;
     }
+    function clamp(n, lo, hi){ n = Number(n); if (Number.isNaN(n)) return lo; return Math.min(Math.max(n, lo), hi); }
 
-    function buildPlaceholderMap(){
-      const [w,h] = el.dims.value.split('x').map(n => parseInt(n,10));
-      const negZero = !!el.negZero.checked;
-      const hiresOn = !!el.hiresToggle.checked;
-      const hiresSeed = el.hiresSeedCustom.checked ? parseInt(el.hiresSeed.value || '-1', 10) : parseInt(el.seed.value || '-1', 10);
+    // --- tabs
+    const tabBtns = { sdxl: qs('tab-sdxl'), qwen: qs('tab-qwen') };
+    const panels = { sdxl: qs('panel-sdxl'), qwen: qs('panel-qwen') };
+    function activateTab(name){
+      for (const k of Object.keys(tabBtns)){
+        const sel = (k===name);
+        tabBtns[k].setAttribute('aria-selected', sel? 'true' : 'false');
+        panels[k].classList.toggle('hidden', !sel);
+      }
+    }
+    tabBtns.sdxl.addEventListener('click', ()=>activateTab('sdxl'));
+    tabBtns.qwen.addEventListener('click', ()=>activateTab('qwen'));
+
+    // --- SDXL elements
+    const s = {
+      model: qs('sdxl_model'), prompt: qs('sdxl_prompt'), negZero: qs('sdxl_negZero'), negative: qs('sdxl_negative'), negWrap: qs('sdxl_negWrap'),
+      dims: qs('sdxl_dims'), rescale: qs('sdxl_rescale'), rmbg: qs('sdxl_rmbg'),
+      seed: qs('sdxl_seed'), steps: qs('sdxl_steps'), cfg: qs('sdxl_cfg'), cfgHint: qs('sdxl_cfgHint'), sampler: qs('sdxl_sampler'), scheduler: qs('sdxl_scheduler'),
+      hiresToggle: qs('sdxl_hiresToggle'), hiresWrap: qs('sdxl_hiresWrap'), hiresScale: qs('sdxl_hiresScale'), hiresSteps: qs('sdxl_hiresSteps'), hiresCfg: qs('sdxl_hiresCfg'), hiresCfgHint: qs('sdxl_hiresCfgHint'), hiresDenoise: qs('sdxl_hiresDenoise'), hiresSampler: qs('sdxl_hiresSampler'), hiresScheduler: qs('sdxl_hiresScheduler'), hiresSeedCustom: qs('sdxl_hiresSeedCustom'), hiresSeedWrap: qs('sdxl_hiresSeedWrap'), hiresSeed: qs('sdxl_hiresSeed'),
+      runBtn: qs('sdxl_runBtn'), curlBtn: qs('sdxl_curlBtn'), resetBtn: qs('sdxl_resetBtn'), clearBtn: qs('sdxl_clearBtn'),
+      status: qs('sdxl_status'), gallery: qs('sdxl_gallery'), debugReq: qs('sdxl_debugReq'), debugResp: qs('sdxl_debugResp'),
+    };
+
+    function setCfgRangeForSampler(sel, input, hint){
+      const isCfgPP = sel.value.includes('cfg_pp');
+      if (isCfgPP){ input.min = 0.5; input.max = 3.0; input.step = 0.1; if(+input.value < 0.5 || +input.value > 3.0) input.value = 1.0; hint.textContent = 'Range 0.5–3.0 (cfg_pp)'; }
+      else{ input.min = 4.0; input.max = 6.0; input.step = 0.1; if(+input.value < 4.0 || +input.value > 6.0) input.value = 5.0; hint.textContent = 'Range 4.0–6.0 (non cfg_pp)'; }
+    }
+    setCfgRangeForSampler(s.sampler, s.cfg, s.cfgHint);
+    setCfgRangeForSampler(s.hiresSampler, s.hiresCfg, s.hiresCfgHint);
+
+    s.sampler.addEventListener('change', ()=> setCfgRangeForSampler(s.sampler, s.cfg, s.cfgHint));
+    s.hiresSampler.addEventListener('change', ()=> setCfgRangeForSampler(s.hiresSampler, s.hiresCfg, s.hiresCfgHint));
+    s.negZero.addEventListener('change', ()=>{ s.negWrap.style.display = s.negZero.checked ? 'none' : ''; });
+    s.hiresToggle.addEventListener('change', ()=>{ s.hiresWrap.style.display = s.hiresToggle.checked ? '' : 'none'; });
+    s.hiresSeedCustom.addEventListener('change', ()=>{ s.hiresSeedWrap.style.display = s.hiresSeedCustom.checked ? '' : 'none'; });
+
+    s.resetBtn.addEventListener('click', ()=>{
+      s.prompt.value = ''; s.negative.value = ''; s.negZero.checked = false; s.negWrap.style.display = '';
+      s.dims.value = '1024x1024'; s.rescale.value = 0.7; s.rmbg.checked = false;
+      s.seed.value = -1; s.steps.value = 25; s.cfg.value = 5.0; s.sampler.value='euler'; s.scheduler.value='normal'; setCfgRangeForSampler(s.sampler, s.cfg, s.cfgHint);
+      s.hiresToggle.checked=false; s.hiresWrap.style.display='none'; s.hiresScale.value=1.50; s.hiresSteps.value=20; s.hiresCfg.value=5.0; s.hiresDenoise.value=0.56; s.hiresSampler.value='euler'; s.hiresScheduler.value='normal'; setCfgRangeForSampler(s.hiresSampler, s.hiresCfg, s.hiresCfgHint);
+      s.hiresSeedCustom.checked=false; s.hiresSeedWrap.style.display='none'; s.hiresSeed.value=-1; s.status.textContent='Reset to defaults';
+    });
+    s.clearBtn.addEventListener('click', ()=>{ s.gallery.innerHTML=''; s.status.textContent='Gallery cleared'; });
+
+    function buildSDXLMap(){
+      const [w,h] = s.dims.value.split('x').map(n=>parseInt(n,10));
+      const negZero = !!s.negZero.checked;
+      const hiresOn = !!s.hiresToggle.checked;
+      const baseSeedUI = parseInt(s.seed.value || '-1', 10);
+      const baseSeed = (baseSeedUI === -1) ? randomSeed32() : baseSeedUI;
+      let hiresSeed = baseSeed;
+      if (hiresOn && s.hiresSeedCustom.checked){ const ui = parseInt(s.hiresSeed.value || '-1', 10); hiresSeed = (ui === -1)? randomSeed32(): ui; }
       return {
-        model: el.model.value,
-        prompt: el.prompt.value || '',
+        model: s.model.value,
+        prompt: s.prompt.value || '',
         neg_zero_out: negZero,
-        negative_prompt: negZero ? '' : (el.negative.value || ''),
+        negative_prompt: negZero ? '' : (s.negative.value || ''),
         width: w, height: h,
-        rescalecfg_multiplier: parseFloat(el.rescale.value || '0.7'),
-        remove_bg: !!el.rmbg.checked,
-        seed: parseInt(el.seed.value || '-1', 10),
-        steps: parseInt(el.steps.value || '25', 10),
-        cfg: parseFloat(el.cfg.value || '5.0'),
-        sampler: el.sampler.value,
-        scheduler: el.scheduler.value,
+        rescalecfg_multiplier: parseFloat(s.rescale.value || '0.7'),
+        remove_bg: !!s.rmbg.checked,
+        seed: baseSeed,
+        steps: parseInt(s.steps.value || '25', 10),
+        cfg: parseFloat(s.cfg.value || '5.0'),
+        sampler: s.sampler.value,
+        scheduler: s.scheduler.value,
         use_hiresfix: hiresOn,
-        hiresfix_scale_by: parseFloat(el.hiresScale.value || '1.50'),
+        hiresfix_scale_by: parseFloat(s.hiresScale.value || '1.50'),
         hiresfix_seed: hiresSeed,
-        hiresfix_steps: parseInt(el.hiresSteps.value || '20', 10),
-        hiresfix_cfg: parseFloat(el.hiresCfg.value || '5.0'),
-        hiresfix_sampler: el.hiresSampler.value,
-        hiresfix_scheduler: el.hiresScheduler.value,
-        hiresfix_denoise: parseFloat(el.hiresDenoise.value || '0.56'),
+        hiresfix_steps: parseInt(s.hiresSteps.value || '20', 10),
+        hiresfix_cfg: parseFloat(s.hiresCfg.value || '5.0'),
+        hiresfix_sampler: s.hiresSampler.value,
+        hiresfix_scheduler: s.hiresScheduler.value,
+        hiresfix_denoise: parseFloat(s.hiresDenoise.value || '0.56'),
       };
     }
+    function buildSDXLPayload(){ const tpl = JSON.parse(qs('workflow-sdxl-template').textContent.trim()); const map = buildSDXLMap(); const resolved = deepReplacePlaceholders(tpl, map); return { input: { workflow: resolved } }; }
 
-    function buildPayload(){
-      const template = getWorkflowTemplate('sdxl-workflow-template');
-      const map = buildPlaceholderMap();
-      // Map keys used in placeholders are without % per deepReplacePlaceholders
-      const resolved = deepReplacePlaceholders(template, map);
-      return { input: { workflow: resolved } };
-    }
+    function setBusySDXL(b){ s.runBtn.disabled=b; s.status.textContent = b? 'Running…' : 'Idle'; }
 
-    function makeCurl(payload, keyRaw){
-      const key = (keyRaw || '').trim() || '<api_key>';
-      return [
-        'curl -sX POST',
-        `  -H "Authorization: Bearer ${key}"`,
-        '  -H "Content-Type: application/json"',
-        `  -d '${JSON.stringify(payload)}'`,
-        `  ${ENDPOINT}`
-      ].join(' \n');
-    }
-
-    function setBusy(b){ el.runBtn.disabled = b; el.status.textContent = b? 'Running…' : 'Idle'; }
-
-    async function run(){
-      const key = el.apiKey.value.trim();
-      if (!key){ el.status.textContent = 'API key required'; return; }
+    async function runSDXL(){
+      const key = qs('apiKey').value.trim(); if(!key){ s.status.textContent='API key required'; return; }
       try{
-        setBusy(true);
-        const payload = buildPayload();
-        el.debugReq.textContent = JSON.stringify(payload, null, 2);
-        const resp = await fetch(ENDPOINT, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await resp.json();
-        el.debugResp.textContent = JSON.stringify(data, null, 2);
-
-        if (!resp.ok){ throw new Error(`HTTP ${resp.status}`); }
-        if (data.status !== 'COMPLETED'){ throw new Error(`Job status: ${data.status}`); }
-        if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0){ throw new Error('No images in response'); }
-
+        setBusySDXL(true);
+        const payload = buildSDXLPayload(); s.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(ENDPOINT, { method:'POST', headers:{ 'Authorization':`Bearer ${key}`, 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+        const data = await resp.json(); s.debugResp.textContent = JSON.stringify(data, null, 2);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if (data.status !== 'COMPLETED') throw new Error(`Job status: ${data.status}`);
+        if (!data.output || !Array.isArray(data.output.images) || data.output.images.length===0) throw new Error('No images in response');
         for (const item of data.output.images){
-          if (item.type === 'base64' && item.data){
-            const imgUrl = `data:image/png;base64,${item.data}`;
-            addShot(el.gallery, imgUrl, item.filename || 'image.png');
-          } else if (item.type === 's3_url' && item.data){
-            addShot(el.gallery, item.data, item.filename || 'image.png');
-          }
+          const name = item.filename || 'image.png';
+          if (item.type === 'base64' && item.data){ const mime = name.toLowerCase().endsWith('.avif')? 'image/avif' : 'image/png'; addShot(s.gallery, `data:${mime};base64,${item.data}`, name); }
+          else if (item.type === 's3_url' && item.data){ addShot(s.gallery, item.data, name); }
         }
-        el.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
-      } catch(err){
-        console.error(err);
-        el.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-      } finally{ setBusy(false); }
+        s.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      } catch(err){ console.error(err); s.status.innerHTML = `<span class="error">Error: ${err.message}</span>`; }
+      finally{ setBusySDXL(false); }
     }
 
-    function addShot(gallery, url, name){
-      const wrap = document.createElement('div');
-      wrap.className = 'shot';
-      const header = document.createElement('div'); header.className = 'header';
-      header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
-      wrap.appendChild(header);
-      const img = new Image(); img.loading = 'lazy'; img.src = url; wrap.appendChild(img);
-      gallery.prepend(wrap);
+    s.runBtn.addEventListener('click', e=>{ e.preventDefault(); runSDXL(); });
+    s.curlBtn.addEventListener('click', ()=>{ const text = makeCurl(buildSDXLPayload()); navigator.clipboard.writeText(text).then(()=>{ s.status.textContent='cURL copied'; }); });
+
+    // --- QWEN elements
+    const q = {
+      prompt: qs('qwen_prompt'), lowstep: qs('qwen_lowstep'), negative: qs('qwen_negative'), negWrap: qs('qwen_negWrap'),
+      width: qs('qwen_width'), height: qs('qwen_height'), seed: qs('qwen_seed'), steps: qs('qwen_steps'), cfg: qs('qwen_cfg'), sampler: qs('qwen_sampler'), scheduler: qs('qwen_scheduler'), modelShift: qs('qwen_modelShift'),
+      stepsRow: qs('qwen_stepsRow'),
+      runBtn: qs('qwen_runBtn'), curlBtn: qs('qwen_curlBtn'), resetBtn: qs('qwen_resetBtn'), clearBtn: qs('qwen_clearBtn'),
+      status: qs('qwen_status'), gallery: qs('qwen_gallery'), debugReq: qs('qwen_debugReq'), debugResp: qs('qwen_debugResp'),
+    };
+
+    function applyLowStepVisibility(){
+      const on = !!q.lowstep.checked;
+      q.negWrap.style.display = on ? 'none' : '';
+      q.stepsRow.style.display = on ? 'none' : '';
     }
+    q.lowstep.addEventListener('change', applyLowStepVisibility);
 
-    qEl.lowStep.addEventListener('change', () => {
-      const on = qEl.lowStep.checked;
-      qEl.negWrap.style.display = on ? 'none' : '';
-      qEl.stepsWrap.style.display = on ? 'none' : '';
-      qEl.cfgWrap.style.display = on ? 'none' : '';
+    q.resetBtn.addEventListener('click', ()=>{
+      q.prompt.value=''; q.lowstep.checked=false; applyLowStepVisibility(); q.negative.value='';
+      q.width.value=1024; q.height.value=1024; q.seed.value=-1; q.steps.value=20; q.cfg.value=2.0; q.sampler.value='euler'; q.scheduler.value='normal'; q.modelShift.value=3.10; q.status.textContent='Reset to defaults';
     });
+    q.clearBtn.addEventListener('click', ()=>{ q.gallery.innerHTML=''; q.status.textContent='Gallery cleared'; });
 
-    qEl.resetBtn.addEventListener('click', () => {
-      qEl.prompt.value = '';
-      qEl.lowStep.checked = false; qEl.negWrap.style.display = ''; qEl.stepsWrap.style.display=''; qEl.cfgWrap.style.display='';
-      qEl.negative.value = '';
-      qEl.width.value = 1024; qEl.height.value = 1024;
-      qEl.seed.value = -1; qEl.steps.value = 20; qEl.cfg.value = 2.0;
-      qEl.sampler.value = 'euler'; qEl.scheduler.value = 'normal';
-      qEl.modelShift.value = 3.10;
-      qEl.status.textContent = 'Reset to defaults';
-    });
-
-    qEl.clearBtn.addEventListener('click', () => { qEl.gallery.innerHTML=''; qEl.status.textContent='Gallery cleared'; });
-
-    function buildPlaceholderMapQwen(){
-      const useLS = !!qEl.lowStep.checked;
-      const w = Math.min(parseInt(qEl.width.value || '0',10),1920);
-      const h = Math.min(parseInt(qEl.height.value || '0',10),1920);
-      let seed = parseInt(qEl.seed.value || '-1',10);
-      if(seed === -1){ seed = Math.floor(Math.random()*2147483647); qEl.seed.value = seed; }
-      const steps = useLS ? 8 : Math.min(Math.max(parseInt(qEl.steps.value || '20',10),10),30);
+    function buildQwenMap(){
+      const w = clamp(parseInt(q.width.value||'1024',10), 1, 1920);
+      const h = clamp(parseInt(q.height.value||'1024',10), 1, 1920);
+      const useLow = !!q.lowstep.checked;
+      const uiSeed = parseInt(q.seed.value||'-1', 10);
+      const seed = (uiSeed === -1) ? randomSeed32() : Math.max(0, uiSeed);
+      const steps = useLow ? 8 : clamp(parseInt(q.steps.value||'20',10), 10, 30);
+      const cfg = clamp(parseFloat(q.cfg.value||'2.0'), 1.0, 3.5);
       return {
-        prompt: qEl.prompt.value || '',
-        use_low_step: useLS,
-        negative_prompt: useLS ? '' : (qEl.negative.value || ''),
-        width: w,
-        height: h,
+        prompt: q.prompt.value || '',
+        use_low_step: useLow,
+        negative_prompt: useLow ? '' : (q.negative.value || ''),
+        width: w, height: h,
         seed: seed,
         steps: steps,
-        cfg: parseFloat(qEl.cfg.value || '2.0'),
-        sampler: qEl.sampler.value,
-        scheduler: qEl.scheduler.value,
-        model_shift: parseFloat(qEl.modelShift.value || '3.10'),
+        cfg: parseFloat(cfg.toFixed(1)),
+        sampler: q.sampler.value,
+        scheduler: q.scheduler.value,
+        model_shift: parseFloat((Number(q.modelShift.value||'3.10')).toFixed(2)),
       };
     }
+    function buildQwenPayload(){ const tpl = JSON.parse(qs('workflow-qwen-template').textContent.trim()); const map = buildQwenMap(); const resolved = deepReplacePlaceholders(tpl, map); return { input: { workflow: resolved } }; }
+    function setBusyQwen(b){ q.runBtn.disabled=b; q.status.textContent = b? 'Running…' : 'Idle'; }
 
-    function buildPayloadQwen(){
-      const template = getWorkflowTemplate('qwen-workflow-template');
-      const map = buildPlaceholderMapQwen();
-      const resolved = deepReplacePlaceholders(template, map);
-      return { input: { workflow: resolved } };
-    }
-
-    function setBusyQ(b){ qEl.runBtn.disabled = b; qEl.status.textContent = b? 'Running…' : 'Idle'; }
+    function makeCurl(payload){ const key = qs('apiKey').value.trim() || '<api_key>'; return ['curl -sX POST', `  -H "Authorization: Bearer ${key}"`, '  -H "Content-Type: application/json"', `  -d '${JSON.stringify(payload)}'`, `  ${ENDPOINT}`].join(' 
+'); }
 
     async function runQwen(){
-      const key = qEl.apiKey.value.trim();
-      if(!key){ qEl.status.textContent = 'API key required'; return; }
+      const key = qs('apiKey').value.trim(); if(!key){ q.status.textContent='API key required'; return; }
       try{
-        setBusyQ(true);
-        const payload = buildPayloadQwen();
-        qEl.debugReq.textContent = JSON.stringify(payload, null, 2);
-        const resp = await fetch(ENDPOINT, {
-          method:'POST',
-          headers:{ 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await resp.json();
-        qEl.debugResp.textContent = JSON.stringify(data, null, 2);
-        if(!resp.ok){ throw new Error(`HTTP ${resp.status}`); }
-        if(data.status !== 'COMPLETED'){ throw new Error(`Job status: ${data.status}`); }
-        if(!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0){ throw new Error('No images in response'); }
-        for(const item of data.output.images){
-          if(item.type === 'base64' && item.data){
-            const imgUrl = `data:image/avif;base64,${item.data}`;
-            addShot(qEl.gallery, imgUrl, item.filename || 'image.avif');
-          } else if(item.type === 's3_url' && item.data){
-            addShot(qEl.gallery, item.data, item.filename || 'image.avif');
-          }
+        setBusyQwen(true);
+        const payload = buildQwenPayload(); q.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(ENDPOINT, { method:'POST', headers:{ 'Authorization':`Bearer ${key}`, 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+        const data = await resp.json(); q.debugResp.textContent = JSON.stringify(data, null, 2);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if (data.status !== 'COMPLETED') throw new Error(`Job status: ${data.status}`);
+        if (!data.output || !Array.isArray(data.output.images) || data.output.images.length===0) throw new Error('No images in response');
+        for (const item of data.output.images){
+          const name = item.filename || 'image.avif';
+          if (item.type === 'base64' && item.data){ const mime = name.toLowerCase().endsWith('.avif')? 'image/avif' : 'image/png'; addShot(q.gallery, `data:${mime};base64,${item.data}`, name); }
+          else if (item.type === 's3_url' && item.data){ addShot(q.gallery, item.data, name); }
         }
-        qEl.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
-      }catch(err){
-        console.error(err);
-        qEl.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-      }finally{ setBusyQ(false); }
+        q.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      } catch(err){ console.error(err); q.status.innerHTML = `<span class="error">Error: ${err.message}</span>`; }
+      finally{ setBusyQwen(false); }
     }
 
-    qEl.runBtn.addEventListener('click', e=>{ e.preventDefault(); runQwen(); });
+    q.runBtn.addEventListener('click', e=>{ e.preventDefault(); runQwen(); });
+    q.curlBtn.addEventListener('click', ()=>{ const text = makeCurl(buildQwenPayload()); navigator.clipboard.writeText(text).then(()=>{ q.status.textContent='cURL copied'; }); });
 
-    qEl.curlBtn.addEventListener('click', () => {
-      const payload = buildPayloadQwen();
-      const text = makeCurl(payload, qEl.apiKey.value);
-      navigator.clipboard.writeText(text).then(()=>{ qEl.status.textContent = 'cURL copied'; });
-    });
+    // --- shared addShot
+    function addShot(galleryEl, url, name){
+      const wrap = document.createElement('div'); wrap.className='shot';
+      const header = document.createElement('div'); header.className='header';
+      header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+      wrap.appendChild(header);
+      const img = new Image(); img.loading='lazy'; img.src=url; wrap.appendChild(img);
+      galleryEl.prepend(wrap);
+    }
 
-    el.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); run(); });
-
-    el.curlBtn.addEventListener('click', ()=>{
-      const payload = buildPayload();
-      const text = makeCurl(payload, el.apiKey.value);
-      navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
-    });
-
-    // Initialize
-    (function(){
-      el.dims.value = '1024x1024';
-    })();
+    // init defaults
+    (function(){ s.dims.value='1024x1024'; applyLowStepVisibility(); })();
   </script>
 </body>
 </html>
