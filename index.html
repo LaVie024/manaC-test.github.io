@@ -58,7 +58,15 @@
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px}
     details pre{max-height:300px; overflow:auto; background:#0b0e14; border:1px solid var(--border); border-radius:8px; padding:12px}
     .error{color:var(--danger)}
-  </style>
+  
+
+/* --- Tabs --- */
+.tabs{max-width:1100px; margin:8px auto 0; padding:0 16px; display:flex; gap:8px}
+.tab{padding:8px 12px; border:1px solid var(--border); background:#0d1320; color:var(--text); border-radius:10px; cursor:pointer; user-select:none}
+.tab.active{background:#11305a}
+.hidden{display:none}
+
+</style>
 </head>
 <body>
   <header>
@@ -67,6 +75,13 @@
       <div class="desc">Static client for /runsync. No backend. API key stays in-memory.</div>
     </div>
   </header>
+
+<nav class="tabs" id="tabbar">
+  <button class="tab active" data-tab="sdxl">SDXL</button>
+  <button class="tab" data-tab="qwen">Qwen-Image</button>
+</nav>
+
+
   <main>
     <section class="card" id="controls">
       <header class="body" style="border-bottom:1px solid var(--border)">
@@ -265,6 +280,129 @@
     </section>
   </main>
 
+<main id="qwen-main" class="hidden">
+  <section class="card" id="q-controls">
+    <header class="body" style="border-bottom:1px solid var(--border)">
+      <strong>Qwen-Image Controls</strong>
+      <div class="status" id="q-status">Idle</div>
+    </header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">
+        Uses the same RunPod API key field above (rp_…); endpoint identical to SDXL.
+      </div>
+
+      <label for="q-prompt">Prompt</label>
+      <textarea id="q-prompt" placeholder="Describe the image..."></textarea>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="q-lowstep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Use low-step (forces steps=8; hides steps & negative)</span>
+      </div>
+
+      <div id="q-negwrap">
+        <label for="q-negative">Negative prompt</label>
+        <textarea id="q-negative" placeholder="Things to avoid..."></textarea>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="q-width">Width</label>
+          <input id="q-width" type="number" min="64" max="1920" step="1" value="1024" />
+        </div>
+        <div>
+          <label for="q-height">Height</label>
+          <input id="q-height" type="number" min="64" max="1920" step="1" value="1024" />
+        </div>
+      </div>
+
+      <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+      <strong>Sampler</strong>
+      <div class="row-3">
+        <div>
+          <label for="q-seed">Seed</label>
+          <input id="q-seed" type="number" step="1" value="-1" />
+          <div class="hint">-1 = random (client-side)</div>
+        </div>
+        <div id="q-steps-wrap">
+          <label for="q-steps">Steps</label>
+          <input id="q-steps" type="number" min="10" max="30" step="1" value="20" />
+        </div>
+        <div>
+          <label for="q-cfg">CFG</label>
+          <input id="q-cfg" type="number" min="1.0" max="3.5" step="0.1" value="2.0" />
+          <div class="hint">Always sent (even in low-step)</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="q-sampler">Sampler</label>
+          <select id="q-sampler">
+            <option>euler</option>
+            <option>euler_ancestral</option>
+            <option>euler_cfg_pp</option>
+            <option>euler_ancestral_cfg_pp</option>
+            <option>dpmpp_2m</option>
+            <option>dpmpp_2s_ancestral</option>
+            <option>dpmpp_2s_ancestral_cfg_pp</option>
+            <option>res_multistep</option>
+            <option>res_multistep_cfg_pp</option>
+            <option>sa_solver_pece</option>
+            <option>gradient_estimation</option>
+            <option>gradient_estimation_cfg_pp</option>
+          </select>
+        </div>
+        <div>
+          <label for="q-scheduler">Scheduler</label>
+          <select id="q-scheduler">
+            <option>normal</option>
+            <option>simple</option>
+            <option>sgm_uniform</option>
+            <option>beta</option>
+            <option>kl_optimal</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label for="q-model-shift">Model shift</label>
+          <input id="q-model-shift" type="number" min="0.00" step="0.01" value="3.10" />
+          <div class="hint">Two decimal places</div>
+        </div>
+      </div>
+
+      <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+      <div class="row">
+        <button class="btn primary" id="q-run">Generate</button>
+        <button class="btn" id="q-curl" type="button">Copy cURL</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="q-reset" type="button">Reset to defaults</button>
+        <button class="btn danger" id="q-clear" type="button">Clear gallery</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (AVIF)</strong></header>
+    <div class="gallery" id="q-gallery"></div>
+    <div class="body">
+      <details>
+        <summary class="mono">Request payload (debug)</summary>
+        <pre class="mono" id="q-debugReq"></pre>
+      </details>
+      <details>
+        <summary class="mono">Raw response (debug)</summary>
+        <pre class="mono" id="q-debugResp"></pre>
+      </details>
+    </div>
+  </section>
+</main>
+
+
+
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
   <script id="workflow-template" type="application/json">{
   "3": {"inputs": {"seed": "%seed%", "steps": "%steps%", "cfg": "%cfg%", "sampler_name": "%sampler%", "scheduler": "%scheduler%", "denoise": 1, "model": ["13", 0], "positive": ["6", 0], "negative": ["11", 0], "latent_image": ["5", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler (Initial)"}},
@@ -285,6 +423,282 @@
   "19": {"inputs": {"model": "BiRefNet_dynamic", "mask_blur": 0, "mask_offset": 0, "invert_output": false, "refine_foreground": false, "background": "Alpha", "background_color": "#000000", "image": ["8", 0]}, "class_type": "BiRefNetRMBG", "_meta": {"title": "BiRefNet Remove Background (RMBG)"}}
 }
   </script>
+
+<script id="qwen-template" type="application/json">
+{
+  "1": {
+    "inputs": {
+      "unet_name": "qwen_image_fp8_e4m3fn.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "5": {
+    "inputs": {
+      "value": "%use_low_step%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Low Step"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": "%prompt%",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "%negative_prompt%",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "width": "%width%",
+      "height": "%height%",
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {
+      "title": "EmptySD3LatentImage"
+    }
+  },
+  "9": {
+    "inputs": {
+      "seed": "%seed%",
+      "steps": "%steps%",
+      "cfg": [
+        "20",
+        0
+      ],
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "denoise": 1,
+      "model": [
+        "10",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "14",
+        0
+      ],
+      "latent_image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "10": {
+    "inputs": {
+      "shift": "%model_shift%",
+      "model": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingAuraFlow",
+    "_meta": {
+      "title": "ModelSamplingAuraFlow"
+    }
+  },
+  "11": {
+    "inputs": {
+      "lora_name": "Qwen-Image-Lightning-8steps-V1.1.safetensors",
+      "strength_model": 1,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "12": {
+    "inputs": {
+      "boolean": [
+        "5",
+        0
+      ],
+      "on_true": [
+        "11",
+        0
+      ],
+      "on_false": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "13": {
+    "inputs": {
+      "conditioning": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "14": {
+    "inputs": {
+      "boolean": [
+        "5",
+        0
+      ],
+      "on_true": [
+        "13",
+        0
+      ],
+      "on_false": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "15": {
+    "inputs": {
+      "samples": [
+        "9",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "16": {
+    "inputs": {
+      "filename_prefix": "Qwen",
+      "filename_keys": "",
+      "foldername_prefix": "",
+      "foldername_keys": "",
+      "delimiter": "-",
+      "save_job_data": "disabled",
+      "job_data_per_image": false,
+      "job_custom_text": "",
+      "save_metadata": false,
+      "counter_digits": 4,
+      "counter_position": "last",
+      "one_counter_per_folder": true,
+      "image_preview": true,
+      "output_ext": ".avif",
+      "quality": 99,
+      "images": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "SaveImageExtended",
+    "_meta": {
+      "title": "\ud83d\udcbe Save Image Extended"
+    }
+  },
+  "20": {
+    "inputs": {
+      "boolean": [
+        "5",
+        0
+      ],
+      "on_true": [
+        "21",
+        0
+      ],
+      "on_false": [
+        "22",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "21": {
+    "inputs": {
+      "value": 1
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "LSCFG"
+    }
+  },
+  "22": {
+    "inputs": {
+      "value": "%cfg%"
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Standard CFG"
+    }
+  }
+}
+</script>
+
+
 
   <script>
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
@@ -480,5 +894,193 @@
       el.dims.value = '1024x1024';
     })();
   </script>
+
+
+<script>
+  // --- Tabs: label the existing main and wire toggling without changing SDXL code ---
+  (function(){
+    const sdxlMain = document.querySelector('body > main') || document.querySelector('main');
+    const qwenMain = document.getElementById('qwen-main');
+    const tabbar = document.getElementById('tabbar');
+    if (!sdxlMain || !qwenMain || !tabbar) return;
+    sdxlMain.id = 'sdxl-main';
+    tabbar.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.tab'); if(!btn) return;
+      for(const b of tabbar.querySelectorAll('.tab')) b.classList.remove('active');
+      btn.classList.add('active');
+      const t = btn.dataset.tab;
+      if(t === 'sdxl'){ sdxlMain.classList.remove('hidden'); qwenMain.classList.add('hidden'); }
+      else { sdxlMain.classList.add('hidden'); qwenMain.classList.remove('hidden'); }
+    });
+  })();
+
+  // --- Qwen element helpers ---
+  const q = id => document.getElementById(id);
+  const qel = {
+    apiKey: document.getElementById('apiKey'),
+    prompt: q('q-prompt'),
+    lowstep: q('q-lowstep'),
+    negative: q('q-negative'), negwrap: q('q-negwrap'),
+    width: q('q-width'), height: q('q-height'),
+    seed: q('q-seed'), steps: q('q-steps'), stepsWrap: q('q-steps-wrap'),
+    cfg: q('q-cfg'), sampler: q('q-sampler'), scheduler: q('q-scheduler'),
+    modelShift: q('q-model-shift'),
+    runBtn: q('q-run'), curlBtn: q('q-curl'), resetBtn: q('q-reset'), clearBtn: q('q-clear'),
+    status: q('q-status'), gallery: q('q-gallery'), debugReq: q('q-debugReq'), debugResp: q('q-debugResp'),
+  };
+
+  // Low-step toggle behavior
+  qel.lowstep.addEventListener('change', ()=>{
+    const on = qel.lowstep.checked;
+    qel.negwrap.style.display = on ? 'none' : '';
+    qel.stepsWrap.style.display = on ? 'none' : '';
+    if(on){ qel.steps.value = 8; }
+  });
+
+  qel.resetBtn.addEventListener('click', ()=>{
+    qel.prompt.value = '';
+    qel.lowstep.checked = false; qel.negwrap.style.display=''; qel.stepsWrap.style.display='';
+    qel.negative.value = '';
+    qel.width.value = 1024; qel.height.value = 1024;
+    qel.seed.value = -1; qel.steps.value = 20; qel.cfg.value = 2.0;
+    qel.sampler.value = 'euler'; qel.scheduler.value = 'normal';
+    qel.modelShift.value = 3.10;
+    qel.status.textContent = 'Reset to defaults';
+  });
+
+  qel.clearBtn.addEventListener('click', ()=>{ qel.gallery.innerHTML=''; qel.status.textContent='Gallery cleared'; });
+
+  function buildQwenPlaceholderMap(){
+    let seedVal = parseInt(qel.seed.value || '-1', 10);
+    if(seedVal === -1){
+      if(window.crypto && crypto.getRandomValues){
+        const buf = new Uint32Array(1); crypto.getRandomValues(buf);
+        seedVal = (buf[0] >>> 0) || 1;
+      } else {
+        seedVal = Math.floor(Math.random()*2147483647) + 1;
+      }
+      qel.seed.value = seedVal;
+    }
+    const low = !!qel.lowstep.checked;
+    const steps = low ? 8 : Math.max(10, Math.min(30, parseInt(qel.steps.value || '20',10)));
+    const cfg = Math.max(1.0, Math.min(3.5, parseFloat((qel.cfg.value || '2.0').toString())));
+    const w = Math.max(64, Math.min(1920, parseInt(qel.width.value || '1024',10)));
+    const h = Math.max(64, Math.min(1920, parseInt(qel.height.value || '1024',10)));
+    const shift = Math.max(0, parseFloat((qel.modelShift.value || '3.10')).toFixed(2));
+    return {
+      use_low_step: low,
+      prompt: qel.prompt.value || '',
+      negative_prompt: low ? '' : (qel.negative.value || ''),
+      width: w, height: h,
+      seed: seedVal, steps: steps,
+      cfg: parseFloat(cfg.toFixed(1)),
+      sampler: qel.sampler.value,
+      scheduler: qel.scheduler.value,
+      model_shift: shift
+    };
+  }
+
+  function getQwenTemplate(){
+    const el = document.getElementById('qwen-template');
+    if(!el) throw new Error('Missing qwen-template');
+    const raw = el.textContent.trim();
+    return JSON.parse(raw);
+  }
+
+  function deepReplacePlaceholdersQ(obj, map){
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'string'){
+      const m = obj.match(/^%([a-zA-Z0-9_]+)%$/);
+      if (m){
+        const key = m[1];
+        if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
+        return map[key];
+      }
+      return obj;
+    } else if (Array.isArray(obj)){
+      return obj.map(v => deepReplacePlaceholdersQ(v, map));
+    } else if (typeof obj === 'object'){
+      const out = {};
+      for (const k of Object.keys(obj)) out[k] = deepReplacePlaceholdersQ(obj[k], map);
+      return out;
+    }
+    return obj;
+  }
+
+  function buildQwenPayload(){
+    const template = getQwenTemplate();
+    const map = buildQwenPlaceholderMap();
+    const resolved = deepReplacePlaceholdersQ(template, map);
+    return { input: { workflow: resolved } };
+  }
+
+  function makeQwenCurl(payload){
+    const key = (qel.apiKey && qel.apiKey.value || '').trim() || '<api_key>';
+    return [
+      'curl -sX POST',
+      `  -H "Authorization: Bearer ${key}"`,
+      '  -H "Content-Type: application/json"',
+      `  -d '${JSON.stringify(payload)}'`,
+      '  https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync'
+    ].join(' \\n');
+  }
+
+  function setQBusy(b){ if(qel.runBtn) qel.runBtn.disabled = b; if(qel.status) qel.status.textContent = b? 'Running…' : 'Idle'; }
+
+  function addQShot(url, name){
+    const wrap = document.createElement('div');
+    wrap.className = 'shot';
+    const header = document.createElement('div'); header.className = 'header';
+    header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+    wrap.appendChild(header);
+    const img = new Image(); img.loading = 'lazy'; img.src = url; wrap.appendChild(img);
+    qel.gallery.prepend(wrap);
+  }
+
+  async function runQwen(){
+    const key = (qel.apiKey && qel.apiKey.value || '').trim();
+    if(!key){ if(qel.status) qel.status.textContent = 'API key required'; return; }
+    try{
+      setQBusy(true);
+      const payload = buildQwenPayload();
+      if(qel.debugReq) qel.debugReq.textContent = JSON.stringify(payload, null, 2);
+
+      const resp = await fetch('https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if(qel.debugResp) qel.debugResp.textContent = JSON.stringify(data, null, 2);
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (data.status !== 'COMPLETED') throw new Error(`Job status: ${data.status}`);
+      if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0) throw new Error('No images in response');
+
+      for (const item of data.output.images){
+        if (item.type === 'base64' && item.data){
+          const imgUrl = `data:image/avif;base64,${item.data}`;
+          addQShot(imgUrl, item.filename || 'image.avif');
+        } else if (item.type === 's3_url' && item.data){
+          addQShot(item.data, item.filename || 'image.avif');
+        }
+      }
+      if(qel.status) qel.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+    } catch(err){
+      console.error(err);
+      if(qel.status) qel.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+    } finally{ setQBusy(false); }
+  }
+
+  if (qel.runBtn) qel.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); runQwen(); });
+  if (qel.curlBtn) qel.curlBtn.addEventListener('click', ()=>{
+    const payload = buildQwenPayload();
+    const text = makeQwenCurl(payload);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(()=>{ if(qel.status) qel.status.textContent = 'cURL copied'; });
+    }
+  });
+</script>
+
 </body>
 </html>
