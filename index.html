@@ -1474,10 +1474,17 @@
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       if (data.status !== 'COMPLETED') throw new Error(`Job status: ${data.status}`);
       const out = data.output || {};
-      let items = [];
-      if (Array.isArray(out.audios)) items = out.audios;
-      else if (out.audio) items = [out.audio];
-      else if (Array.isArray(out.files)) items = out.files;
+      const items = [];
+      (function collect(o){
+        if(!o) return;
+        if(Array.isArray(o)){ o.forEach(collect); return; }
+        if(typeof o === 'object'){
+          if(Array.isArray(o.audios)) items.push(...o.audios);
+          if(o.audio) items.push(o.audio);
+          if(Array.isArray(o.files)) items.push(...o.files);
+          for(const v of Object.values(o)) collect(v);
+        }
+      })(out);
       let found = false;
       for(const item of items){
         if(item.type === 'base64' && item.data && (item.mime?.startsWith('audio') || /\.(ogg|opus)$/i.test(item.filename || ''))){
