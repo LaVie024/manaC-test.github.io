@@ -85,6 +85,7 @@
 <nav class="tabs" id="tabbar">
   <button class="tab active" data-tab="sdxl">SDXL</button>
   <button class="tab" data-tab="qwen">Qwen-Image</button>
+  <button class="tab" data-tab="ace">ACE-Step</button>
 </nav>
 
 
@@ -345,6 +346,98 @@
       <details>
         <summary class="mono">Raw response (debug)</summary>
         <pre class="mono" id="q-debugResp"></pre>
+      </details>
+    </div>
+  </section>
+</main>
+
+<main id="ace-main" class="hidden">
+  <section class="card" id="ace-controls">
+    <header class="body" style="border-bottom:1px solid var(--border)">
+      <strong>ACE-Step Controls</strong>
+      <div class="status" id="ace-status">Idle</div>
+    </header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">
+        Uses the same RunPod API key field above (rp_…); endpoint identical to SDXL.
+      </div>
+
+      <label for="ace-tags">Tags</label>
+      <textarea id="ace-tags" placeholder="General tags and prompt..."></textarea>
+
+      <label for="ace-structure">Structure</label>
+      <textarea id="ace-structure" placeholder="Song structure..."></textarea>
+
+      <div class="row">
+        <div>
+          <label for="ace-minutes">Minutes</label>
+          <input id="ace-minutes" type="number" min="0" max="4" step="1" value="0" />
+        </div>
+        <div>
+          <label for="ace-seconds">Seconds</label>
+          <input id="ace-seconds" type="number" min="0" max="59" step="1" value="30" />
+        </div>
+      </div>
+
+      <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+      <strong>Sampler</strong>
+      <div class="row-3">
+        <div>
+          <label for="ace-seed">Seed</label>
+          <input id="ace-seed" type="number" step="1" value="-1" />
+          <div class="hint" id="ace-seedHint">Use -1 for random</div>
+        </div>
+        <div>
+          <label for="ace-steps">Steps</label>
+          <input id="ace-steps" type="number" step="1" value="20" />
+        </div>
+        <div>
+          <label for="ace-cfg">CFG</label>
+          <input id="ace-cfg" type="number" step="0.1" value="2.0" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="ace-sampler">Sampler</label>
+          <select id="ace-sampler"></select>
+        </div>
+        <div>
+          <label for="ace-scheduler">Scheduler</label>
+          <select id="ace-scheduler"></select>
+        </div>
+      </div>
+
+      <label for="ace-quality">Quality</label>
+      <select id="ace-quality">
+        <option>96k</option>
+        <option selected>128k</option>
+        <option>192k</option>
+      </select>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="ace-run">Generate</button>
+        <button class="btn" id="ace-curl" type="button">Copy cURL</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="ace-reset" type="button">Reset to defaults</button>
+        <button class="btn danger" id="ace-clear" type="button">Clear gallery</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (OGG)</strong></header>
+    <div class="gallery" id="ace-gallery"></div>
+    <div class="body">
+      <details>
+        <summary class="mono">Request payload (debug)</summary>
+        <pre class="mono" id="ace-debugReq"></pre>
+      </details>
+      <details>
+        <summary class="mono">Raw response (debug)</summary>
+        <pre class="mono" id="ace-debugResp"></pre>
       </details>
     </div>
   </section>
@@ -647,6 +740,194 @@
 }
 </script>
 
+<script id="ace-template" type="application/json">
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "ace_step_v1_3.5b.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "3": {
+    "inputs": {
+      "seconds": [
+        "4",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyAceStepLatentAudio",
+    "_meta": {
+      "title": "EmptyAceStepLatentAudio"
+    }
+  },
+  "4": {
+    "inputs": {
+      "expression": "(a * 60) + b",
+      "a": [
+        "5",
+        0
+      ],
+      "b": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": {
+      "title": "Math Expression"
+    }
+  },
+  "5": {
+    "inputs": {
+      "value": "%minutes%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Minutes"
+    }
+  },
+  "6": {
+    "inputs": {
+      "value": "%seconds%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Seconds"
+    }
+  },
+  "7": {
+    "inputs": {
+      "tags": "%tags%",
+      "lyrics": "%structure%",
+      "lyrics_strength": 0.99,
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "TextEncodeAceStepAudio",
+    "_meta": {
+      "title": "TextEncodeAceStepAudio"
+    }
+  },
+  "8": {
+    "inputs": {
+      "seed": "%seed%",
+      "steps": "%steps%",
+      "cfg": "%cfg%",
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "denoise": 1,
+      "model": [
+        "11",
+        0
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "9",
+        0
+      ],
+      "latent_image": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "9": {
+    "inputs": {
+      "conditioning": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "10": {
+    "inputs": {
+      "shift": 5.0,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "11": {
+    "inputs": {
+      "model": [
+        "10",
+        0
+      ],
+      "operation": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "LatentApplyOperationCFG",
+    "_meta": {
+      "title": "ApplyOperationCFG"
+    }
+  },
+  "12": {
+    "inputs": {
+      "multiplier": 1.0
+    },
+    "class_type": "LatentOperationTonemapReinhard",
+    "_meta": {
+      "title": "LatentOperationTonemapReinhard"
+    }
+  },
+  "13": {
+    "inputs": {
+      "samples": [
+        "8",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAEDecodeAudio"
+    }
+  },
+  "14": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "quality": "%quality%",
+      "audioUI": "",
+      "audio": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "SaveAudioOpus",
+    "_meta": {
+      "title": "Save Audio (Opus)"
+    }
+  }
+}
+</script>
+
 
 
   <script>
@@ -888,16 +1169,18 @@
   (function(){
     const sdxlMain = document.querySelector('body > main') || document.querySelector('main');
     const qwenMain = document.getElementById('qwen-main');
+    const aceMain = document.getElementById('ace-main');
     const tabbar = document.getElementById('tabbar');
-    if (!sdxlMain || !qwenMain || !tabbar) return;
+    if (!sdxlMain || !qwenMain || !aceMain || !tabbar) return;
     sdxlMain.id = 'sdxl-main';
     tabbar.addEventListener('click', (e)=>{
       const btn = e.target.closest('.tab'); if(!btn) return;
       for(const b of tabbar.querySelectorAll('.tab')) b.classList.remove('active');
       btn.classList.add('active');
       const t = btn.dataset.tab;
-      if(t === 'sdxl'){ sdxlMain.classList.remove('hidden'); qwenMain.classList.add('hidden'); }
-      else { sdxlMain.classList.add('hidden'); qwenMain.classList.remove('hidden'); }
+      sdxlMain.classList.toggle('hidden', t !== 'sdxl');
+      qwenMain.classList.toggle('hidden', t !== 'qwen');
+      aceMain.classList.toggle('hidden', t !== 'ace');
     });
   })();
 
@@ -1068,6 +1351,187 @@
     const text = makeQwenCurl(payload);
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(()=>{ if(qel.status) qel.status.textContent = 'cURL copied'; });
+    }
+  });
+</script>
+
+<script>
+  // --- ACE-Step element helpers ---
+  const a = id => document.getElementById(id);
+  const ael = {
+    apiKey: document.getElementById('apiKey'),
+    tags: a('ace-tags'),
+    structure: a('ace-structure'),
+    minutes: a('ace-minutes'),
+    seconds: a('ace-seconds'),
+    seed: a('ace-seed'), seedHint: a('ace-seedHint'),
+    steps: a('ace-steps'), cfg: a('ace-cfg'),
+    sampler: a('ace-sampler'), scheduler: a('ace-scheduler'),
+    quality: a('ace-quality'),
+    runBtn: a('ace-run'), curlBtn: a('ace-curl'), resetBtn: a('ace-reset'), clearBtn: a('ace-clear'),
+    status: a('ace-status'), gallery: a('ace-gallery'), debugReq: a('ace-debugReq'), debugResp: a('ace-debugResp'),
+  };
+
+  ael.seedHintDefault = ael.seedHint ? ael.seedHint.textContent : '';
+
+  populateSelect(ael.sampler, SAMPLERS, 'res_multistep');
+  populateSelect(ael.scheduler, SCHEDULERS, 'linear_quadratic');
+
+  function fixAceTime(){
+    let m = parseInt(ael.minutes.value || '0', 10);
+    let s = parseInt(ael.seconds.value || '0', 10);
+    if(isNaN(m)) m = 0;
+    if(isNaN(s)) s = 0;
+    while(s >= 60){ s -= 60; m++; }
+    while(s < 0){ s += 60; m--; }
+    if(m < 0){ m = 0; s = 30; }
+    if(m === 0 && s < 30){ s = 30; }
+    if(m > 4){ m = 4; s = 0; }
+    if(m === 4 && s > 0){ s = 0; }
+    ael.minutes.value = m;
+    ael.seconds.value = s.toString().padStart(2,'0');
+  }
+
+  ael.minutes.addEventListener('change', fixAceTime);
+  ael.seconds.addEventListener('change', fixAceTime);
+
+  ael.resetBtn.addEventListener('click', ()=>{
+    ael.tags.value = '';
+    ael.structure.value = '';
+    ael.minutes.value = 0;
+    ael.seconds.value = 30;
+    ael.seed.value = -1;
+    ael.steps.value = 20;
+    ael.cfg.value = 2.0;
+    ael.sampler.value = 'res_multistep';
+    ael.scheduler.value = 'linear_quadratic';
+    ael.quality.value = '128k';
+    if(ael.seedHint) ael.seedHint.textContent = ael.seedHintDefault;
+    ael.status.textContent = 'Reset to defaults';
+  });
+
+  ael.clearBtn.addEventListener('click', ()=>{ ael.gallery.innerHTML=''; ael.status.textContent='Gallery cleared'; });
+
+  function getAceTemplate(){
+    const el = document.getElementById('ace-template');
+    if(!el) throw new Error('Missing ace-template');
+    return JSON.parse(el.textContent.trim());
+  }
+
+  function deepReplacePlaceholdersA(obj, map){
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'string'){
+      const m = obj.match(/^%([a-zA-Z0-9_]+)%$/);
+      if (m){
+        const key = m[1];
+        if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
+        return map[key];
+      }
+      return obj;
+    } else if (Array.isArray(obj)){
+      return obj.map(v => deepReplacePlaceholdersA(v, map));
+    } else if (typeof obj === 'object'){
+      const out = {};
+      for (const k of Object.keys(obj)) out[k] = deepReplacePlaceholdersA(obj[k], map);
+      return out;
+    }
+    return obj;
+  }
+
+  function buildAcePlaceholderMap(){
+    fixAceTime();
+    let seedVal = parseInt(ael.seed.value || '-1', 10);
+    if(seedVal === -1){
+      seedVal = genRandomSeed();
+      if(ael.seedHint) ael.seedHint.textContent = `Random seed: ${seedVal}`;
+    } else if(ael.seedHint){
+      ael.seedHint.textContent = ael.seedHintDefault;
+    }
+    return {
+      tags: ael.tags.value || '',
+      structure: ael.structure.value || '',
+      minutes: parseInt(ael.minutes.value || '0', 10),
+      seconds: parseInt(ael.seconds.value || '0', 10),
+      seed: seedVal,
+      steps: parseInt(ael.steps.value || '20', 10),
+      cfg: parseFloat(ael.cfg.value || '2.0'),
+      sampler: ael.sampler.value,
+      scheduler: ael.scheduler.value,
+      quality: ael.quality.value,
+    };
+  }
+
+  function buildAcePayload(){
+    const template = getAceTemplate();
+    const map = buildAcePlaceholderMap();
+    const resolved = deepReplacePlaceholdersA(template, map);
+    return { input: { workflow: resolved } };
+  }
+
+  function makeAceCurl(payload){
+    const key = (ael.apiKey && ael.apiKey.value || '').trim() || '<api_key>';
+    return [
+      'curl -sX POST',
+      `  -H "Authorization: Bearer ${key}"`,
+      '  -H "Content-Type: application/json"',
+      `  -d '${JSON.stringify(payload)}'`,
+      `  ${ENDPOINT}`
+    ].join(' \n');
+  }
+
+  function setABusy(b){ if(ael.runBtn) ael.runBtn.disabled = b; if(ael.status) ael.status.textContent = b? 'Running…' : 'Idle'; }
+
+  function addAAudio(url, name){
+    const wrap = document.createElement('div');
+    wrap.className = 'shot';
+    const header = document.createElement('div'); header.className = 'header';
+    header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+    wrap.appendChild(header);
+    const audio = document.createElement('audio'); audio.controls = true; audio.src = url;
+    wrap.appendChild(audio);
+    ael.gallery.prepend(wrap);
+  }
+
+  async function runAce(){
+    const key = (ael.apiKey && ael.apiKey.value || '').trim();
+    if(!key){ if(ael.status) ael.status.textContent = 'API key required'; return; }
+    try{
+      setABusy(true);
+      const payload = buildAcePayload();
+      if(ael.debugReq) ael.debugReq.textContent = JSON.stringify(payload, null, 2);
+      const resp = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if(ael.debugResp) ael.debugResp.textContent = JSON.stringify(data, null, 2);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (data.status !== 'COMPLETED') throw new Error(`Job status: ${data.status}`);
+      const items = data.output?.audios || data.output?.files || [];
+      let found = false;
+      for(const item of items){
+        if(item.type === 'base64' && item.data && (item.mime?.startsWith('audio') || /\.(ogg|opus)$/i.test(item.filename || ''))){
+          const mime = item.mime || 'audio/ogg';
+          const url = `data:${mime};base64,${item.data}`;
+          addAAudio(url, item.filename || 'audio.ogg');
+          found = true;
+        }
+      }
+      if(!found) throw new Error('No audio in response');
+      if(ael.status) ael.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+    } catch(err){
+      console.error(err);
+      if(ael.status) ael.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+    } finally { setABusy(false); }
+  }
+
+  if (ael.runBtn) ael.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); runAce(); });
+  if (ael.curlBtn) ael.curlBtn.addEventListener('click', ()=>{
+    const payload = buildAcePayload();
+    const text = makeAceCurl(payload);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(()=>{ if(ael.status) ael.status.textContent = 'cURL copied'; });
     }
   });
 </script>
