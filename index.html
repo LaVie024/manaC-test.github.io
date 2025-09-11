@@ -160,30 +160,11 @@
         <div class="row">
           <div>
             <label for="sampler">Sampler</label>
-            <select id="sampler">
-              <option>euler</option>
-              <option>euler_ancestral</option>
-              <option>euler_cfg_pp</option>
-              <option>euler_ancestral_cfg_pp</option>
-              <option>dpmpp_2m</option>
-              <option>dpmpp_2s_ancestral</option>
-              <option>dpmpp_2s_ancestral_cfg_pp</option>
-              <option>res_multistep</option>
-              <option>res_multistep_cfg_pp</option>
-              <option>sa_solver_pece</option>
-              <option>gradient_estimation</option>
-              <option>gradient_estimation_cfg_pp</option>
-            </select>
+            <select id="sampler"></select>
           </div>
           <div>
             <label for="scheduler">Scheduler</label>
-            <select id="scheduler">
-              <option>normal</option>
-              <option>simple</option>
-              <option>sgm_uniform</option>
-              <option>beta</option>
-              <option>kl_optimal</option>
-            </select>
+            <select id="scheduler"></select>
           </div>
         </div>
 
@@ -215,30 +196,11 @@
           <div class="row">
             <div>
               <label for="hiresSampler">Sampler</label>
-              <select id="hiresSampler">
-                <option>euler</option>
-                <option>euler_ancestral</option>
-                <option>euler_cfg_pp</option>
-                <option>euler_ancestral_cfg_pp</option>
-                <option>dpmpp_2m</option>
-                <option>dpmpp_2s_ancestral</option>
-                <option>dpmpp_2s_ancestral_cfg_pp</option>
-                <option>res_multistep</option>
-                <option>res_multistep_cfg_pp</option>
-                <option>sa_solver_pece</option>
-                <option>gradient_estimation</option>
-                <option>gradient_estimation_cfg_pp</option>
-              </select>
+              <select id="hiresSampler"></select>
             </div>
             <div>
               <label for="hiresScheduler">Scheduler</label>
-              <select id="hiresScheduler">
-                <option>normal</option>
-                <option>simple</option>
-                <option>sgm_uniform</option>
-                <option>beta</option>
-                <option>kl_optimal</option>
-              </select>
+              <select id="hiresScheduler"></select>
             </div>
           </div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
@@ -337,30 +299,11 @@
       <div class="row">
         <div>
           <label for="q-sampler">Sampler</label>
-          <select id="q-sampler">
-            <option>euler</option>
-            <option>euler_ancestral</option>
-            <option>euler_cfg_pp</option>
-            <option>euler_ancestral_cfg_pp</option>
-            <option>dpmpp_2m</option>
-            <option>dpmpp_2s_ancestral</option>
-            <option>dpmpp_2s_ancestral_cfg_pp</option>
-            <option>res_multistep</option>
-            <option>res_multistep_cfg_pp</option>
-            <option>sa_solver_pece</option>
-            <option>gradient_estimation</option>
-            <option>gradient_estimation_cfg_pp</option>
-          </select>
+          <select id="q-sampler"></select>
         </div>
         <div>
           <label for="q-scheduler">Scheduler</label>
-          <select id="q-scheduler">
-            <option>normal</option>
-            <option>simple</option>
-            <option>sgm_uniform</option>
-            <option>beta</option>
-            <option>kl_optimal</option>
-          </select>
+          <select id="q-scheduler"></select>
         </div>
       </div>
 
@@ -702,6 +645,19 @@
 
   <script>
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
+    const SAMPLERS = [
+      'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
+      'dpmpp_2m', 'dpmpp_2s_ancestral', 'dpmpp_2s_ancestral_cfg_pp',
+      'res_multistep', 'res_multistep_cfg_pp', 'sa_solver_pece',
+      'gradient_estimation', 'gradient_estimation_cfg_pp'
+    ];
+    const SCHEDULERS = ['normal', 'simple', 'sgm_uniform', 'beta', 'kl_optimal'];
+
+    function populateSelect(sel, options, def){
+      if(!sel) return;
+      sel.innerHTML = options.map(o => `<option>${o}</option>`).join('');
+      if(def) sel.value = def;
+    }
 
     const qs = id => document.getElementById(id);
     const el = {
@@ -715,6 +671,11 @@
       status: qs('status'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
     };
 
+    populateSelect(el.sampler, SAMPLERS, 'euler');
+    populateSelect(el.scheduler, SCHEDULERS, 'normal');
+    populateSelect(el.hiresSampler, SAMPLERS, 'euler');
+    populateSelect(el.hiresScheduler, SCHEDULERS, 'normal');
+  
     function setCfgRangeForSampler(samplerSel, cfgInput, hintEl){
       const isCfgPP = samplerSel.value.includes('cfg_pp');
       if(isCfgPP){
@@ -928,6 +889,9 @@
     runBtn: q('q-run'), curlBtn: q('q-curl'), resetBtn: q('q-reset'), clearBtn: q('q-clear'),
     status: q('q-status'), gallery: q('q-gallery'), debugReq: q('q-debugReq'), debugResp: q('q-debugResp'),
   };
+
+  populateSelect(qel.sampler, SAMPLERS, 'euler');
+  populateSelect(qel.scheduler, SCHEDULERS, 'normal');
 
   // Low-step toggle behavior
   qel.lowstep.addEventListener('change', ()=>{
