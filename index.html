@@ -753,50 +753,12 @@
   },
   "3": {
     "inputs": {
-      "seconds": [
-        "4",
-        0
-      ],
+      "seconds": "%total_seconds%",
       "batch_size": 1
     },
     "class_type": "EmptyAceStepLatentAudio",
     "_meta": {
       "title": "EmptyAceStepLatentAudio"
-    }
-  },
-  "4": {
-    "inputs": {
-      "expression": "(a * 60) + b",
-      "a": [
-        "5",
-        0
-      ],
-      "b": [
-        "6",
-        0
-      ]
-    },
-    "class_type": "MathExpression|pysssss",
-    "_meta": {
-      "title": "Math Expression"
-    }
-  },
-  "5": {
-    "inputs": {
-      "value": "%minutes%"
-    },
-    "class_type": "PrimitiveInt",
-    "_meta": {
-      "title": "Minutes"
-    }
-  },
-  "6": {
-    "inputs": {
-      "value": "%seconds%"
-    },
-    "class_type": "PrimitiveInt",
-    "_meta": {
-      "title": "Seconds"
     }
   },
   "7": {
@@ -1447,11 +1409,14 @@
     } else if(ael.seedHint){
       ael.seedHint.textContent = ael.seedHintDefault;
     }
+    const minutes = parseInt(ael.minutes.value || '0', 10);
+    const seconds = parseInt(ael.seconds.value || '0', 10);
     return {
       tags: ael.tags.value || '',
       structure: ael.structure.value || '',
-      minutes: parseInt(ael.minutes.value || '0', 10),
-      seconds: parseInt(ael.seconds.value || '0', 10),
+      minutes,
+      seconds,
+      total_seconds: minutes * 60 + seconds,
       seed: seedVal,
       steps: parseInt(ael.steps.value || '50', 10),
       cfg: parseFloat(ael.cfg.value || '5.0'),
