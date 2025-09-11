@@ -146,7 +146,7 @@
         </div>
 
         <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <strong>Sampler</strong>
+        <strong></strong>
         <div class="row-3">
           <div>
             <label for="seed">Seed</label>
@@ -653,11 +653,13 @@
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
     const SAMPLERS = [
       'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
-      'dpmpp_2m', 'dpmpp_2s_ancestral', 'dpmpp_2s_ancestral_cfg_pp',
-      'res_multistep', 'res_multistep_cfg_pp', 'sa_solver_pece',
-      'gradient_estimation', 'gradient_estimation_cfg_pp'
+      'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral', 
+      'dpmpp_sde', 'dpmpp_2s_ancestral_cfg_pp', 'dpmpp_2m_sde_heun',
+      'res_multistep', 'res_multistep_cfg_pp', 'res_multistep_ancestral_cfg_pp', 
+      'sa_solver_pece', 'ipndm', 'deis', 'er_sde', 'seeds_2',
+      'gradient_estimation', 'gradient_estimation_cfg_pp', 'uni_pc'
     ];
-    const SCHEDULERS = ['normal', 'simple', 'sgm_uniform', 'beta', 'kl_optimal'];
+    const SCHEDULERS = ['normal', 'simple', 'sgm_uniform', 'karras', 'exponential', 'beta', 'zeta', 'linear_quadratic', 'kl_optimal'];
 
     function genRandomSeed(){
       if(window.crypto && crypto.getRandomValues){
