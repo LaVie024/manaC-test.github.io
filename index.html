@@ -66,9 +66,13 @@
 .tab.active{background:#11305a}
 .hidden{display:none}
 
+    .lightbox{position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;}
+    .lightbox img{max-width:100%; max-height:100%; border-radius:8px}
+
 </style>
 </head>
 <body>
+  <div id="lightbox" class="lightbox hidden"><img alt="Full size" /></div>
   <header>
     <div class="wrap">
       <h1>RunPod ComfyUI Frontend</h1>
@@ -856,7 +860,7 @@
       const header = document.createElement('div'); header.className = 'header';
       header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
       wrap.appendChild(header);
-      const img = new Image(); img.loading = 'lazy'; img.src = url; wrap.appendChild(img);
+      const img = new Image(); img.loading = 'lazy'; img.src = url; img.addEventListener('click', ()=>openLightbox(url)); wrap.appendChild(img);
       el.gallery.prepend(wrap);
     }
 
@@ -1015,7 +1019,7 @@
     const header = document.createElement('div'); header.className = 'header';
     header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
     wrap.appendChild(header);
-    const img = new Image(); img.loading = 'lazy'; img.src = url; wrap.appendChild(img);
+    const img = new Image(); img.loading = 'lazy'; img.src = url; img.addEventListener('click', ()=>openLightbox(url)); wrap.appendChild(img);
     qel.gallery.prepend(wrap);
   }
 
@@ -1062,6 +1066,21 @@
       navigator.clipboard.writeText(text).then(()=>{ if(qel.status) qel.status.textContent = 'cURL copied'; });
     }
   });
+</script>
+
+<script>
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = lightbox.querySelector('img');
+  function openLightbox(src){
+    lightboxImg.src = src;
+    lightbox.classList.remove('hidden');
+  }
+  function closeLightbox(){
+    lightbox.classList.add('hidden');
+    lightboxImg.src = '';
+  }
+  lightbox.addEventListener('click', closeLightbox);
+  window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeLightbox(); });
 </script>
 
 </body>
