@@ -145,7 +145,7 @@
           <div>
             <label for="seed">Seed</label>
             <input id="seed" type="number" step="1" value="-1" />
-            <div class="hint">Use -1 for random</div>
+            <div class="hint" id="seedHint">Use -1 for random</div>
           </div>
           <div>
             <label for="steps">Steps</label>
@@ -283,7 +283,7 @@
         <div>
           <label for="q-seed">Seed</label>
           <input id="q-seed" type="number" step="1" value="-1" />
-          <div class="hint">-1 = random (client-side)</div>
+          <div class="hint" id="q-seedHint">-1 = random (client-side)</div>
         </div>
         <div id="q-steps-wrap">
           <label for="q-steps">Steps</label>
@@ -653,6 +653,14 @@
     ];
     const SCHEDULERS = ['normal', 'simple', 'sgm_uniform', 'beta', 'kl_optimal'];
 
+    function genRandomSeed(){
+      if(window.crypto && crypto.getRandomValues){
+        const buf = new Uint32Array(1); crypto.getRandomValues(buf);
+        return (buf[0] >>> 0) || 1;
+      }
+      return Math.floor(Math.random()*2147483647) + 1;
+    }
+
     function populateSelect(sel, options, def){
       if(!sel) return;
       sel.innerHTML = options.map(o => `<option>${o}</option>`).join('');
@@ -664,12 +672,14 @@
       apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
       negZero: qs('negZero'), negative: qs('negative'), negWrap: qs('negWrap'),
       dims: qs('dims'), rescale: qs('rescale'), rmbg: qs('rmbg'),
-      seed: qs('seed'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
+      seed: qs('seed'), seedHint: qs('seedHint'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
       sampler: qs('sampler'), scheduler: qs('scheduler'),
       hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
       runBtn: qs('runBtn'), curlBtn: qs('curlBtn'), resetBtn: qs('resetBtn'), clearBtn: qs('clearBtn'),
       status: qs('status'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
     };
+
+    el.seedHintDefault = el.seedHint ? el.seedHint.textContent : '';
 
     populateSelect(el.sampler, SAMPLERS, 'euler');
     populateSelect(el.scheduler, SCHEDULERS, 'normal');
@@ -717,6 +727,7 @@
       el.seed.value = -1; el.steps.value = 25; el.cfg.value = 5.0; el.sampler.value = 'euler'; el.scheduler.value = 'normal'; setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
       el.hiresToggle.checked = false; el.hiresWrap.style.display = 'none'; el.hiresScale.value = 1.50; el.hiresSteps.value = 20; el.hiresCfg.value = 5.0; el.hiresDenoise.value = 0.56; el.hiresSampler.value='euler'; el.hiresScheduler.value='normal'; setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
       el.hiresSeedCustom.checked = false; el.hiresSeedWrap.style.display = 'none'; el.hiresSeed.value=-1;
+      if(el.seedHint) el.seedHint.textContent = el.seedHintDefault;
       el.status.textContent = 'Reset to defaults';
     });
 
@@ -752,7 +763,14 @@
       const [w,h] = el.dims.value.split('x').map(n => parseInt(n,10));
       const negZero = !!el.negZero.checked;
       const hiresOn = !!el.hiresToggle.checked;
-      const hiresSeed = el.hiresSeedCustom.checked ? parseInt(el.hiresSeed.value || '-1', 10) : parseInt(el.seed.value || '-1', 10);
+      let seedVal = parseInt(el.seed.value || '-1', 10);
+      if(seedVal === -1){
+        seedVal = genRandomSeed();
+        if(el.seedHint) el.seedHint.textContent = `Random seed: ${seedVal}`;
+      } else if(el.seedHint){
+        el.seedHint.textContent = el.seedHintDefault;
+      }
+      const hiresSeed = el.hiresSeedCustom.checked ? parseInt(el.hiresSeed.value || '-1', 10) : seedVal;
       return {
         model: el.model.value,
         prompt: el.prompt.value || '',
@@ -761,7 +779,7 @@
         width: w, height: h,
         rescalecfg_multiplier: parseFloat(el.rescale.value || '0.7'),
         remove_bg: !!el.rmbg.checked,
-        seed: parseInt(el.seed.value || '-1', 10),
+        seed: seedVal,
         steps: parseInt(el.steps.value || '25', 10),
         cfg: parseFloat(el.cfg.value || '5.0'),
         sampler: el.sampler.value,
@@ -883,12 +901,14 @@
     lowstep: q('q-lowstep'),
     negative: q('q-negative'), negwrap: q('q-negwrap'),
     width: q('q-width'), height: q('q-height'),
-    seed: q('q-seed'), steps: q('q-steps'), stepsWrap: q('q-steps-wrap'),
+    seed: q('q-seed'), seedHint: q('q-seedHint'), steps: q('q-steps'), stepsWrap: q('q-steps-wrap'),
     cfg: q('q-cfg'), sampler: q('q-sampler'), scheduler: q('q-scheduler'),
     modelShift: q('q-model-shift'),
     runBtn: q('q-run'), curlBtn: q('q-curl'), resetBtn: q('q-reset'), clearBtn: q('q-clear'),
     status: q('q-status'), gallery: q('q-gallery'), debugReq: q('q-debugReq'), debugResp: q('q-debugResp'),
   };
+
+  qel.seedHintDefault = qel.seedHint ? qel.seedHint.textContent : '';
 
   populateSelect(qel.sampler, SAMPLERS, 'euler');
   populateSelect(qel.scheduler, SCHEDULERS, 'normal');
@@ -909,6 +929,7 @@
     qel.seed.value = -1; qel.steps.value = 20; qel.cfg.value = 2.0;
     qel.sampler.value = 'euler'; qel.scheduler.value = 'normal';
     qel.modelShift.value = 3.10;
+    if(qel.seedHint) qel.seedHint.textContent = qel.seedHintDefault;
     qel.status.textContent = 'Reset to defaults';
   });
 
@@ -917,13 +938,10 @@
   function buildQwenPlaceholderMap(){
     let seedVal = parseInt(qel.seed.value || '-1', 10);
     if(seedVal === -1){
-      if(window.crypto && crypto.getRandomValues){
-        const buf = new Uint32Array(1); crypto.getRandomValues(buf);
-        seedVal = (buf[0] >>> 0) || 1;
-      } else {
-        seedVal = Math.floor(Math.random()*2147483647) + 1;
-      }
-      qel.seed.value = seedVal;
+      seedVal = genRandomSeed();
+      if(qel.seedHint) qel.seedHint.textContent = `Random seed: ${seedVal}`;
+    } else if(qel.seedHint){
+      qel.seedHint.textContent = qel.seedHintDefault;
     }
     const low = !!qel.lowstep.checked;
     const steps = low ? 8 : Math.max(10, Math.min(30, parseInt(qel.steps.value || '20',10)));
