@@ -389,11 +389,11 @@
         </div>
         <div>
           <label for="ace-steps">Steps</label>
-          <input id="ace-steps" type="number" step="1" value="20" />
+          <input id="ace-steps" type="number" step="1" value="50" />
         </div>
         <div>
           <label for="ace-cfg">CFG</label>
-          <input id="ace-cfg" type="number" step="0.1" value="2.0" />
+          <input id="ace-cfg" type="number" step="0.1" value="5.0" />
         </div>
       </div>
 
@@ -755,7 +755,7 @@
     "inputs": {
       "seconds": [
         "4",
-        1
+        0
       ],
       "batch_size": 1
     },
@@ -1401,8 +1401,8 @@
     ael.minutes.value = 0;
     ael.seconds.value = 30;
     ael.seed.value = -1;
-    ael.steps.value = 20;
-    ael.cfg.value = 2.0;
+    ael.steps.value = 50;
+    ael.cfg.value = 5.0;
     ael.sampler.value = 'res_multistep';
     ael.scheduler.value = 'linear_quadratic';
     ael.quality.value = '128k';
@@ -1453,8 +1453,8 @@
       minutes: parseInt(ael.minutes.value || '0', 10),
       seconds: parseInt(ael.seconds.value || '0', 10),
       seed: seedVal,
-      steps: parseInt(ael.steps.value || '20', 10),
-      cfg: parseFloat(ael.cfg.value || '2.0'),
+      steps: parseInt(ael.steps.value || '50', 10),
+      cfg: parseFloat(ael.cfg.value || '5.0'),
       sampler: ael.sampler.value,
       scheduler: ael.scheduler.value,
       quality: ael.quality.value,
@@ -1508,7 +1508,11 @@
       if(ael.debugResp) ael.debugResp.textContent = JSON.stringify(data, null, 2);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       if (data.status !== 'COMPLETED') throw new Error(`Job status: ${data.status}`);
-      const items = data.output?.audios || data.output?.files || [];
+      const out = data.output || {};
+      let items = [];
+      if (Array.isArray(out.audios)) items = out.audios;
+      else if (out.audio) items = [out.audio];
+      else if (Array.isArray(out.files)) items = out.files;
       let found = false;
       for(const item of items){
         if(item.type === 'base64' && item.data && (item.mime?.startsWith('audio') || /\.(ogg|opus)$/i.test(item.filename || ''))){
