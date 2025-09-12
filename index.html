@@ -26,12 +26,16 @@
     .row-4{display:grid; grid-template-columns: repeat(4,1fr); gap:10px}
 
     label{display:block; margin:10px 0 4px; font-weight:600; font-size:12px; color:#cdd6eb}
-    input[type="text"], input[type="number"], select, textarea{
+    input[type="text"], input[type="number"], input[type="range"], select, textarea{
       width:100%; padding:10px 12px; border-radius:9px; border:1px solid var(--border); background:#0c0e14; color:var(--text);
       outline:none; transition:border .15s ease;
     }
     textarea{min-height:120px; resize:vertical}
-    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus{border-color:#33406b}
+    input[type="text"]:focus, input[type="number"]:focus, input[type="range"]:focus, select:focus, textarea:focus{border-color:#33406b}
+
+    .range-wrap{display:flex; align-items:center; gap:8px}
+    .range-wrap input[type="range"]{flex:1}
+    .range-val{width:32px; text-align:right}
 
     .hint{color:var(--muted); font-size:12px}
     .muted{color:var(--muted)}
@@ -155,15 +159,21 @@
             <input id="seed" type="number" step="1" value="-1" />
             <div class="hint" id="seedHint">Use -1 for random</div>
           </div>
-          <div>
-            <label for="steps">Steps</label>
-            <input id="steps" type="number" min="15" max="35" step="1" value="25" />
-          </div>
-          <div>
-            <label for="cfg">CFG</label>
-            <input id="cfg" type="number" step="0.1" value="5.0" />
-            <div class="hint" id="cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
-          </div>
+            <div>
+              <label for="steps">Steps</label>
+              <div class="range-wrap">
+                <input id="steps" type="range" min="15" max="35" step="1" value="25" />
+                <span class="range-val" id="stepsVal">25</span>
+              </div>
+            </div>
+            <div>
+              <label for="cfg">CFG</label>
+              <div class="range-wrap">
+                <input id="cfg" type="range" min="4.0" max="6.0" step="0.1" value="5.0" />
+                <span class="range-val" id="cfgVal">5.0</span>
+              </div>
+              <div class="hint" id="cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+            </div>
         </div>
         <div class="row">
           <div>
@@ -187,15 +197,21 @@
               <label for="hiresScale">Scale by</label>
               <input id="hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
             </div>
-            <div>
-              <label for="hiresSteps">Steps</label>
-              <input id="hiresSteps" type="number" min="15" max="25" step="1" value="20" />
-            </div>
-            <div>
-              <label for="hiresCfg">CFG</label>
-              <input id="hiresCfg" type="number" step="0.1" value="5.0" />
-              <div class="hint" id="hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
-            </div>
+              <div>
+                <label for="hiresSteps">Steps</label>
+                <div class="range-wrap">
+                  <input id="hiresSteps" type="range" min="15" max="25" step="1" value="20" />
+                  <span class="range-val" id="hiresStepsVal">20</span>
+                </div>
+              </div>
+              <div>
+                <label for="hiresCfg">CFG</label>
+                <div class="range-wrap">
+                  <input id="hiresCfg" type="range" min="4.0" max="6.0" step="0.1" value="5.0" />
+                  <span class="range-val" id="hiresCfgVal">5.0</span>
+                </div>
+                <div class="hint" id="hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+              </div>
             <div>
               <label for="hiresDenoise">Denoise</label>
               <input id="hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
@@ -293,15 +309,21 @@
           <input id="q-seed" type="number" step="1" value="-1" />
           <div class="hint" id="q-seedHint">-1 = random (client-side)</div>
         </div>
-        <div id="q-steps-wrap">
-          <label for="q-steps">Steps</label>
-          <input id="q-steps" type="number" min="10" max="30" step="1" value="20" />
-        </div>
-        <div>
-          <label for="q-cfg">CFG</label>
-          <input id="q-cfg" type="number" min="1.0" max="3.5" step="0.1" value="2.0" />
-          <div class="hint">Always sent (even in low-step)</div>
-        </div>
+          <div id="q-steps-wrap">
+            <label for="q-steps">Steps</label>
+            <div class="range-wrap">
+              <input id="q-steps" type="range" min="10" max="30" step="1" value="20" />
+              <span class="range-val" id="q-stepsVal">20</span>
+            </div>
+          </div>
+          <div>
+            <label for="q-cfg">CFG</label>
+            <div class="range-wrap">
+              <input id="q-cfg" type="range" min="1.0" max="3.5" step="0.1" value="2.0" />
+              <span class="range-val" id="q-cfgVal">2.0</span>
+            </div>
+            <div class="hint">Always sent (even in low-step)</div>
+          </div>
       </div>
 
       <div class="row">
@@ -661,7 +683,28 @@
       'sa_solver_pece', 'ipndm', 'deis', 'er_sde', 'seeds_2',
       'gradient_estimation', 'gradient_estimation_cfg_pp', 'uni_pc'
     ];
-    const SCHEDULERS = ['normal', 'simple', 'sgm_uniform', 'karras', 'exponential', 'beta', 'zeta', 'linear_quadratic', 'kl_optimal'];
+      const SCHEDULERS = ['normal', 'simple', 'sgm_uniform', 'karras', 'exponential', 'beta', 'zeta', 'linear_quadratic', 'kl_optimal'];
+
+      const SLIDER_IDS = ['steps','cfg','hiresSteps','hiresCfg','q-steps','q-cfg'];
+
+      function bindSlider(id){
+        const input = document.getElementById(id);
+        const out = document.getElementById(id + 'Val');
+        if(!input || !out) return;
+        const sync = () => { out.textContent = input.value; };
+        input.addEventListener('input', sync);
+        sync();
+      }
+
+      function updateRangeDisplays(){
+        SLIDER_IDS.forEach(id => {
+          const input = document.getElementById(id);
+          const out = document.getElementById(id + 'Val');
+          if(input && out) out.textContent = input.value;
+        });
+      }
+
+      SLIDER_IDS.forEach(bindSlider);
 
     function genRandomSeed(){
       if(window.crypto && crypto.getRandomValues){
@@ -696,18 +739,19 @@
     populateSelect(el.hiresSampler, SAMPLERS, 'euler');
     populateSelect(el.hiresScheduler, SCHEDULERS, 'normal');
   
-    function setCfgRangeForSampler(samplerSel, cfgInput, hintEl){
-      const isCfgPP = samplerSel.value.includes('cfg_pp');
-      if(isCfgPP){
-        cfgInput.min = 0.5; cfgInput.max = 3.0; cfgInput.step = 0.1;
-        if(+cfgInput.value < 0.5 || +cfgInput.value > 3.0) cfgInput.value = 1.0;
-        hintEl.textContent = 'Range 0.5–3.0 (cfg_pp)';
-      } else {
-        cfgInput.min = 4.0; cfgInput.max = 6.0; cfgInput.step = 0.1;
-        if(+cfgInput.value < 4.0 || +cfgInput.value > 6.0) cfgInput.value = 5.0;
-        hintEl.textContent = 'Range 4.0–6.0 (non cfg_pp)';
+      function setCfgRangeForSampler(samplerSel, cfgInput, hintEl){
+        const isCfgPP = samplerSel.value.includes('cfg_pp');
+        if(isCfgPP){
+          cfgInput.min = 0.5; cfgInput.max = 3.0; cfgInput.step = 0.1;
+          if(+cfgInput.value < 0.5 || +cfgInput.value > 3.0) cfgInput.value = 1.0;
+          hintEl.textContent = 'Range 0.5–3.0 (cfg_pp)';
+        } else {
+          cfgInput.min = 4.0; cfgInput.max = 6.0; cfgInput.step = 0.1;
+          if(+cfgInput.value < 4.0 || +cfgInput.value > 6.0) cfgInput.value = 5.0;
+          hintEl.textContent = 'Range 4.0–6.0 (non cfg_pp)';
+        }
+        updateRangeDisplays();
       }
-    }
 
     setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
     setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
@@ -736,10 +780,11 @@
       el.rescale.value = 0.7; el.rmbg.checked = false;
       el.seed.value = -1; el.steps.value = 25; el.cfg.value = 5.0; el.sampler.value = 'euler'; el.scheduler.value = 'normal'; setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
       el.hiresToggle.checked = false; el.hiresWrap.style.display = 'none'; el.hiresScale.value = 1.50; el.hiresSteps.value = 20; el.hiresCfg.value = 5.0; el.hiresDenoise.value = 0.56; el.hiresSampler.value='euler'; el.hiresScheduler.value='normal'; setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
-      el.hiresSeedCustom.checked = false; el.hiresSeedWrap.style.display = 'none'; el.hiresSeed.value=-1;
-      if(el.seedHint) el.seedHint.textContent = el.seedHintDefault;
-      el.status.textContent = 'Reset to defaults';
-    });
+        el.hiresSeedCustom.checked = false; el.hiresSeedWrap.style.display = 'none'; el.hiresSeed.value=-1;
+        updateRangeDisplays();
+        if(el.seedHint) el.seedHint.textContent = el.seedHintDefault;
+        el.status.textContent = 'Reset to defaults';
+      });
 
     el.clearBtn.addEventListener('click', () => { el.gallery.innerHTML = ''; el.status.textContent = 'Gallery cleared'; });
 
@@ -924,24 +969,26 @@
   populateSelect(qel.scheduler, SCHEDULERS, 'normal');
 
   // Low-step toggle behavior
-  qel.lowstep.addEventListener('change', ()=>{
-    const on = qel.lowstep.checked;
-    qel.negwrap.style.display = on ? 'none' : '';
-    qel.stepsWrap.style.display = on ? 'none' : '';
-    if(on){ qel.steps.value = 8; }
-  });
+    qel.lowstep.addEventListener('change', ()=>{
+      const on = qel.lowstep.checked;
+      qel.negwrap.style.display = on ? 'none' : '';
+      qel.stepsWrap.style.display = on ? 'none' : '';
+      if(on){ qel.steps.value = 8; }
+      updateRangeDisplays();
+    });
 
-  qel.resetBtn.addEventListener('click', ()=>{
-    qel.prompt.value = '';
-    qel.lowstep.checked = false; qel.negwrap.style.display=''; qel.stepsWrap.style.display='';
-    qel.negative.value = '';
-    qel.width.value = 1024; qel.height.value = 1024;
-    qel.seed.value = -1; qel.steps.value = 20; qel.cfg.value = 2.0;
-    qel.sampler.value = 'euler'; qel.scheduler.value = 'normal';
-    qel.modelShift.value = 3.10;
-    if(qel.seedHint) qel.seedHint.textContent = qel.seedHintDefault;
-    qel.status.textContent = 'Reset to defaults';
-  });
+    qel.resetBtn.addEventListener('click', ()=>{
+      qel.prompt.value = '';
+      qel.lowstep.checked = false; qel.negwrap.style.display=''; qel.stepsWrap.style.display='';
+      qel.negative.value = '';
+      qel.width.value = 1024; qel.height.value = 1024;
+      qel.seed.value = -1; qel.steps.value = 20; qel.cfg.value = 2.0;
+      qel.sampler.value = 'euler'; qel.scheduler.value = 'normal';
+      qel.modelShift.value = 3.10;
+      updateRangeDisplays();
+      if(qel.seedHint) qel.seedHint.textContent = qel.seedHintDefault;
+      qel.status.textContent = 'Reset to defaults';
+    });
 
   qel.clearBtn.addEventListener('click', ()=>{ qel.gallery.innerHTML=''; qel.status.textContent='Gallery cleared'; });
 
