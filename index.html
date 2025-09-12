@@ -653,6 +653,7 @@
 
   <script>
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
+    const STATUS_ENDPOINT = ENDPOINT.replace('/runsync', '/status');
     const SAMPLERS = [
       'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
       'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral', 
@@ -824,6 +825,23 @@
       ].join(' \n');
     }
 
+    async function pollStatus(key, id, debugEl){
+      let attempt = 0;
+      while(true){
+        attempt++;
+        const resp = await fetch(`${STATUS_ENDPOINT}/${id}`, {
+          headers: { 'Authorization': `Bearer ${key}` }
+        });
+        const data = await resp.json();
+        if(debugEl) debugEl.textContent = JSON.stringify(data, null, 2);
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if(data.status === 'COMPLETED') return data;
+        if(data.status === 'FAILED' || data.status === 'CANCELLED') throw new Error(`Job status: ${data.status}`);
+        const delay = Number(data.delayTime) || Math.min(1000 * attempt, 5000);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+
     function setBusy(b){ el.runBtn.disabled = b; el.status.textContent = b? 'Running…' : 'Idle'; }
 
     async function run(){
@@ -838,12 +856,19 @@
           headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
           body: JSON.stringify(payload)
         });
-        const data = await resp.json();
+        let data = await resp.json();
         el.debugResp.textContent = JSON.stringify(data, null, 2);
 
-        if (!resp.ok){ throw new Error(`HTTP ${resp.status}`); }
-        if (data.status !== 'COMPLETED'){ throw new Error(`Job status: ${data.status}`); }
-        if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0){ throw new Error('No images in response'); }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if (data.status !== 'COMPLETED'){
+          if(data.id){
+            el.status.textContent = 'Waiting for job...';
+            data = await pollStatus(key, data.id, el.debugResp);
+          } else {
+            throw new Error(`Job status: ${data.status}`);
+          }
+        }
+        if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0) throw new Error('No images in response');
 
         for (const item of data.output.images){
           if (item.type === 'base64' && item.data){
@@ -1013,7 +1038,7 @@
       `  -H "Authorization: Bearer ${key}"`,
       '  -H "Content-Type: application/json"',
       `  -d '${JSON.stringify(payload)}'`,
-      '  https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync'
+      `  ${ENDPOINT}`
     ].join(' \\n');
   }
 
@@ -1036,17 +1061,23 @@
       setQBusy(true);
       const payload = buildQwenPayload();
       if(qel.debugReq) qel.debugReq.textContent = JSON.stringify(payload, null, 2);
-
-      const resp = await fetch('https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync', {
+      const resp = await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await resp.json();
+      let data = await resp.json();
       if(qel.debugResp) qel.debugResp.textContent = JSON.stringify(data, null, 2);
 
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      if (data.status !== 'COMPLETED') throw new Error(`Job status: ${data.status}`);
+      if (data.status !== 'COMPLETED'){
+        if(data.id){
+          if(qel.status) qel.status.textContent = 'Waiting for job...';
+          data = await pollStatus(key, data.id, qel.debugResp);
+        }else{
+          throw new Error(`Job status: ${data.status}`);
+        }
+      }
       if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0) throw new Error('No images in response');
 
       for (const item of data.output.images){
