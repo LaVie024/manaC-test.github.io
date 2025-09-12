@@ -87,6 +87,12 @@
   <button class="tab" data-tab="qwen">Qwen-Image</button>
 </nav>
 
+<div id="apiKeyWrap" style="max-width:1100px; margin:8px auto 0; padding:0 16px; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; align-items:center;">
+  <label for="apiKey" style="margin:0">RunPod API Key</label>
+  <input id="apiKey" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" style="width:300px" />
+  <div class="hint" style="width:100%; text-align:right">Used only in this page, not stored.</div>
+</div>
+
 
   <main>
     <section class="card" id="controls">
@@ -95,10 +101,6 @@
         <div class="status" id="status">Idle</div>
       </header>
       <div class="body">
-        <label for="apiKey">RunPod API Key</label>
-        <input id="apiKey" type="text" placeholder="rp_..." autocomplete="off" spellcheck="false" />
-        <div class="hint">Used only in this page, not stored.</div>
-
         <label for="model">Model</label>
         <select id="model">
           <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
