@@ -235,7 +235,7 @@
     </section>
 
     <section class="card">
-      <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output</strong></header>
+      <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (AVIF)</strong></header>
       <div class="gallery" id="gallery"></div>
       <div class="body">
         <details>
@@ -361,7 +361,7 @@
   "5": {"inputs": {"width": "%width%", "height": "%height%", "batch_size": 1}, "class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent Image"}},
   "6": {"inputs": {"text": "%prompt%", "clip": ["4", 1]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Prompt)"}},
   "8": {"inputs": {"samples": ["15", 0], "vae": ["4", 2]}, "class_type": "VAEDecode", "_meta": {"title": "VAE Decode"}},
-  "9": {"inputs": {"filename_prefix": "ComfyUI", "images": ["18", 0]}, "class_type": "SaveImage", "_meta": {"title": "Save Image"}},
+  "9": {"inputs": {"filename_prefix": "ComfyUI", "filename_keys": "", "foldername_prefix": "", "foldername_keys": "", "delimiter": "-", "save_job_data": "disabled", "job_data_per_image": false, "job_custom_text": "", "save_metadata": false, "counter_digits": 4, "counter_position": "last", "one_counter_per_folder": true, "image_preview": true, "output_ext": ".avif", "quality": 99, "images": ["18", 0]}, "class_type": "SaveImageExtended", "_meta": {"title": "\ud83d\udcbe Save Image Extended"}},
   "10": {"inputs": {"conditioning": ["6", 0]}, "class_type": "ConditioningZeroOut", "_meta": {"title": "ConditioningZeroOut"}},
   "11": {"inputs": {"boolean": "%neg_zero_out%", "on_true": ["10", 0], "on_false": ["12", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Zero Out Negative"}},
   "12": {"inputs": {"text": "%negative_prompt%", "clip": ["4", 1]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Prompt)"}},
@@ -621,10 +621,10 @@
 
         for (const item of data.output.images){
           if (item.type === 'base64' && item.data){
-            const imgUrl = `data:image/png;base64,${item.data}`;
-            addShot(imgUrl, item.filename || 'image.png');
+            const imgUrl = `data:image/avif;base64,${item.data}`;
+            addShot(imgUrl, item.filename || 'image.avif');
           } else if (item.type === 's3_url' && item.data){
-            addShot(item.data, item.filename || 'image.png');
+            addShot(item.data, item.filename || 'image.avif');
           }
         }
         el.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
