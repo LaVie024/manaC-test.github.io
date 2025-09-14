@@ -380,7 +380,7 @@
   "8": {"inputs":{"width":"%width%","height":"%height%","batch_size":1},"class_type":"EmptySD3LatentImage","_meta":{"title":"EmptySD3LatentImage"}},
   "9": {"inputs":{"seed":"%seed%","steps":"%steps%","cfg":["20",0],"sampler_name":"%sampler%","scheduler":"%scheduler%","denoise":1,"model":["10",0],"positive":["6",0],"negative":["14",0],"latent_image":["8",0]},"class_type":"KSampler","_meta":{"title":"KSampler"}},
   "10": {"inputs":{"shift":"%model_shift%","model":["12",0]},"class_type":"ModelSamplingAuraFlow","_meta":{"title":"ModelSamplingAuraFlow"}},
-  "11": {"inputs":{"lora_name":"Qwen-Image-Lightning-8steps-V1.1.safetensors","strength_model":1,"model":["1",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly"}},
+  "11": {"inputs":{"lora_name":"Qwen-Image-Lightning-8steps-V2.0.safetensors","strength_model":1,"model":["1",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly"}},
   "12": {"inputs":{"boolean":["5",0],"on_true":["11",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
   "13": {"inputs":{"conditioning":["6",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},
   "14": {"inputs":{"boolean":["5",0],"on_true":["13",0],"on_false":["7",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
