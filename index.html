@@ -121,25 +121,19 @@
           <textarea id="negative" placeholder="Things to avoid..."></textarea>
         </div>
 
-        <div class="row">
-          <div>
-            <label for="dims">Dimensions</label>
-            <select id="dims">
-              <option>704x1408</option>
-              <option>768x1344</option>
-              <option>768x1280</option>
-              <option>896x1152</option>
-              <option>1024x1024</option>
-              <option>1152x896</option>
-              <option>1280x768</option>
-              <option>1344x768</option>
-              <option>1408x704</option>
-            </select>
-          </div>
-          <div>
-            <label for="rescale">RescaleCFG multiplier</label>
-            <input id="rescale" type="number" min="0" max="2" step="0.1" value="0.7" />
-          </div>
+        <div>
+          <label for="dims">Dimensions</label>
+          <select id="dims">
+            <option>704x1408</option>
+            <option>768x1344</option>
+            <option>768x1280</option>
+            <option>896x1152</option>
+            <option>1024x1024</option>
+            <option>1152x896</option>
+            <option>1280x768</option>
+            <option>1344x768</option>
+            <option>1408x704</option>
+          </select>
         </div>
 
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
@@ -365,7 +359,7 @@
   "10": {"inputs": {"conditioning": ["6", 0]}, "class_type": "ConditioningZeroOut", "_meta": {"title": "ConditioningZeroOut"}},
   "11": {"inputs": {"boolean": "%neg_zero_out%", "on_true": ["10", 0], "on_false": ["12", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Zero Out Negative"}},
   "12": {"inputs": {"text": "%negative_prompt%", "clip": ["4", 1]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Prompt)"}},
-  "13": {"inputs": {"multiplier": "%rescalecfg_multiplier%", "model": ["14", 0]}, "class_type": "RescaleCFG", "_meta": {"title": "RescaleCFG"}},
+  "13": {"inputs": {"model": ["14", 0], "eta": 1, "norm_threshold": 20, "momentum": 0}, "class_type": "APG", "_meta": {"title": "Adaptive Projected Guidance"}},
   "14": {"inputs": {"model": ["4", 0]}, "class_type": "Mahiro", "_meta": {"title": "Mahiro"}},
   "15": {"inputs": {"boolean": "%use_hiresfix%", "on_true": ["17", 0], "on_false": ["3", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Use HiresFix"}},
   "16": {"inputs": {"upscale_method": "nearest-exact", "scale_by": "%hiresfix_scale_by%", "samples": ["3", 0]}, "class_type": "LatentUpscaleBy", "_meta": {"title": "Upscale Latent By"}},
@@ -431,7 +425,7 @@
     const el = {
       apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
       negZero: qs('negZero'), negative: qs('negative'), negWrap: qs('negWrap'),
-      dims: qs('dims'), rescale: qs('rescale'), rmbg: qs('rmbg'),
+      dims: qs('dims'), rmbg: qs('rmbg'),
       seed: qs('seed'), seedHint: qs('seedHint'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
       sampler: qs('sampler'), scheduler: qs('scheduler'),
       hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
@@ -483,7 +477,7 @@
       el.negative.value = '';
       el.negZero.checked = false; el.negWrap.style.display = '';
       el.dims.value = '1024x1024';
-      el.rescale.value = 0.7; el.rmbg.checked = false;
+      el.rmbg.checked = false;
       el.seed.value = -1; el.steps.value = 25; el.cfg.value = 5.0; el.sampler.value = 'euler'; el.scheduler.value = 'normal'; setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
       el.hiresToggle.checked = false; el.hiresWrap.style.display = 'none'; el.hiresScale.value = 1.50; el.hiresSteps.value = 20; el.hiresCfg.value = 5.0; el.hiresDenoise.value = 0.56; el.hiresSampler.value='euler'; el.hiresScheduler.value='normal'; setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
       el.hiresSeedCustom.checked = false; el.hiresSeedWrap.style.display = 'none'; el.hiresSeed.value=-1;
@@ -537,7 +531,6 @@
         neg_zero_out: negZero,
         negative_prompt: negZero ? '' : (el.negative.value || ''),
         width: w, height: h,
-        rescalecfg_multiplier: parseFloat(el.rescale.value || '0.7'),
         remove_bg: !!el.rmbg.checked,
         seed: seedVal,
         steps: parseInt(el.steps.value || '25', 10),
