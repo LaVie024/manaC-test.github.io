@@ -18,7 +18,7 @@
     @media (max-width: 880px){ main{grid-template-columns: 1fr;} }
 
     .card{background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden}
-    .card header{position:unset; background:none; border:0}
+    .card header{position:unset; background:none; border:0; display:flex; align-items:center; justify-content:space-between; gap:8px}
     .card .body{padding:14px}
 
     .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
@@ -98,7 +98,10 @@
     <section class="card" id="controls">
       <header class="body" style="border-bottom:1px solid var(--border)">
         <strong>Controls</strong>
-        <div class="status" id="status">Idle</div>
+        <div style="display:flex; gap:8px; align-items:center">
+          <div class="status" id="timer">00:00.00</div>
+          <div class="status" id="status">Idle</div>
+        </div>
       </header>
       <div class="body">
         <label for="model">Model</label>
@@ -248,7 +251,10 @@
   <section class="card" id="q-controls">
     <header class="body" style="border-bottom:1px solid var(--border)">
       <strong>Qwen-Image Controls</strong>
-      <div class="status" id="q-status">Idle</div>
+      <div style="display:flex; gap:8px; align-items:center">
+        <div class="status" id="q-timer">00:00.00</div>
+        <div class="status" id="q-status">Idle</div>
+      </div>
     </header>
     <div class="body">
       <div class="hint" style="margin-bottom:10px">
@@ -421,6 +427,35 @@
       if(def) sel.value = def;
     }
 
+    function formatDuration(ms){
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      const hundredths = Math.floor((ms % 1000) / 10);
+      return `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(hundredths).padStart(2,'0')}`;
+    }
+
+    function makeTimer(el){
+      let start = 0;
+      let handle = null;
+      function update(){
+        if(!el) return;
+        const diff = performance.now() - start;
+        el.textContent = formatDuration(diff);
+      }
+      return {
+        start(){
+          start = performance.now();
+          update();
+          handle = setInterval(update, 30);
+        },
+        stop(){
+          if(handle) clearInterval(handle);
+          handle = null;
+          update();
+        }
+      };
+    }
+
     const qs = id => document.getElementById(id);
     const el = {
       apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
@@ -430,8 +465,10 @@
       sampler: qs('sampler'), scheduler: qs('scheduler'),
       hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
       runBtn: qs('runBtn'), curlBtn: qs('curlBtn'), resetBtn: qs('resetBtn'), clearBtn: qs('clearBtn'),
-      status: qs('status'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
+      status: qs('status'), timer: qs('timer'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
     };
+
+    const timer = makeTimer(el.timer);
 
     el.seedHintDefault = el.seedHint ? el.seedHint.textContent : '';
 
@@ -584,7 +621,11 @@
       }
     }
 
-    function setBusy(b){ el.runBtn.disabled = b; el.status.textContent = b? 'Running…' : 'Idle'; }
+    function setBusy(b){
+      el.runBtn.disabled = b;
+      el.status.textContent = b? 'Running…' : 'Idle';
+      if(el.timer){ b ? timer.start() : timer.stop(); }
+    }
 
     async function run(){
       const key = el.apiKey.value.trim();
@@ -682,8 +723,10 @@
     cfg: q('q-cfg'), sampler: q('q-sampler'), scheduler: q('q-scheduler'),
     modelShift: q('q-model-shift'),
     runBtn: q('q-run'), curlBtn: q('q-curl'), resetBtn: q('q-reset'), clearBtn: q('q-clear'),
-    status: q('q-status'), gallery: q('q-gallery'), debugReq: q('q-debugReq'), debugResp: q('q-debugResp'),
+    status: q('q-status'), timer: q('q-timer'), gallery: q('q-gallery'), debugReq: q('q-debugReq'), debugResp: q('q-debugResp'),
   };
+
+  const qtimer = makeTimer(qel.timer);
 
   qel.seedHintDefault = qel.seedHint ? qel.seedHint.textContent : '';
 
@@ -784,7 +827,11 @@
     ].join(' \\n');
   }
 
-  function setQBusy(b){ if(qel.runBtn) qel.runBtn.disabled = b; if(qel.status) qel.status.textContent = b? 'Running…' : 'Idle'; }
+  function setQBusy(b){
+    if(qel.runBtn) qel.runBtn.disabled = b;
+    if(qel.status) qel.status.textContent = b? 'Running…' : 'Idle';
+    if(qel.timer){ b ? qtimer.start() : qtimer.stop(); }
+  }
 
   function addQShot(url, name){
     const wrap = document.createElement('div');
