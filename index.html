@@ -85,6 +85,7 @@
 <nav class="tabs" id="tabbar">
   <button class="tab active" data-tab="sdxl">SDXL</button>
   <button class="tab" data-tab="qwen">Qwen-Image</button>
+  <button class="tab" data-tab="ace">ACE-Step</button>
 </nav>
 
 <div id="apiKeyWrap" style="max-width:1100px; margin:8px auto 0; padding:0 16px; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; align-items:center;">
@@ -353,6 +354,102 @@
   </section>
 </main>
 
+<main id="ace-main" class="hidden">
+  <section class="card" id="ace-controls">
+    <header class="body" style="border-bottom:1px solid var(--border)">
+      <strong>ACE-Step Controls</strong>
+      <div style="display:flex; gap:8px; align-items:center">
+        <div class="status" id="ace-timer">00:00.00</div>
+        <div class="status" id="ace-status">Idle</div>
+      </div>
+    </header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">
+        Uses the same RunPod API key field above; dedicated endpoint for ACE-Step audio.
+      </div>
+
+      <label for="ace-tags">Tags</label>
+      <textarea id="ace-tags" placeholder="Describe the song..."></textarea>
+
+      <label for="ace-structure">Structure</label>
+      <textarea id="ace-structure" placeholder="Describe the song structure..."></textarea>
+
+      <label>Length (MM:SS)</label>
+      <div class="row">
+        <div>
+          <label for="ace-minutes">Minutes</label>
+          <input id="ace-minutes" type="number" min="0" step="1" value="0" />
+        </div>
+        <div>
+          <label for="ace-seconds">Seconds</label>
+          <input id="ace-seconds" type="number" min="0" max="59" step="1" value="30" />
+        </div>
+      </div>
+      <div class="hint">Converted to total seconds before sending.</div>
+
+      <div class="row-3">
+        <div>
+          <label for="ace-seed">Seed</label>
+          <input id="ace-seed" type="number" step="1" value="-1" />
+          <div class="hint" id="ace-seedHint">Use -1 for random</div>
+        </div>
+        <div>
+          <label for="ace-steps">Steps</label>
+          <input id="ace-steps" type="number" min="25" max="75" step="1" value="50" />
+        </div>
+        <div>
+          <label for="ace-cfg">CFG</label>
+          <input id="ace-cfg" type="number" min="1.0" step="0.1" value="5.0" />
+          <div class="hint">Minimum 1.0</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="ace-sampler">Sampler</label>
+          <select id="ace-sampler"></select>
+        </div>
+        <div>
+          <label for="ace-scheduler">Scheduler</label>
+          <select id="ace-scheduler"></select>
+        </div>
+      </div>
+
+      <label for="ace-quality">Quality</label>
+      <select id="ace-quality">
+        <option value="96k">96k</option>
+        <option value="128k" selected>128k</option>
+        <option value="192k">192k</option>
+      </select>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="ace-run">Generate</button>
+        <button class="btn" id="ace-curl" type="button">Copy cURL</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="ace-reset" type="button">Reset to defaults</button>
+        <button class="btn danger" id="ace-clear" type="button">Clear outputs</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/e1hyz03h6llhvn/runsync</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (Opus)</strong></header>
+    <div class="gallery" id="ace-gallery"></div>
+    <div class="body">
+      <details>
+        <summary class="mono">Request payload (debug)</summary>
+        <pre class="mono" id="ace-debugReq"></pre>
+      </details>
+      <details>
+        <summary class="mono">Raw response (debug)</summary>
+        <pre class="mono" id="ace-debugResp"></pre>
+      </details>
+    </div>
+  </section>
+</main>
+
 
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
@@ -399,11 +496,168 @@
 }
 </script>
 
+<script id="ace-template" type="application/json">
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "ace_step_v1_3.5b.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "3": {
+    "inputs": {
+      "seconds": "%length%",
+      "batch_size": 1
+    },
+    "class_type": "EmptyAceStepLatentAudio",
+    "_meta": {
+      "title": "EmptyAceStepLatentAudio"
+    }
+  },
+  "7": {
+    "inputs": {
+      "tags": "%tags%",
+      "lyrics": "%structure%",
+      "lyrics_strength": 0.99,
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "TextEncodeAceStepAudio",
+    "_meta": {
+      "title": "TextEncodeAceStepAudio"
+    }
+  },
+  "8": {
+    "inputs": {
+      "seed": "%seed%",
+      "steps": "%steps%",
+      "cfg": "%cfg%",
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "denoise": 1,
+      "model": [
+        "11",
+        0
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "9",
+        0
+      ],
+      "latent_image": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "9": {
+    "inputs": {
+      "conditioning": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "10": {
+    "inputs": {
+      "shift": 5,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "11": {
+    "inputs": {
+      "model": [
+        "10",
+        0
+      ],
+      "operation": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "LatentApplyOperationCFG",
+    "_meta": {
+      "title": "ApplyOperationCFG"
+    }
+  },
+  "12": {
+    "inputs": {
+      "multiplier": 1
+    },
+    "class_type": "LatentOperationTonemapReinhard",
+    "_meta": {
+      "title": "LatentOperationTonemapReinhard"
+    }
+  },
+  "13": {
+    "inputs": {
+      "samples": [
+        "8",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAEDecodeAudio"
+    }
+  },
+  "14": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "quality": "%quality%",
+      "audioUI": "",
+      "audio": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "SaveAudioOpus",
+    "_meta": {
+      "title": "Save Audio (Opus)"
+    }
+  }
+}
+</script>
+
 
 
   <script>
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
     const STATUS_ENDPOINT = ENDPOINT.replace('/runsync', '/status');
+    const ACE_ENDPOINT = 'https://api.runpod.ai/v2/e1hyz03h6llhvn/runsync';
+    const ACE_STATUS_ENDPOINT = ACE_ENDPOINT.replace('/runsync', '/status');
+    const ACE_BASE_ENDPOINT = ACE_ENDPOINT.replace(/\/runsync$/, '');
+    const ACE_FILE_ENDPOINT = `${ACE_BASE_ENDPOINT}/file`;
+    const ACE_FILES_ENDPOINT = `${ACE_BASE_ENDPOINT}/files`;
+    const ACE_RUNS_ENDPOINT = `${ACE_BASE_ENDPOINT}/runs`;
+    const ACE_RUN_ENDPOINT = `${ACE_BASE_ENDPOINT}/run`;
     const SAMPLERS = [
       'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
       'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral', 
@@ -530,6 +784,12 @@
       return JSON.parse(raw);
     }
 
+    function getAceTemplate(){
+      const el = document.getElementById('ace-template');
+      if(!el) throw new Error('ACE template missing');
+      return JSON.parse(el.textContent.trim());
+    }
+
     function deepReplacePlaceholders(obj, map){
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'string'){
@@ -605,11 +865,11 @@
       ].join(' \n');
     }
 
-    async function pollStatus(key, id, debugEl){
+    async function pollStatus(key, id, debugEl, statusEndpoint = STATUS_ENDPOINT){
       let attempt = 0;
       while(true){
         attempt++;
-        const resp = await fetch(`${STATUS_ENDPOINT}/${id}`, {
+        const resp = await fetch(`${statusEndpoint}/${id}`, {
           headers: { 'Authorization': `Bearer ${key}` }
         });
         const data = await resp.json();
@@ -687,6 +947,469 @@
       navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
     });
 
+    // --- ACE-Step helpers ---
+    const ace = id => document.getElementById(id);
+    const acel = {
+      apiKey: document.getElementById('apiKey'),
+      tags: ace('ace-tags'),
+      structure: ace('ace-structure'),
+      minutes: ace('ace-minutes'),
+      seconds: ace('ace-seconds'),
+      seed: ace('ace-seed'), seedHint: ace('ace-seedHint'),
+      steps: ace('ace-steps'), cfg: ace('ace-cfg'),
+      sampler: ace('ace-sampler'), scheduler: ace('ace-scheduler'),
+      quality: ace('ace-quality'),
+      runBtn: ace('ace-run'), curlBtn: ace('ace-curl'), resetBtn: ace('ace-reset'), clearBtn: ace('ace-clear'),
+      status: ace('ace-status'), timer: ace('ace-timer'), gallery: ace('ace-gallery'),
+      debugReq: ace('ace-debugReq'), debugResp: ace('ace-debugResp'),
+    };
+
+    const acetimer = makeTimer(acel.timer);
+    const aceBlobCleanups = [];
+
+    if(acel.sampler) populateSelect(acel.sampler, SAMPLERS, 'res_multistep');
+    if(acel.scheduler) populateSelect(acel.scheduler, SCHEDULERS, 'linear_quadratic');
+
+    acel.seedHintDefault = acel.seedHint ? acel.seedHint.textContent : '';
+
+    function clampSeconds(val){
+      let s = parseFloat(val);
+      if(!Number.isFinite(s)) s = 0;
+      if(s < 0) s = 0;
+      if(s > 59.999) s = 59.999;
+      return s;
+    }
+
+    function guessAceFilenameFromUrl(url){
+      try{
+        const u = new URL(url);
+        const parts = u.pathname.split('/').filter(Boolean);
+        const name = parts.pop();
+        if(name) return name;
+      }catch(err){
+        if(typeof url === 'string'){
+          const tail = url.split('/').filter(Boolean).pop();
+          if(tail) return tail;
+        }
+      }
+      return 'audio.ogg';
+    }
+
+    function guessAceFilenameFromDataUri(uri){
+      const match = /^data:audio\/([^;,]+)/i.exec(uri || '');
+      if(match && match[1]){
+        const ext = match[1].split('/').pop();
+        if(ext) return `audio.${ext}`;
+      }
+      return 'audio.ogg';
+    }
+
+    function parseContentDispositionFilename(header){
+      if(!header) return null;
+      const star = header.match(/filename\*=UTF-8''([^;]+)/i);
+      if(star && star[1]){
+        try{ return decodeURIComponent(star[1]); }
+        catch(err){ return star[1]; }
+      }
+      const quoted = header.match(/filename="?([^";]+)"?/i);
+      if(quoted && quoted[1]) return quoted[1];
+      return null;
+    }
+
+    if(acel.seconds){
+      acel.seconds.addEventListener('change', ()=>{
+        const s = clampSeconds(acel.seconds.value || '0');
+        acel.seconds.value = Number.isInteger(s) ? String(Math.trunc(s)) : s.toFixed(3);
+      });
+    }
+
+    if(acel.minutes){
+      acel.minutes.addEventListener('change', ()=>{
+        let m = parseInt(acel.minutes.value || '0', 10);
+        if(!Number.isFinite(m) || m < 0) m = 0;
+        acel.minutes.value = m;
+      });
+    }
+
+    function getAceLengthSeconds(){
+      const minutes = Math.max(0, parseInt(acel.minutes && acel.minutes.value || '0', 10) || 0);
+      const seconds = clampSeconds(acel.seconds && acel.seconds.value || '0');
+      return Math.round((minutes * 60 + seconds) * 1000) / 1000;
+    }
+
+    function buildAcePlaceholderMap(){
+      let seedVal = parseInt(acel.seed && acel.seed.value || '-1', 10);
+      if(!Number.isFinite(seedVal)) seedVal = -1;
+      if(seedVal === -1){
+        seedVal = genRandomSeed();
+        if(acel.seedHint) acel.seedHint.textContent = `Random seed: ${seedVal}`;
+      } else if(acel.seedHint){
+        acel.seedHint.textContent = acel.seedHintDefault;
+      }
+      const rawSteps = parseInt(acel.steps && (acel.steps.value || '50'), 10);
+      const stepsVal = Number.isFinite(rawSteps) ? Math.min(75, Math.max(25, rawSteps)) : 50;
+      const rawCfg = parseFloat(acel.cfg && (acel.cfg.value || '5.0'));
+      const cfgVal = Number.isFinite(rawCfg) ? Math.max(1.0, rawCfg) : 5.0;
+      return {
+        tags: acel.tags && acel.tags.value || '',
+        structure: acel.structure && acel.structure.value || '',
+        length: getAceLengthSeconds(),
+        seed: seedVal,
+        steps: stepsVal,
+        cfg: Number.isFinite(cfgVal) ? cfgVal : 5.0,
+        sampler: acel.sampler && acel.sampler.value || 'res_multistep',
+        scheduler: acel.scheduler && acel.scheduler.value || 'linear_quadratic',
+        quality: acel.quality && acel.quality.value || '128k',
+      };
+    }
+
+    function buildAcePayload(){
+      const template = getAceTemplate();
+      const map = buildAcePlaceholderMap();
+      const resolved = deepReplacePlaceholders(template, map);
+      return { input: { workflow: resolved } };
+    }
+
+    function makeAceCurl(payload){
+      const key = (acel.apiKey && acel.apiKey.value || '').trim() || '<api_key>';
+      return [
+        'curl -sX POST',
+        `  -H "Authorization: Bearer ${key}"`,
+        '  -H "Content-Type: application/json"',
+        `  -d '${JSON.stringify(payload)}'`,
+        `  ${ACE_ENDPOINT}`
+      ].join(' \n');
+    }
+
+    function setAceBusy(b){
+      if(acel.runBtn) acel.runBtn.disabled = b;
+      if(acel.status){
+        if(b){
+          acel.status.textContent = 'Running…';
+        } else if(acel.status.textContent === 'Running…' || acel.status.textContent === 'Fetching audio files…'){
+          acel.status.textContent = 'Idle';
+        }
+      }
+      if(acel.timer){ b ? acetimer.start() : acetimer.stop(); }
+    }
+
+    function aceItemToSource(item){
+      if(!item) return null;
+      const audioPattern = /\.(?:ogg|opus|wav|mp3|m4a|flac)(?:\?.*)?$/i;
+      if(typeof item === 'string'){
+        const trimmed = item.trim();
+        if(trimmed.startsWith('data:audio/')){
+          return { kind: 'data', url: trimmed, filename: guessAceFilenameFromDataUri(trimmed) };
+        }
+        if(/^https?:/i.test(trimmed) && audioPattern.test(trimmed)){
+          return { kind: 'url', url: trimmed, filename: guessAceFilenameFromUrl(trimmed) };
+        }
+        return null;
+      }
+      if(Array.isArray(item)){
+        // Arrays are handled by extractAceAudios walker, but keep a fallback
+        for(const entry of item){
+          const found = aceItemToSource(entry);
+          if(found) return found;
+        }
+        return null;
+      }
+      if(typeof item !== 'object') return null;
+
+      const filename = item.filename || item.file_name || item.name || item.originalName || null;
+      const typeRaw = item.type || item.kind || '';
+      const contentTypeRaw = item.content_type || item.contentType || item.mime || '';
+      const lowerType = typeof typeRaw === 'string' ? typeRaw.toLowerCase() : '';
+      const lowerContentType = typeof contentTypeRaw === 'string' ? contentTypeRaw.toLowerCase() : '';
+
+      if(lowerType === 'base64' && item.data){
+        const mime = lowerContentType || 'audio/ogg';
+        return {
+          kind: 'data',
+          url: `data:${mime};base64,${item.data}`,
+          filename: filename || guessAceFilenameFromDataUri(`data:${mime}`)
+        };
+      }
+
+      const candidateKeys = ['url', 'data', 'path', 'location', 'signed_url', 'signedUrl', 'downloadUrl', 'download_url'];
+      for(const key of candidateKeys){
+        const value = item[key];
+        if(typeof value !== 'string') continue;
+        const trimmed = value.trim();
+        if(trimmed.startsWith('data:audio/')){
+          return { kind: 'data', url: trimmed, filename: filename || guessAceFilenameFromDataUri(trimmed) };
+        }
+        if(/^https?:/i.test(trimmed) && (audioPattern.test(trimmed) || lowerType.includes('audio') || lowerContentType.startsWith('audio'))){
+          return { kind: 'url', url: trimmed, filename: filename || guessAceFilenameFromUrl(trimmed) };
+        }
+      }
+
+      if((lowerType && lowerType.startsWith('audio')) || (lowerContentType && lowerContentType.startsWith('audio'))){
+        if(item.data && typeof item.data === 'string'){
+          if(item.data.startsWith('http')){
+            return { kind: 'url', url: item.data, filename: filename || guessAceFilenameFromUrl(item.data) };
+          }
+          if(item.data.startsWith('data:audio/')){
+            return { kind: 'data', url: item.data, filename: filename || guessAceFilenameFromDataUri(item.data) };
+          }
+          return {
+            kind: 'data',
+            url: `data:${lowerContentType || lowerType};base64,${item.data}`,
+            filename: filename || guessAceFilenameFromDataUri(`data:${lowerContentType || lowerType}`)
+          };
+        }
+      }
+
+      if(item.bucket && item.key && typeof item.bucket === 'string' && typeof item.key === 'string'){
+        const s3Url = item.key.startsWith('http') ? item.key : `https://${item.bucket}.s3.amazonaws.com/${item.key.replace(/^\//, '')}`;
+        if(/^https?:/i.test(s3Url)){
+          return { kind: 'url', url: s3Url, filename: filename || guessAceFilenameFromUrl(s3Url) };
+        }
+      }
+
+      if(item.data && typeof item.data === 'object'){
+        const nested = aceItemToSource(item.data);
+        if(nested) return nested;
+      }
+      if(item.output && typeof item.output === 'object'){
+        const nested = aceItemToSource(item.output);
+        if(nested) return nested;
+      }
+      if(item.result && typeof item.result === 'object'){
+        const nested = aceItemToSource(item.result);
+        if(nested) return nested;
+      }
+
+      let fileId = item.fileId || item.file_id || null;
+      if(!fileId && item.id && (lowerType === 'file' || lowerType === 'output')) fileId = item.id;
+      const hasExplicitUrl = candidateKeys.some(key => typeof item[key] === 'string' && item[key].trim().startsWith('http'));
+      if(!fileId && item.id && (filename || item.name) && !hasExplicitUrl) fileId = item.id;
+      if(fileId){
+        const inferredName = filename || item.name || guessAceFilenameFromUrl(item.path || item.key || '');
+        return {
+          kind: 'file',
+          fileId,
+          filename: inferredName || 'audio.ogg'
+        };
+      }
+
+      return null;
+    }
+
+    function extractAceAudios(data){
+      const ready = [];
+      const pending = [];
+      const seenUrls = new Set();
+      const seenFiles = new Set();
+      const visited = new WeakSet();
+
+      function pushSource(src){
+        if(!src) return;
+        if(src.kind === 'file'){
+          const fid = src.fileId;
+          if(fid && !seenFiles.has(fid)){
+            seenFiles.add(fid);
+            pending.push({ fileId: fid, filename: src.filename || 'audio.ogg' });
+          }
+          return;
+        }
+        const url = src.url;
+        if(!url || seenUrls.has(url)) return;
+        seenUrls.add(url);
+        const name = src.filename || (src.kind === 'data' ? guessAceFilenameFromDataUri(url) : guessAceFilenameFromUrl(url));
+        ready.push({ url, filename: name, cleanup: src.cleanup });
+      }
+
+      function walk(node){
+        if(node === null || node === undefined) return;
+        if(typeof node === 'string'){
+          const trimmed = node.trim();
+          if(!trimmed) return;
+          const maybe = aceItemToSource(trimmed);
+          if(maybe) pushSource(maybe);
+          return;
+        }
+        if(typeof node === 'number' || typeof node === 'boolean') return;
+        if(Array.isArray(node)){
+          for(const item of node) walk(item);
+          return;
+        }
+        if(typeof node === 'object'){
+          if(visited.has(node)) return;
+          visited.add(node);
+          pushSource(aceItemToSource(node));
+          for(const key of Object.keys(node)){
+            if(key === 'id' || key === 'status' || key === 'executionTime' || key === 'delayTime' || key === 'workerId') continue;
+            walk(node[key]);
+          }
+        }
+      }
+
+      walk(data);
+      return { ready, pending };
+    }
+
+    async function downloadAceFile(key, jobId, fileId, filename){
+      if(!fileId) return null;
+      const headers = { 'Authorization': `Bearer ${key}` };
+      const bases = new Set();
+      bases.add(`${ACE_FILE_ENDPOINT}/${fileId}`);
+      bases.add(`${ACE_FILES_ENDPOINT}/${fileId}`);
+      bases.add(`${ACE_BASE_ENDPOINT}/output/${fileId}`);
+      if(jobId){
+        bases.add(`${ACE_RUNS_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${ACE_RUNS_ENDPOINT}/${jobId}/file/${fileId}`);
+        bases.add(`${ACE_RUN_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${ACE_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${ACE_ENDPOINT}/${jobId}/file/${fileId}`);
+      }
+      const queries = ['', '?download=1', '?rp_download=1', '?rp_download=true'];
+      const baseVariants = new Set();
+      for(const base of bases){
+        baseVariants.add(base);
+        baseVariants.add(`${base}/download`);
+      }
+      for(const base of baseVariants){
+        for(const q of queries){
+          const target = `${base}${q}`;
+          try{
+            const resp = await fetch(target, { headers });
+            if(!resp.ok) continue;
+            const contentType = resp.headers.get('content-type') || '';
+            if(contentType.includes('application/json')){
+              const json = await resp.json();
+              const src = aceItemToSource(json);
+              if(src && src.kind !== 'file'){
+                return { url: src.url, filename: src.filename || filename || 'audio.ogg' };
+              }
+              continue;
+            }
+            const blob = await resp.blob();
+            const name = parseContentDispositionFilename(resp.headers.get('content-disposition')) || filename || 'audio.ogg';
+            const blobUrl = URL.createObjectURL(blob);
+            return { url: blobUrl, filename: name, cleanup: () => URL.revokeObjectURL(blobUrl) };
+          } catch(err){
+            console.debug('ACE download candidate failed', target, err);
+          }
+        }
+      }
+      return null;
+    }
+
+    function addAceTrack(entry){
+      if(!entry || !acel.gallery) return;
+      const url = entry.url;
+      if(!url) return;
+      const name = entry.filename || guessAceFilenameFromUrl(url);
+      const wrap = document.createElement('div');
+      wrap.className = 'shot';
+      const header = document.createElement('div');
+      header.className = 'header';
+      const title = document.createElement('span');
+      title.className = 'mono';
+      title.textContent = name;
+      title.title = name;
+      const download = document.createElement('a');
+      download.className = 'btn';
+      download.href = url;
+      download.download = name;
+      download.textContent = 'Download';
+      header.appendChild(title);
+      header.appendChild(download);
+      wrap.appendChild(header);
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = url;
+      audio.style.width = '100%';
+      wrap.appendChild(audio);
+      if(entry.cleanup && typeof entry.cleanup === 'function'){
+        aceBlobCleanups.push(entry.cleanup);
+      }
+      acel.gallery.prepend(wrap);
+    }
+
+    async function runAce(){
+      const key = (acel.apiKey && acel.apiKey.value || '').trim();
+      if(!key){ if(acel.status) acel.status.textContent = 'API key required'; return; }
+      try{
+        setAceBusy(true);
+        const payload = buildAcePayload();
+        if(acel.debugReq) acel.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(ACE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        let data = await resp.json();
+        let jobId = data && data.id ? data.id : null;
+        if(acel.debugResp) acel.debugResp.textContent = JSON.stringify(data, null, 2);
+
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if(data.status !== 'COMPLETED'){
+          if(data.id){
+            if(acel.status) acel.status.textContent = 'Waiting for job...';
+            data = await pollStatus(key, data.id, acel.debugResp, ACE_STATUS_ENDPOINT);
+            if(data && data.id) jobId = data.id;
+          } else {
+            throw new Error(`Job status: ${data.status}`);
+          }
+        }
+
+        const { ready, pending } = extractAceAudios(data);
+        const tracks = [...ready];
+        if(pending.length && acel.status) acel.status.textContent = 'Fetching audio files…';
+        for(const file of pending){
+          const downloaded = await downloadAceFile(key, jobId, file.fileId, file.filename);
+          if(downloaded) tracks.push(downloaded);
+        }
+        if(!tracks.length){
+          const workerStatus = data && data.output && data.output.status ? data.output.status : null;
+          throw new Error(workerStatus ? `No audio returned (worker status: ${workerStatus})` : 'No audio returned');
+        }
+
+        for(const item of tracks){
+          addAceTrack(item);
+        }
+        if(acel.status) acel.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      } catch(err){
+        console.error(err);
+        if(acel.status) acel.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      } finally { setAceBusy(false); }
+    }
+
+    if(acel.runBtn) acel.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); runAce(); });
+    if(acel.curlBtn) acel.curlBtn.addEventListener('click', ()=>{
+      const payload = buildAcePayload();
+      const text = makeAceCurl(payload);
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>{ if(acel.status) acel.status.textContent = 'cURL copied'; });
+      }
+    });
+
+    if(acel.resetBtn) acel.resetBtn.addEventListener('click', ()=>{
+      if(acel.tags) acel.tags.value = '';
+      if(acel.structure) acel.structure.value = '';
+      if(acel.minutes) acel.minutes.value = 0;
+      if(acel.seconds) acel.seconds.value = 30;
+      if(acel.seed) acel.seed.value = -1;
+      if(acel.steps) acel.steps.value = 50;
+      if(acel.cfg) acel.cfg.value = 5.0;
+      if(acel.sampler) acel.sampler.value = 'res_multistep';
+      if(acel.scheduler) acel.scheduler.value = 'linear_quadratic';
+      if(acel.quality) acel.quality.value = '128k';
+      if(acel.seedHint) acel.seedHint.textContent = acel.seedHintDefault;
+      if(acel.status) acel.status.textContent = 'Reset to defaults';
+    });
+
+    if(acel.clearBtn) acel.clearBtn.addEventListener('click', ()=>{
+      if(acel.gallery) acel.gallery.innerHTML = '';
+      while(aceBlobCleanups.length){
+        const fn = aceBlobCleanups.pop();
+        try{ if(typeof fn === 'function') fn(); } catch(err){ console.debug('ACE cleanup error', err); }
+      }
+      if(acel.status) acel.status.textContent = 'Outputs cleared';
+    });
+
     // Initialize
     (function(){
       el.dims.value = '1024x1024';
@@ -699,16 +1422,23 @@
   (function(){
     const sdxlMain = document.querySelector('body > main') || document.querySelector('main');
     const qwenMain = document.getElementById('qwen-main');
+    const aceMain = document.getElementById('ace-main');
     const tabbar = document.getElementById('tabbar');
-    if (!sdxlMain || !qwenMain || !tabbar) return;
+    if (!sdxlMain || !tabbar) return;
     sdxlMain.id = 'sdxl-main';
+    const sections = { sdxl: sdxlMain };
+    if(qwenMain) sections.qwen = qwenMain;
+    if(aceMain) sections.ace = aceMain;
     tabbar.addEventListener('click', (e)=>{
       const btn = e.target.closest('.tab'); if(!btn) return;
+      const tab = btn.dataset.tab;
+      if(!tab || !sections[tab]) return;
       for(const b of tabbar.querySelectorAll('.tab')) b.classList.remove('active');
       btn.classList.add('active');
-      const t = btn.dataset.tab;
-      if(t === 'sdxl'){ sdxlMain.classList.remove('hidden'); qwenMain.classList.add('hidden'); }
-      else { sdxlMain.classList.add('hidden'); qwenMain.classList.remove('hidden'); }
+      for (const key of Object.keys(sections)){
+        if(key === tab) sections[key].classList.remove('hidden');
+        else sections[key].classList.add('hidden');
+      }
     });
   })();
 
