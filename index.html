@@ -980,6 +980,114 @@
       return s;
     }
 
+    function parseAceDurationToSeconds(value){
+      if(value === null || value === undefined) return null;
+      if(typeof value === 'number'){ return Number.isFinite(value) && value > 0 ? value : null; }
+      if(typeof value !== 'string') return null;
+      const trimmed = value.trim();
+      if(!trimmed) return null;
+      if(/^\d+(?:\.\d+)?$/.test(trimmed)){ return parseFloat(trimmed); }
+      const colonParts = trimmed.split(':');
+      if(colonParts.length > 1){
+        let total = 0;
+        let multiplier = 1;
+        while(colonParts.length){
+          const part = colonParts.pop();
+          if(part === undefined) break;
+          const num = parseFloat(part);
+          if(!Number.isFinite(num)) return null;
+          total += num * multiplier;
+          multiplier *= 60;
+        }
+        return total > 0 ? total : null;
+      }
+      const unitMatch = trimmed.match(/^([0-9]+(?:\.[0-9]+)?)(ms|s|sec|secs|seconds|m|min|minutes|h|hr|hrs|hours)$/i);
+      if(unitMatch){
+        const magnitude = parseFloat(unitMatch[1]);
+        if(!Number.isFinite(magnitude) || magnitude <= 0) return null;
+        const unit = unitMatch[2].toLowerCase();
+        if(unit === 'ms') return magnitude / 1000;
+        if(unit === 's' || unit === 'sec' || unit === 'secs' || unit === 'seconds') return magnitude;
+        if(unit === 'm' || unit === 'min' || unit === 'minutes') return magnitude * 60;
+        if(unit === 'h' || unit === 'hr' || unit === 'hrs' || unit === 'hours') return magnitude * 3600;
+      }
+      const simpleMatch = trimmed.match(/^([0-9]+)m(?:\s*([0-9]+(?:\.[0-9]+)?)s)?$/i);
+      if(simpleMatch){
+        const minutes = parseFloat(simpleMatch[1]);
+        const seconds = simpleMatch[2] ? parseFloat(simpleMatch[2]) : 0;
+        if(Number.isFinite(minutes) && minutes >= 0 && Number.isFinite(seconds) && seconds >= 0){
+          const total = minutes * 60 + seconds;
+          return total > 0 ? total : null;
+        }
+      }
+      return null;
+    }
+
+    function findAceDurationSeconds(obj, visited = new WeakSet()){
+      if(!obj || typeof obj !== 'object') return null;
+      if(visited.has(obj)) return null;
+      visited.add(obj);
+      const candidateKeys = [
+        'duration', 'durationSeconds', 'duration_seconds', 'duration_sec', 'seconds', 'secs',
+        'length', 'length_seconds', 'lengthSeconds', 'audio_seconds', 'audioSeconds',
+        'total_seconds', 'time_seconds', 'time'
+      ];
+      for(const key of candidateKeys){
+        if(Object.prototype.hasOwnProperty.call(obj, key)){
+          const parsed = parseAceDurationToSeconds(obj[key]);
+          if(parsed) return parsed;
+        }
+      }
+      const nestedKeys = ['metadata', 'meta', 'info', 'details', 'extra', 'attributes', 'audioInfo', 'audio_info'];
+      for(const key of nestedKeys){
+        if(!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+        const value = obj[key];
+        if(Array.isArray(value)){
+          for(const item of value){
+            const found = findAceDurationSeconds(item, visited);
+            if(found) return found;
+          }
+        } else if(value && typeof value === 'object'){
+          const found = findAceDurationSeconds(value, visited);
+          if(found) return found;
+        }
+      }
+      return null;
+    }
+
+    function formatAceClock(seconds){
+      if(!Number.isFinite(seconds) || seconds <= 0) return null;
+      const totalSeconds = Math.floor(seconds);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+      const secStr = String(secs).padStart(2, '0');
+      if(hours > 0){
+        return `${hours}:${String(minutes).padStart(2, '0')}:${secStr}`;
+      }
+      return `${minutes}:${secStr}`;
+    }
+
+    function formatAceSecondsValue(seconds){
+      if(!Number.isFinite(seconds) || seconds <= 0) return null;
+      let decimals = 0;
+      if(seconds < 10) decimals = 2;
+      else if(seconds < 100) decimals = 1;
+      let str = seconds.toFixed(decimals);
+      if(decimals > 0) str = str.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+      return str;
+    }
+
+    function formatAceDurationLabel(seconds){
+      if(!Number.isFinite(seconds) || seconds <= 0) return null;
+      const clock = formatAceClock(seconds);
+      const precise = formatAceSecondsValue(seconds);
+      if(clock && precise) return `Length: ${clock} (${precise}s)`;
+      if(clock) return `Length: ${clock}`;
+      if(precise) return `Length: ${precise}s`;
+      return null;
+    }
+
     function guessAceFilenameFromUrl(url){
       try{
         const u = new URL(url);
@@ -1002,6 +1110,20 @@
         if(ext) return `audio.${ext}`;
       }
       return 'audio.ogg';
+    }
+
+    function finalizeAceSource(src, context, fallbackDuration){
+      if(!src) return src;
+      let duration = null;
+      if(Number.isFinite(fallbackDuration) && fallbackDuration > 0){
+        duration = fallbackDuration;
+      } else if(typeof context === 'number'){
+        duration = context;
+      } else if(context && typeof context === 'object'){
+        duration = findAceDurationSeconds(context);
+      }
+      if(Number.isFinite(duration) && duration > 0) src.duration = duration;
+      return src;
     }
 
     function parseContentDispositionFilename(header){
@@ -1121,14 +1243,15 @@
       const contentTypeRaw = item.content_type || item.contentType || item.mime || '';
       const lowerType = typeof typeRaw === 'string' ? typeRaw.toLowerCase() : '';
       const lowerContentType = typeof contentTypeRaw === 'string' ? contentTypeRaw.toLowerCase() : '';
+      const fallbackDuration = findAceDurationSeconds(item);
 
       if(lowerType === 'base64' && item.data){
         const mime = lowerContentType || 'audio/ogg';
-        return {
+        return finalizeAceSource({
           kind: 'data',
           url: `data:${mime};base64,${item.data}`,
           filename: filename || guessAceFilenameFromDataUri(`data:${mime}`)
-        };
+        }, item, fallbackDuration);
       }
 
       const candidateKeys = ['url', 'data', 'path', 'location', 'signed_url', 'signedUrl', 'downloadUrl', 'download_url'];
@@ -1137,47 +1260,62 @@
         if(typeof value !== 'string') continue;
         const trimmed = value.trim();
         if(trimmed.startsWith('data:audio/')){
-          return { kind: 'data', url: trimmed, filename: filename || guessAceFilenameFromDataUri(trimmed) };
+          return finalizeAceSource({ kind: 'data', url: trimmed, filename: filename || guessAceFilenameFromDataUri(trimmed) }, item, fallbackDuration);
         }
         if(/^https?:/i.test(trimmed) && (audioPattern.test(trimmed) || lowerType.includes('audio') || lowerContentType.startsWith('audio'))){
-          return { kind: 'url', url: trimmed, filename: filename || guessAceFilenameFromUrl(trimmed) };
+          return finalizeAceSource({ kind: 'url', url: trimmed, filename: filename || guessAceFilenameFromUrl(trimmed) }, item, fallbackDuration);
         }
       }
 
       if((lowerType && lowerType.startsWith('audio')) || (lowerContentType && lowerContentType.startsWith('audio'))){
         if(item.data && typeof item.data === 'string'){
           if(item.data.startsWith('http')){
-            return { kind: 'url', url: item.data, filename: filename || guessAceFilenameFromUrl(item.data) };
+            return finalizeAceSource({ kind: 'url', url: item.data, filename: filename || guessAceFilenameFromUrl(item.data) }, item, fallbackDuration);
           }
           if(item.data.startsWith('data:audio/')){
-            return { kind: 'data', url: item.data, filename: filename || guessAceFilenameFromDataUri(item.data) };
+            return finalizeAceSource({ kind: 'data', url: item.data, filename: filename || guessAceFilenameFromDataUri(item.data) }, item, fallbackDuration);
           }
-          return {
+          return finalizeAceSource({
             kind: 'data',
             url: `data:${lowerContentType || lowerType};base64,${item.data}`,
             filename: filename || guessAceFilenameFromDataUri(`data:${lowerContentType || lowerType}`)
-          };
+          }, item, fallbackDuration);
         }
       }
 
       if(item.bucket && item.key && typeof item.bucket === 'string' && typeof item.key === 'string'){
         const s3Url = item.key.startsWith('http') ? item.key : `https://${item.bucket}.s3.amazonaws.com/${item.key.replace(/^\//, '')}`;
         if(/^https?:/i.test(s3Url)){
-          return { kind: 'url', url: s3Url, filename: filename || guessAceFilenameFromUrl(s3Url) };
+          return finalizeAceSource({ kind: 'url', url: s3Url, filename: filename || guessAceFilenameFromUrl(s3Url) }, item, fallbackDuration);
         }
       }
 
       if(item.data && typeof item.data === 'object'){
         const nested = aceItemToSource(item.data);
-        if(nested) return nested;
+        if(nested){
+          if((!Number.isFinite(nested.duration) || nested.duration <= 0) && Number.isFinite(fallbackDuration) && fallbackDuration > 0){
+            nested.duration = fallbackDuration;
+          }
+          return nested;
+        }
       }
       if(item.output && typeof item.output === 'object'){
         const nested = aceItemToSource(item.output);
-        if(nested) return nested;
+        if(nested){
+          if((!Number.isFinite(nested.duration) || nested.duration <= 0) && Number.isFinite(fallbackDuration) && fallbackDuration > 0){
+            nested.duration = fallbackDuration;
+          }
+          return nested;
+        }
       }
       if(item.result && typeof item.result === 'object'){
         const nested = aceItemToSource(item.result);
-        if(nested) return nested;
+        if(nested){
+          if((!Number.isFinite(nested.duration) || nested.duration <= 0) && Number.isFinite(fallbackDuration) && fallbackDuration > 0){
+            nested.duration = fallbackDuration;
+          }
+          return nested;
+        }
       }
 
       let fileId = item.fileId || item.file_id || null;
@@ -1186,11 +1324,11 @@
       if(!fileId && item.id && (filename || item.name) && !hasExplicitUrl) fileId = item.id;
       if(fileId){
         const inferredName = filename || item.name || guessAceFilenameFromUrl(item.path || item.key || '');
-        return {
+        return finalizeAceSource({
           kind: 'file',
           fileId,
           filename: inferredName || 'audio.ogg'
-        };
+        }, item, fallbackDuration);
       }
 
       return null;
@@ -1209,7 +1347,7 @@
           const fid = src.fileId;
           if(fid && !seenFiles.has(fid)){
             seenFiles.add(fid);
-            pending.push({ fileId: fid, filename: src.filename || 'audio.ogg' });
+            pending.push({ fileId: fid, filename: src.filename || 'audio.ogg', duration: Number.isFinite(src.duration) && src.duration > 0 ? src.duration : null });
           }
           return;
         }
@@ -1217,7 +1355,9 @@
         if(!url || seenUrls.has(url)) return;
         seenUrls.add(url);
         const name = src.filename || (src.kind === 'data' ? guessAceFilenameFromDataUri(url) : guessAceFilenameFromUrl(url));
-        ready.push({ url, filename: name, cleanup: src.cleanup });
+        const entry = { url, filename: name, cleanup: src.cleanup };
+        if(Number.isFinite(src.duration) && src.duration > 0) entry.duration = src.duration;
+        ready.push(entry);
       }
 
       function walk(node){
@@ -1276,18 +1416,27 @@
             const resp = await fetch(target, { headers });
             if(!resp.ok) continue;
             const contentType = resp.headers.get('content-type') || '';
+            const headerDuration = parseAceDurationToSeconds(resp.headers.get('x-runpod-duration') || resp.headers.get('x-runpod-audio-seconds') || resp.headers.get('content-duration'));
             if(contentType.includes('application/json')){
               const json = await resp.json();
               const src = aceItemToSource(json);
               if(src && src.kind !== 'file'){
-                return { url: src.url, filename: src.filename || filename || 'audio.ogg' };
+                if((!Number.isFinite(src.duration) || src.duration <= 0) && Number.isFinite(headerDuration) && headerDuration > 0){
+                  src.duration = headerDuration;
+                }
+                const out = { url: src.url, filename: src.filename || filename || 'audio.ogg' };
+                if(Number.isFinite(src.duration) && src.duration > 0) out.duration = src.duration;
+                if(typeof src.cleanup === 'function') out.cleanup = src.cleanup;
+                return out;
               }
               continue;
             }
             const blob = await resp.blob();
             const name = parseContentDispositionFilename(resp.headers.get('content-disposition')) || filename || 'audio.ogg';
             const blobUrl = URL.createObjectURL(blob);
-            return { url: blobUrl, filename: name, cleanup: () => URL.revokeObjectURL(blobUrl) };
+            const out = { url: blobUrl, filename: name, cleanup: () => URL.revokeObjectURL(blobUrl) };
+            if(Number.isFinite(headerDuration) && headerDuration > 0) out.duration = headerDuration;
+            return out;
           } catch(err){
             console.debug('ACE download candidate failed', target, err);
           }
@@ -1305,22 +1454,64 @@
       wrap.className = 'shot';
       const header = document.createElement('div');
       header.className = 'header';
+      const titleWrap = document.createElement('div');
+      titleWrap.style.display = 'flex';
+      titleWrap.style.flexDirection = 'column';
+      titleWrap.style.gap = '4px';
+      titleWrap.style.minWidth = '0';
       const title = document.createElement('span');
       title.className = 'mono';
       title.textContent = name;
       title.title = name;
+      title.style.wordBreak = 'break-word';
+      const durationLabel = document.createElement('span');
+      durationLabel.className = 'hint';
+      durationLabel.textContent = 'Length: loading…';
+      titleWrap.appendChild(title);
+      titleWrap.appendChild(durationLabel);
       const download = document.createElement('a');
       download.className = 'btn';
       download.href = url;
       download.download = name;
       download.textContent = 'Download';
-      header.appendChild(title);
+      header.appendChild(titleWrap);
       header.appendChild(download);
       wrap.appendChild(header);
       const audio = document.createElement('audio');
       audio.controls = true;
+      audio.preload = 'metadata';
       audio.src = url;
       audio.style.width = '100%';
+      const applyDuration = seconds => {
+        const text = formatAceDurationLabel(seconds);
+        if(text){
+          durationLabel.textContent = text;
+          durationLabel.title = text;
+          durationLabel.dataset.hasDuration = 'true';
+        }
+      };
+      const initialDuration = parseAceDurationToSeconds(entry.duration);
+      if(Number.isFinite(initialDuration) && initialDuration > 0){
+        applyDuration(initialDuration);
+      }
+      const handleDurationEvent = () => {
+        const dur = audio.duration;
+        if(Number.isFinite(dur) && dur > 0){ applyDuration(dur); return; }
+        if(audio.seekable && audio.seekable.length){
+          const end = audio.seekable.end(audio.seekable.length - 1);
+          if(Number.isFinite(end) && end > 0){ applyDuration(end); }
+        }
+      };
+      audio.addEventListener('loadedmetadata', handleDurationEvent);
+      audio.addEventListener('durationchange', handleDurationEvent);
+      audio.addEventListener('loadeddata', handleDurationEvent);
+      audio.addEventListener('error', ()=>{
+        if(!durationLabel.dataset.hasDuration){
+          durationLabel.textContent = 'Length: unavailable';
+          durationLabel.removeAttribute('title');
+        }
+      });
+      if(audio.readyState >= 1) handleDurationEvent();
       wrap.appendChild(audio);
       if(entry.cleanup && typeof entry.cleanup === 'function'){
         aceBlobCleanups.push(entry.cleanup);
@@ -1360,7 +1551,12 @@
         if(pending.length && acel.status) acel.status.textContent = 'Fetching audio files…';
         for(const file of pending){
           const downloaded = await downloadAceFile(key, jobId, file.fileId, file.filename);
-          if(downloaded) tracks.push(downloaded);
+          if(downloaded){
+            if(Number.isFinite(file.duration) && file.duration > 0 && (!Number.isFinite(downloaded.duration) || downloaded.duration <= 0)){
+              downloaded.duration = file.duration;
+            }
+            tracks.push(downloaded);
+          }
         }
         if(!tracks.length){
           const workerStatus = data && data.output && data.output.status ? data.output.status : null;
