@@ -85,6 +85,7 @@
 <nav class="tabs" id="tabbar">
   <button class="tab active" data-tab="sdxl">SDXL</button>
   <button class="tab" data-tab="qwen">Qwen-Image</button>
+  <button class="tab" data-tab="ace">ACE-Step</button>
 </nav>
 
 <div id="apiKeyWrap" style="max-width:1100px; margin:8px auto 0; padding:0 16px; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; align-items:center;">
@@ -353,6 +354,102 @@
   </section>
 </main>
 
+<main id="ace-main" class="hidden">
+  <section class="card" id="ace-controls">
+    <header class="body" style="border-bottom:1px solid var(--border)">
+      <strong>ACE-Step Controls</strong>
+      <div style="display:flex; gap:8px; align-items:center">
+        <div class="status" id="ace-timer">00:00.00</div>
+        <div class="status" id="ace-status">Idle</div>
+      </div>
+    </header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">
+        Uses the same RunPod API key field above; dedicated endpoint for ACE-Step audio.
+      </div>
+
+      <label for="ace-tags">Tags</label>
+      <textarea id="ace-tags" placeholder="Describe the song..."></textarea>
+
+      <label for="ace-structure">Structure</label>
+      <textarea id="ace-structure" placeholder="Describe the song structure..."></textarea>
+
+      <label>Length (MM:SS)</label>
+      <div class="row">
+        <div>
+          <label for="ace-minutes">Minutes</label>
+          <input id="ace-minutes" type="number" min="0" step="1" value="0" />
+        </div>
+        <div>
+          <label for="ace-seconds">Seconds</label>
+          <input id="ace-seconds" type="number" min="0" max="59" step="1" value="30" />
+        </div>
+      </div>
+      <div class="hint">Converted to total seconds before sending.</div>
+
+      <div class="row-3">
+        <div>
+          <label for="ace-seed">Seed</label>
+          <input id="ace-seed" type="number" step="1" value="-1" />
+          <div class="hint" id="ace-seedHint">Use -1 for random</div>
+        </div>
+        <div>
+          <label for="ace-steps">Steps</label>
+          <input id="ace-steps" type="number" min="25" max="75" step="1" value="50" />
+        </div>
+        <div>
+          <label for="ace-cfg">CFG</label>
+          <input id="ace-cfg" type="number" min="1.0" step="0.1" value="5.0" />
+          <div class="hint">Minimum 1.0</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="ace-sampler">Sampler</label>
+          <select id="ace-sampler"></select>
+        </div>
+        <div>
+          <label for="ace-scheduler">Scheduler</label>
+          <select id="ace-scheduler"></select>
+        </div>
+      </div>
+
+      <label for="ace-quality">Quality</label>
+      <select id="ace-quality">
+        <option value="96k">96k</option>
+        <option value="128k" selected>128k</option>
+        <option value="192k">192k</option>
+      </select>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="ace-run">Generate</button>
+        <button class="btn" id="ace-curl" type="button">Copy cURL</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="ace-reset" type="button">Reset to defaults</button>
+        <button class="btn danger" id="ace-clear" type="button">Clear outputs</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/9y8bbjrr366yuo/runsync</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (Opus)</strong></header>
+    <div class="gallery" id="ace-gallery"></div>
+    <div class="body">
+      <details>
+        <summary class="mono">Request payload (debug)</summary>
+        <pre class="mono" id="ace-debugReq"></pre>
+      </details>
+      <details>
+        <summary class="mono">Raw response (debug)</summary>
+        <pre class="mono" id="ace-debugResp"></pre>
+      </details>
+    </div>
+  </section>
+</main>
+
 
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
@@ -399,11 +496,163 @@
 }
 </script>
 
+<script id="ace-template" type="application/json">
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "ace_step_v1_3.5b.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "3": {
+    "inputs": {
+      "seconds": "%length%",
+      "batch_size": 1
+    },
+    "class_type": "EmptyAceStepLatentAudio",
+    "_meta": {
+      "title": "EmptyAceStepLatentAudio"
+    }
+  },
+  "7": {
+    "inputs": {
+      "tags": "%tags%",
+      "lyrics": "%structure%",
+      "lyrics_strength": 0.99,
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "TextEncodeAceStepAudio",
+    "_meta": {
+      "title": "TextEncodeAceStepAudio"
+    }
+  },
+  "8": {
+    "inputs": {
+      "seed": "%seed%",
+      "steps": "%steps%",
+      "cfg": "%cfg%",
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "denoise": 1,
+      "model": [
+        "11",
+        0
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "9",
+        0
+      ],
+      "latent_image": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "9": {
+    "inputs": {
+      "conditioning": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "10": {
+    "inputs": {
+      "shift": 5,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "11": {
+    "inputs": {
+      "model": [
+        "10",
+        0
+      ],
+      "operation": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "LatentApplyOperationCFG",
+    "_meta": {
+      "title": "ApplyOperationCFG"
+    }
+  },
+  "12": {
+    "inputs": {
+      "multiplier": 1
+    },
+    "class_type": "LatentOperationTonemapReinhard",
+    "_meta": {
+      "title": "LatentOperationTonemapReinhard"
+    }
+  },
+  "13": {
+    "inputs": {
+      "samples": [
+        "8",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAEDecodeAudio"
+    }
+  },
+  "14": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "quality": "%quality%",
+      "audioUI": "",
+      "audio": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "SaveAudioOpus",
+    "_meta": {
+      "title": "Save Audio (Opus)"
+    }
+  }
+}
+</script>
+
 
 
   <script>
     const ENDPOINT = 'https://api.runpod.ai/v2/vpr9pkvlr7n873/runsync';
     const STATUS_ENDPOINT = ENDPOINT.replace('/runsync', '/status');
+    const ACE_ENDPOINT = 'https://api.runpod.ai/v2/9y8bbjrr366yuo/runsync';
+    const ACE_STATUS_ENDPOINT = ACE_ENDPOINT.replace('/runsync', '/status');
     const SAMPLERS = [
       'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
       'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral', 
@@ -530,6 +779,12 @@
       return JSON.parse(raw);
     }
 
+    function getAceTemplate(){
+      const el = document.getElementById('ace-template');
+      if(!el) throw new Error('ACE template missing');
+      return JSON.parse(el.textContent.trim());
+    }
+
     function deepReplacePlaceholders(obj, map){
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'string'){
@@ -605,11 +860,11 @@
       ].join(' \n');
     }
 
-    async function pollStatus(key, id, debugEl){
+    async function pollStatus(key, id, debugEl, statusEndpoint = STATUS_ENDPOINT){
       let attempt = 0;
       while(true){
         attempt++;
-        const resp = await fetch(`${STATUS_ENDPOINT}/${id}`, {
+        const resp = await fetch(`${statusEndpoint}/${id}`, {
           headers: { 'Authorization': `Bearer ${key}` }
         });
         const data = await resp.json();
@@ -687,6 +942,243 @@
       navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
     });
 
+    // --- ACE-Step helpers ---
+    const ace = id => document.getElementById(id);
+    const acel = {
+      apiKey: document.getElementById('apiKey'),
+      tags: ace('ace-tags'),
+      structure: ace('ace-structure'),
+      minutes: ace('ace-minutes'),
+      seconds: ace('ace-seconds'),
+      seed: ace('ace-seed'), seedHint: ace('ace-seedHint'),
+      steps: ace('ace-steps'), cfg: ace('ace-cfg'),
+      sampler: ace('ace-sampler'), scheduler: ace('ace-scheduler'),
+      quality: ace('ace-quality'),
+      runBtn: ace('ace-run'), curlBtn: ace('ace-curl'), resetBtn: ace('ace-reset'), clearBtn: ace('ace-clear'),
+      status: ace('ace-status'), timer: ace('ace-timer'), gallery: ace('ace-gallery'),
+      debugReq: ace('ace-debugReq'), debugResp: ace('ace-debugResp'),
+    };
+
+    const acetimer = makeTimer(acel.timer);
+
+    if(acel.sampler) populateSelect(acel.sampler, SAMPLERS, 'res_multistep');
+    if(acel.scheduler) populateSelect(acel.scheduler, SCHEDULERS, 'linear_quadratic');
+
+    acel.seedHintDefault = acel.seedHint ? acel.seedHint.textContent : '';
+
+    function clampSeconds(val){
+      let s = parseFloat(val);
+      if(!Number.isFinite(s)) s = 0;
+      if(s < 0) s = 0;
+      if(s > 59.999) s = 59.999;
+      return s;
+    }
+
+    if(acel.seconds){
+      acel.seconds.addEventListener('change', ()=>{
+        const s = clampSeconds(acel.seconds.value || '0');
+        acel.seconds.value = Number.isInteger(s) ? String(Math.trunc(s)) : s.toFixed(3);
+      });
+    }
+
+    if(acel.minutes){
+      acel.minutes.addEventListener('change', ()=>{
+        let m = parseInt(acel.minutes.value || '0', 10);
+        if(!Number.isFinite(m) || m < 0) m = 0;
+        acel.minutes.value = m;
+      });
+    }
+
+    function getAceLengthSeconds(){
+      const minutes = Math.max(0, parseInt(acel.minutes && acel.minutes.value || '0', 10) || 0);
+      const seconds = clampSeconds(acel.seconds && acel.seconds.value || '0');
+      return Math.round((minutes * 60 + seconds) * 1000) / 1000;
+    }
+
+    function buildAcePlaceholderMap(){
+      let seedVal = parseInt(acel.seed && acel.seed.value || '-1', 10);
+      if(!Number.isFinite(seedVal)) seedVal = -1;
+      if(seedVal === -1){
+        seedVal = genRandomSeed();
+        if(acel.seedHint) acel.seedHint.textContent = `Random seed: ${seedVal}`;
+      } else if(acel.seedHint){
+        acel.seedHint.textContent = acel.seedHintDefault;
+      }
+      const stepsVal = parseInt(acel.steps && (acel.steps.value || '50'), 10);
+      const cfgVal = parseFloat(acel.cfg && (acel.cfg.value || '5.0'));
+      return {
+        tags: acel.tags && acel.tags.value || '',
+        structure: acel.structure && acel.structure.value || '',
+        length: getAceLengthSeconds(),
+        seed: seedVal,
+        steps: Number.isFinite(stepsVal) ? stepsVal : 50,
+        cfg: Number.isFinite(cfgVal) ? cfgVal : 5.0,
+        sampler: acel.sampler && acel.sampler.value || 'res_multistep',
+        scheduler: acel.scheduler && acel.scheduler.value || 'linear_quadratic',
+        quality: acel.quality && acel.quality.value || '128k',
+      };
+    }
+
+    function buildAcePayload(){
+      const template = getAceTemplate();
+      const map = buildAcePlaceholderMap();
+      const resolved = deepReplacePlaceholders(template, map);
+      return { input: { workflow: resolved } };
+    }
+
+    function makeAceCurl(payload){
+      const key = (acel.apiKey && acel.apiKey.value || '').trim() || '<api_key>';
+      return [
+        'curl -sX POST',
+        `  -H "Authorization: Bearer ${key}"`,
+        '  -H "Content-Type: application/json"',
+        `  -d '${JSON.stringify(payload)}'`,
+        `  ${ACE_ENDPOINT}`
+      ].join(' \n');
+    }
+
+    function setAceBusy(b){
+      if(acel.runBtn) acel.runBtn.disabled = b;
+      if(acel.status) acel.status.textContent = b ? 'Running…' : 'Idle';
+      if(acel.timer){ b ? acetimer.start() : acetimer.stop(); }
+    }
+
+    function aceItemToSource(item){
+      if(!item) return null;
+      if(typeof item === 'string'){
+        if(item.startsWith('http')) return { url: item, filename: 'audio.ogg' };
+        return null;
+      }
+      const filename = item.filename || item.name || 'audio.ogg';
+      const typeRaw = item.type || item.content_type || item.mime || '';
+      const type = typeof typeRaw === 'string' ? typeRaw : '';
+      if(type === 'base64' && item.data){
+        return { url: `data:audio/ogg;base64,${item.data}`, filename };
+      }
+      if(type.startsWith('audio') && item.data){
+        return { url: `data:${type};base64,${item.data}`, filename };
+      }
+      if(type === 's3_url' && item.data){
+        return { url: item.data, filename };
+      }
+      if(item.url){
+        return { url: item.url, filename };
+      }
+      if(item.data && typeof item.data === 'string' && item.data.startsWith('http')){
+        return { url: item.data, filename };
+      }
+      if(item.path && typeof item.path === 'string' && item.path.startsWith('http')){
+        return { url: item.path, filename };
+      }
+      if(type.startsWith('audio') && item.url){
+        return { url: item.url, filename };
+      }
+      return null;
+    }
+
+    function extractAceAudios(data){
+      const out = [];
+      if(!data || !data.output) return out;
+      const collect = (val) => {
+        if(!val) return;
+        const list = Array.isArray(val) ? val : [val];
+        for(const item of list){
+          const src = aceItemToSource(item);
+          if(src) out.push(src);
+          else if(item && item.type === 'output' && item.data) collect(item.data);
+        }
+      };
+      const output = data.output;
+      collect(output.audios);
+      collect(output.audio);
+      collect(output.files);
+      collect(output.items);
+      if(Array.isArray(output)) collect(output);
+      return out;
+    }
+
+    function addAceTrack(url, name){
+      if(!acel.gallery) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'shot';
+      const header = document.createElement('div'); header.className = 'header';
+      header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+      wrap.appendChild(header);
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = url;
+      audio.style.width = '100%';
+      wrap.appendChild(audio);
+      acel.gallery.prepend(wrap);
+    }
+
+    async function runAce(){
+      const key = (acel.apiKey && acel.apiKey.value || '').trim();
+      if(!key){ if(acel.status) acel.status.textContent = 'API key required'; return; }
+      try{
+        setAceBusy(true);
+        const payload = buildAcePayload();
+        if(acel.debugReq) acel.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(ACE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        let data = await resp.json();
+        if(acel.debugResp) acel.debugResp.textContent = JSON.stringify(data, null, 2);
+
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if(data.status !== 'COMPLETED'){
+          if(data.id){
+            if(acel.status) acel.status.textContent = 'Waiting for job...';
+            data = await pollStatus(key, data.id, acel.debugResp, ACE_STATUS_ENDPOINT);
+          } else {
+            throw new Error(`Job status: ${data.status}`);
+          }
+        }
+
+        const tracks = extractAceAudios(data);
+        if(!tracks.length) throw new Error('No audio in response');
+
+        for(const item of tracks){
+          addAceTrack(item.url, item.filename || 'audio.ogg');
+        }
+        if(acel.status) acel.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      } catch(err){
+        console.error(err);
+        if(acel.status) acel.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      } finally { setAceBusy(false); }
+    }
+
+    if(acel.runBtn) acel.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); runAce(); });
+    if(acel.curlBtn) acel.curlBtn.addEventListener('click', ()=>{
+      const payload = buildAcePayload();
+      const text = makeAceCurl(payload);
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>{ if(acel.status) acel.status.textContent = 'cURL copied'; });
+      }
+    });
+
+    if(acel.resetBtn) acel.resetBtn.addEventListener('click', ()=>{
+      if(acel.tags) acel.tags.value = '';
+      if(acel.structure) acel.structure.value = '';
+      if(acel.minutes) acel.minutes.value = 0;
+      if(acel.seconds) acel.seconds.value = 30;
+      if(acel.seed) acel.seed.value = -1;
+      if(acel.steps) acel.steps.value = 50;
+      if(acel.cfg) acel.cfg.value = 5.0;
+      if(acel.sampler) acel.sampler.value = 'res_multistep';
+      if(acel.scheduler) acel.scheduler.value = 'linear_quadratic';
+      if(acel.quality) acel.quality.value = '128k';
+      if(acel.seedHint) acel.seedHint.textContent = acel.seedHintDefault;
+      if(acel.status) acel.status.textContent = 'Reset to defaults';
+    });
+
+    if(acel.clearBtn) acel.clearBtn.addEventListener('click', ()=>{
+      if(acel.gallery) acel.gallery.innerHTML = '';
+      if(acel.status) acel.status.textContent = 'Outputs cleared';
+    });
+
     // Initialize
     (function(){
       el.dims.value = '1024x1024';
@@ -699,16 +1191,23 @@
   (function(){
     const sdxlMain = document.querySelector('body > main') || document.querySelector('main');
     const qwenMain = document.getElementById('qwen-main');
+    const aceMain = document.getElementById('ace-main');
     const tabbar = document.getElementById('tabbar');
-    if (!sdxlMain || !qwenMain || !tabbar) return;
+    if (!sdxlMain || !tabbar) return;
     sdxlMain.id = 'sdxl-main';
+    const sections = { sdxl: sdxlMain };
+    if(qwenMain) sections.qwen = qwenMain;
+    if(aceMain) sections.ace = aceMain;
     tabbar.addEventListener('click', (e)=>{
       const btn = e.target.closest('.tab'); if(!btn) return;
+      const tab = btn.dataset.tab;
+      if(!tab || !sections[tab]) return;
       for(const b of tabbar.querySelectorAll('.tab')) b.classList.remove('active');
       btn.classList.add('active');
-      const t = btn.dataset.tab;
-      if(t === 'sdxl'){ sdxlMain.classList.remove('hidden'); qwenMain.classList.add('hidden'); }
-      else { sdxlMain.classList.add('hidden'); qwenMain.classList.remove('hidden'); }
+      for (const key of Object.keys(sections)){
+        if(key === tab) sections[key].classList.remove('hidden');
+        else sections[key].classList.add('hidden');
+      }
     });
   })();
 
