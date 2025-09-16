@@ -653,6 +653,11 @@
     const STATUS_ENDPOINT = ENDPOINT.replace('/runsync', '/status');
     const ACE_ENDPOINT = 'https://api.runpod.ai/v2/9y8bbjrr366yuo/runsync';
     const ACE_STATUS_ENDPOINT = ACE_ENDPOINT.replace('/runsync', '/status');
+    const ACE_BASE_ENDPOINT = ACE_ENDPOINT.replace(/\/runsync$/, '');
+    const ACE_FILE_ENDPOINT = `${ACE_BASE_ENDPOINT}/file`;
+    const ACE_FILES_ENDPOINT = `${ACE_BASE_ENDPOINT}/files`;
+    const ACE_RUNS_ENDPOINT = `${ACE_BASE_ENDPOINT}/runs`;
+    const ACE_RUN_ENDPOINT = `${ACE_BASE_ENDPOINT}/run`;
     const SAMPLERS = [
       'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
       'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral', 
@@ -960,6 +965,7 @@
     };
 
     const acetimer = makeTimer(acel.timer);
+    const aceBlobCleanups = [];
 
     if(acel.sampler) populateSelect(acel.sampler, SAMPLERS, 'res_multistep');
     if(acel.scheduler) populateSelect(acel.scheduler, SCHEDULERS, 'linear_quadratic');
@@ -972,6 +978,42 @@
       if(s < 0) s = 0;
       if(s > 59.999) s = 59.999;
       return s;
+    }
+
+    function guessAceFilenameFromUrl(url){
+      try{
+        const u = new URL(url);
+        const parts = u.pathname.split('/').filter(Boolean);
+        const name = parts.pop();
+        if(name) return name;
+      }catch(err){
+        if(typeof url === 'string'){
+          const tail = url.split('/').filter(Boolean).pop();
+          if(tail) return tail;
+        }
+      }
+      return 'audio.ogg';
+    }
+
+    function guessAceFilenameFromDataUri(uri){
+      const match = /^data:audio\/([^;,]+)/i.exec(uri || '');
+      if(match && match[1]){
+        const ext = match[1].split('/').pop();
+        if(ext) return `audio.${ext}`;
+      }
+      return 'audio.ogg';
+    }
+
+    function parseContentDispositionFilename(header){
+      if(!header) return null;
+      const star = header.match(/filename\*=UTF-8''([^;]+)/i);
+      if(star && star[1]){
+        try{ return decodeURIComponent(star[1]); }
+        catch(err){ return star[1]; }
+      }
+      const quoted = header.match(/filename="?([^";]+)"?/i);
+      if(quoted && quoted[1]) return quoted[1];
+      return null;
     }
 
     if(acel.seconds){
@@ -1004,14 +1046,16 @@
       } else if(acel.seedHint){
         acel.seedHint.textContent = acel.seedHintDefault;
       }
-      const stepsVal = parseInt(acel.steps && (acel.steps.value || '50'), 10);
-      const cfgVal = parseFloat(acel.cfg && (acel.cfg.value || '5.0'));
+      const rawSteps = parseInt(acel.steps && (acel.steps.value || '50'), 10);
+      const stepsVal = Number.isFinite(rawSteps) ? Math.min(75, Math.max(25, rawSteps)) : 50;
+      const rawCfg = parseFloat(acel.cfg && (acel.cfg.value || '5.0'));
+      const cfgVal = Number.isFinite(rawCfg) ? Math.max(1.0, rawCfg) : 5.0;
       return {
         tags: acel.tags && acel.tags.value || '',
         structure: acel.structure && acel.structure.value || '',
         length: getAceLengthSeconds(),
         seed: seedVal,
-        steps: Number.isFinite(stepsVal) ? stepsVal : 50,
+        steps: stepsVal,
         cfg: Number.isFinite(cfgVal) ? cfgVal : 5.0,
         sampler: acel.sampler && acel.sampler.value || 'res_multistep',
         scheduler: acel.scheduler && acel.scheduler.value || 'linear_quadratic',
@@ -1039,76 +1083,248 @@
 
     function setAceBusy(b){
       if(acel.runBtn) acel.runBtn.disabled = b;
-      if(acel.status) acel.status.textContent = b ? 'Running…' : 'Idle';
+      if(acel.status){
+        if(b){
+          acel.status.textContent = 'Running…';
+        } else if(acel.status.textContent === 'Running…' || acel.status.textContent === 'Fetching audio files…'){
+          acel.status.textContent = 'Idle';
+        }
+      }
       if(acel.timer){ b ? acetimer.start() : acetimer.stop(); }
     }
 
     function aceItemToSource(item){
       if(!item) return null;
+      const audioPattern = /\.(?:ogg|opus|wav|mp3|m4a|flac)(?:\?.*)?$/i;
       if(typeof item === 'string'){
-        if(item.startsWith('http')) return { url: item, filename: 'audio.ogg' };
+        const trimmed = item.trim();
+        if(trimmed.startsWith('data:audio/')){
+          return { kind: 'data', url: trimmed, filename: guessAceFilenameFromDataUri(trimmed) };
+        }
+        if(/^https?:/i.test(trimmed) && audioPattern.test(trimmed)){
+          return { kind: 'url', url: trimmed, filename: guessAceFilenameFromUrl(trimmed) };
+        }
         return null;
       }
-      const filename = item.filename || item.name || 'audio.ogg';
-      const typeRaw = item.type || item.content_type || item.mime || '';
-      const type = typeof typeRaw === 'string' ? typeRaw : '';
-      if(type === 'base64' && item.data){
-        return { url: `data:audio/ogg;base64,${item.data}`, filename };
+      if(Array.isArray(item)){
+        // Arrays are handled by extractAceAudios walker, but keep a fallback
+        for(const entry of item){
+          const found = aceItemToSource(entry);
+          if(found) return found;
+        }
+        return null;
       }
-      if(type.startsWith('audio') && item.data){
-        return { url: `data:${type};base64,${item.data}`, filename };
+      if(typeof item !== 'object') return null;
+
+      const filename = item.filename || item.file_name || item.name || item.originalName || null;
+      const typeRaw = item.type || item.kind || '';
+      const contentTypeRaw = item.content_type || item.contentType || item.mime || '';
+      const lowerType = typeof typeRaw === 'string' ? typeRaw.toLowerCase() : '';
+      const lowerContentType = typeof contentTypeRaw === 'string' ? contentTypeRaw.toLowerCase() : '';
+
+      if(lowerType === 'base64' && item.data){
+        const mime = lowerContentType || 'audio/ogg';
+        return {
+          kind: 'data',
+          url: `data:${mime};base64,${item.data}`,
+          filename: filename || guessAceFilenameFromDataUri(`data:${mime}`)
+        };
       }
-      if(type === 's3_url' && item.data){
-        return { url: item.data, filename };
+
+      const candidateKeys = ['url', 'data', 'path', 'location', 'signed_url', 'signedUrl', 'downloadUrl', 'download_url'];
+      for(const key of candidateKeys){
+        const value = item[key];
+        if(typeof value !== 'string') continue;
+        const trimmed = value.trim();
+        if(trimmed.startsWith('data:audio/')){
+          return { kind: 'data', url: trimmed, filename: filename || guessAceFilenameFromDataUri(trimmed) };
+        }
+        if(/^https?:/i.test(trimmed) && (audioPattern.test(trimmed) || lowerType.includes('audio') || lowerContentType.startsWith('audio'))){
+          return { kind: 'url', url: trimmed, filename: filename || guessAceFilenameFromUrl(trimmed) };
+        }
       }
-      if(item.url){
-        return { url: item.url, filename };
+
+      if((lowerType && lowerType.startsWith('audio')) || (lowerContentType && lowerContentType.startsWith('audio'))){
+        if(item.data && typeof item.data === 'string'){
+          if(item.data.startsWith('http')){
+            return { kind: 'url', url: item.data, filename: filename || guessAceFilenameFromUrl(item.data) };
+          }
+          if(item.data.startsWith('data:audio/')){
+            return { kind: 'data', url: item.data, filename: filename || guessAceFilenameFromDataUri(item.data) };
+          }
+          return {
+            kind: 'data',
+            url: `data:${lowerContentType || lowerType};base64,${item.data}`,
+            filename: filename || guessAceFilenameFromDataUri(`data:${lowerContentType || lowerType}`)
+          };
+        }
       }
-      if(item.data && typeof item.data === 'string' && item.data.startsWith('http')){
-        return { url: item.data, filename };
+
+      if(item.bucket && item.key && typeof item.bucket === 'string' && typeof item.key === 'string'){
+        const s3Url = item.key.startsWith('http') ? item.key : `https://${item.bucket}.s3.amazonaws.com/${item.key.replace(/^\//, '')}`;
+        if(/^https?:/i.test(s3Url)){
+          return { kind: 'url', url: s3Url, filename: filename || guessAceFilenameFromUrl(s3Url) };
+        }
       }
-      if(item.path && typeof item.path === 'string' && item.path.startsWith('http')){
-        return { url: item.path, filename };
+
+      if(item.data && typeof item.data === 'object'){
+        const nested = aceItemToSource(item.data);
+        if(nested) return nested;
       }
-      if(type.startsWith('audio') && item.url){
-        return { url: item.url, filename };
+      if(item.output && typeof item.output === 'object'){
+        const nested = aceItemToSource(item.output);
+        if(nested) return nested;
       }
+      if(item.result && typeof item.result === 'object'){
+        const nested = aceItemToSource(item.result);
+        if(nested) return nested;
+      }
+
+      let fileId = item.fileId || item.file_id || null;
+      if(!fileId && item.id && (lowerType === 'file' || lowerType === 'output')) fileId = item.id;
+      const hasExplicitUrl = candidateKeys.some(key => typeof item[key] === 'string' && item[key].trim().startsWith('http'));
+      if(!fileId && item.id && (filename || item.name) && !hasExplicitUrl) fileId = item.id;
+      if(fileId){
+        const inferredName = filename || item.name || guessAceFilenameFromUrl(item.path || item.key || '');
+        return {
+          kind: 'file',
+          fileId,
+          filename: inferredName || 'audio.ogg'
+        };
+      }
+
       return null;
     }
 
     function extractAceAudios(data){
-      const out = [];
-      if(!data || !data.output) return out;
-      const collect = (val) => {
-        if(!val) return;
-        const list = Array.isArray(val) ? val : [val];
-        for(const item of list){
-          const src = aceItemToSource(item);
-          if(src) out.push(src);
-          else if(item && item.type === 'output' && item.data) collect(item.data);
+      const ready = [];
+      const pending = [];
+      const seenUrls = new Set();
+      const seenFiles = new Set();
+      const visited = new WeakSet();
+
+      function pushSource(src){
+        if(!src) return;
+        if(src.kind === 'file'){
+          const fid = src.fileId;
+          if(fid && !seenFiles.has(fid)){
+            seenFiles.add(fid);
+            pending.push({ fileId: fid, filename: src.filename || 'audio.ogg' });
+          }
+          return;
         }
-      };
-      const output = data.output;
-      collect(output.audios);
-      collect(output.audio);
-      collect(output.files);
-      collect(output.items);
-      if(Array.isArray(output)) collect(output);
-      return out;
+        const url = src.url;
+        if(!url || seenUrls.has(url)) return;
+        seenUrls.add(url);
+        const name = src.filename || (src.kind === 'data' ? guessAceFilenameFromDataUri(url) : guessAceFilenameFromUrl(url));
+        ready.push({ url, filename: name, cleanup: src.cleanup });
+      }
+
+      function walk(node){
+        if(node === null || node === undefined) return;
+        if(typeof node === 'string'){
+          const trimmed = node.trim();
+          if(!trimmed) return;
+          const maybe = aceItemToSource(trimmed);
+          if(maybe) pushSource(maybe);
+          return;
+        }
+        if(typeof node === 'number' || typeof node === 'boolean') return;
+        if(Array.isArray(node)){
+          for(const item of node) walk(item);
+          return;
+        }
+        if(typeof node === 'object'){
+          if(visited.has(node)) return;
+          visited.add(node);
+          pushSource(aceItemToSource(node));
+          for(const key of Object.keys(node)){
+            if(key === 'id' || key === 'status' || key === 'executionTime' || key === 'delayTime' || key === 'workerId') continue;
+            walk(node[key]);
+          }
+        }
+      }
+
+      walk(data);
+      return { ready, pending };
     }
 
-    function addAceTrack(url, name){
-      if(!acel.gallery) return;
+    async function downloadAceFile(key, jobId, fileId, filename){
+      if(!fileId) return null;
+      const headers = { 'Authorization': `Bearer ${key}` };
+      const bases = new Set();
+      bases.add(`${ACE_FILE_ENDPOINT}/${fileId}`);
+      bases.add(`${ACE_FILES_ENDPOINT}/${fileId}`);
+      bases.add(`${ACE_BASE_ENDPOINT}/output/${fileId}`);
+      if(jobId){
+        bases.add(`${ACE_RUNS_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${ACE_RUNS_ENDPOINT}/${jobId}/file/${fileId}`);
+        bases.add(`${ACE_RUN_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${ACE_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${ACE_ENDPOINT}/${jobId}/file/${fileId}`);
+      }
+      const queries = ['', '?download=1', '?rp_download=1', '?rp_download=true'];
+      const baseVariants = new Set();
+      for(const base of bases){
+        baseVariants.add(base);
+        baseVariants.add(`${base}/download`);
+      }
+      for(const base of baseVariants){
+        for(const q of queries){
+          const target = `${base}${q}`;
+          try{
+            const resp = await fetch(target, { headers });
+            if(!resp.ok) continue;
+            const contentType = resp.headers.get('content-type') || '';
+            if(contentType.includes('application/json')){
+              const json = await resp.json();
+              const src = aceItemToSource(json);
+              if(src && src.kind !== 'file'){
+                return { url: src.url, filename: src.filename || filename || 'audio.ogg' };
+              }
+              continue;
+            }
+            const blob = await resp.blob();
+            const name = parseContentDispositionFilename(resp.headers.get('content-disposition')) || filename || 'audio.ogg';
+            const blobUrl = URL.createObjectURL(blob);
+            return { url: blobUrl, filename: name, cleanup: () => URL.revokeObjectURL(blobUrl) };
+          } catch(err){
+            console.debug('ACE download candidate failed', target, err);
+          }
+        }
+      }
+      return null;
+    }
+
+    function addAceTrack(entry){
+      if(!entry || !acel.gallery) return;
+      const url = entry.url;
+      if(!url) return;
+      const name = entry.filename || guessAceFilenameFromUrl(url);
       const wrap = document.createElement('div');
       wrap.className = 'shot';
-      const header = document.createElement('div'); header.className = 'header';
-      header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+      const header = document.createElement('div');
+      header.className = 'header';
+      const title = document.createElement('span');
+      title.className = 'mono';
+      title.textContent = name;
+      title.title = name;
+      const download = document.createElement('a');
+      download.className = 'btn';
+      download.href = url;
+      download.download = name;
+      download.textContent = 'Download';
+      header.appendChild(title);
+      header.appendChild(download);
       wrap.appendChild(header);
       const audio = document.createElement('audio');
       audio.controls = true;
       audio.src = url;
       audio.style.width = '100%';
       wrap.appendChild(audio);
+      if(entry.cleanup && typeof entry.cleanup === 'function'){
+        aceBlobCleanups.push(entry.cleanup);
+      }
       acel.gallery.prepend(wrap);
     }
 
@@ -1125,6 +1341,7 @@
           body: JSON.stringify(payload)
         });
         let data = await resp.json();
+        let jobId = data && data.id ? data.id : null;
         if(acel.debugResp) acel.debugResp.textContent = JSON.stringify(data, null, 2);
 
         if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -1132,16 +1349,26 @@
           if(data.id){
             if(acel.status) acel.status.textContent = 'Waiting for job...';
             data = await pollStatus(key, data.id, acel.debugResp, ACE_STATUS_ENDPOINT);
+            if(data && data.id) jobId = data.id;
           } else {
             throw new Error(`Job status: ${data.status}`);
           }
         }
 
-        const tracks = extractAceAudios(data);
-        if(!tracks.length) throw new Error('No audio in response');
+        const { ready, pending } = extractAceAudios(data);
+        const tracks = [...ready];
+        if(pending.length && acel.status) acel.status.textContent = 'Fetching audio files…';
+        for(const file of pending){
+          const downloaded = await downloadAceFile(key, jobId, file.fileId, file.filename);
+          if(downloaded) tracks.push(downloaded);
+        }
+        if(!tracks.length){
+          const workerStatus = data && data.output && data.output.status ? data.output.status : null;
+          throw new Error(workerStatus ? `No audio returned (worker status: ${workerStatus})` : 'No audio returned');
+        }
 
         for(const item of tracks){
-          addAceTrack(item.url, item.filename || 'audio.ogg');
+          addAceTrack(item);
         }
         if(acel.status) acel.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
       } catch(err){
@@ -1176,6 +1403,10 @@
 
     if(acel.clearBtn) acel.clearBtn.addEventListener('click', ()=>{
       if(acel.gallery) acel.gallery.innerHTML = '';
+      while(aceBlobCleanups.length){
+        const fn = aceBlobCleanups.pop();
+        try{ if(typeof fn === 'function') fn(); } catch(err){ console.debug('ACE cleanup error', err); }
+      }
       if(acel.status) acel.status.textContent = 'Outputs cleared';
     });
 
