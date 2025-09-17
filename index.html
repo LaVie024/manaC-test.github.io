@@ -2238,7 +2238,7 @@
       const bodyString = JSON.stringify(packet.body);
       let responseData = null;
       try{
-        const resp = await fetch(WAN_RUN_ENDPOINT, { method: 'POST', headers, body: bodyString });
+        const resp = await fetch(WAN_FILES_ENDPOINT, { method: 'POST', headers, body: bodyString });
         const text = await resp.text();
         if(text){
           try{ responseData = JSON.parse(text); }
