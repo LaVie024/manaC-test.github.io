@@ -591,7 +591,7 @@
   "18": {"inputs": {"boolean": "%remove_bg%", "on_true": ["19", 0], "on_false": ["8", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Remove Background"}},
   "19": {"inputs": {"model": "BiRefNet_dynamic", "mask_blur": 0, "mask_offset": 0, "invert_output": false, "refine_foreground": false, "background": "Alpha", "background_color": "#000000", "image": ["8", 0]}, "class_type": "BiRefNetRMBG", "_meta": {"title": "BiRefNet Remove Background (RMBG)"}}
 }
-</script>
+  </script>
 
 <script id="wan-template" type="application/json">
 {
@@ -1763,7 +1763,7 @@
         let trimmed = value.trim();
         if(!trimmed || trimmed.length > 4096) return false;
         if(trimmed.startsWith('data:')) return false;
-        const sanitized = trimmed.replace(/\/g, '/');
+        const sanitized = trimmed.replace(/\\/g, '/');
         const lower = sanitized.toLowerCase();
 
         const idx = lower.indexOf('comfyui/input/');
@@ -2301,6 +2301,228 @@
       };
     }
 
+
+  function guessWanFilenameFromUrl(url){
+    try{
+      const u = new URL(url);
+      const parts = u.pathname.split('/').filter(Boolean);
+      const name = parts.pop();
+      if(name) return name;
+    }catch(err){
+      if(typeof url === 'string'){
+        const tail = url.split('/').filter(Boolean).pop();
+        if(tail) return tail;
+      }
+    }
+    return 'video.mp4';
+  }
+
+  function guessWanFilenameFromDataUri(uri){
+    const match = /^data:video\/([^;,]+)/i.exec(uri || '');
+    if(match && match[1]){
+      const ext = match[1].split('/').pop();
+      if(ext) return `video.${ext}`;
+    }
+    return 'video.mp4';
+  }
+
+  function wanItemToVideoSource(item){
+    const videoPattern = /\.(?:mp4|webm|mov|mkv|avi|gif|gifv|mpg|mpeg)$/i;
+    if(item === null || item === undefined) return null;
+    if(typeof item === 'string'){
+      const trimmed = item.trim();
+      if(!trimmed) return null;
+      if(trimmed.startsWith('data:video/')){
+        return { kind: 'data', url: trimmed, filename: guessWanFilenameFromDataUri(trimmed) };
+      }
+      if(/^https?:/i.test(trimmed) && videoPattern.test(trimmed)){
+        return { kind: 'url', url: trimmed, filename: guessWanFilenameFromUrl(trimmed) };
+      }
+      return null;
+    }
+    if(Array.isArray(item)){
+      for(const entry of item){
+        const found = wanItemToVideoSource(entry);
+        if(found) return found;
+      }
+      return null;
+    }
+    if(typeof item !== 'object') return null;
+
+    const filename = item.filename || item.file_name || item.name || item.originalName || item.original_filename || null;
+    const typeRaw = item.type || item.kind || item.format || '';
+    const lowerType = typeof typeRaw === 'string' ? typeRaw.toLowerCase() : '';
+    const mimeRaw = item.mime || item.mimetype || item.content_type || item.contentType || '';
+    const lowerMime = typeof mimeRaw === 'string' ? mimeRaw.toLowerCase() : '';
+
+    if(lowerType === 'base64' && typeof item.data === 'string'){
+      const mime = lowerMime || 'video/mp4';
+      return { kind: 'data', url: `data:${mime};base64,${item.data}`, filename: filename || guessWanFilenameFromDataUri(`data:${mime}`) };
+    }
+
+    if(item.data && typeof item.data === 'string'){
+      const trimmed = item.data.trim();
+      if(trimmed.startsWith('data:video/')){
+        return { kind: 'data', url: trimmed, filename: filename || guessWanFilenameFromDataUri(trimmed) };
+      }
+      if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || lowerType.includes('video') || lowerMime.startsWith('video'))){
+        return { kind: 'url', url: trimmed, filename: filename || guessWanFilenameFromUrl(trimmed) };
+      }
+    }
+
+    const candidateKeys = ['url', 'signed_url', 'signedUrl', 'downloadUrl', 'download_url', 'path', 'location', 'uri'];
+    for(const key of candidateKeys){
+      const value = item[key];
+      if(typeof value !== 'string') continue;
+      const trimmed = value.trim();
+      if(!trimmed) continue;
+      if(trimmed.startsWith('data:video/')){
+        return { kind: 'data', url: trimmed, filename: filename || guessWanFilenameFromDataUri(trimmed) };
+      }
+      if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || lowerType.includes('video') || lowerMime.startsWith('video'))){
+        return { kind: 'url', url: trimmed, filename: filename || guessWanFilenameFromUrl(trimmed) };
+      }
+    }
+
+    if(item.bucket && item.key && typeof item.bucket === 'string' && typeof item.key === 'string'){
+      const key = item.key.startsWith('/') ? item.key.slice(1) : item.key;
+      const s3Url = item.key.startsWith('http') ? item.key : `https://${item.bucket}.s3.amazonaws.com/${key}`;
+      if(/^https?:/i.test(s3Url)){
+        return { kind: 'url', url: s3Url, filename: filename || guessWanFilenameFromUrl(s3Url) };
+      }
+    }
+
+    if(item.data && typeof item.data === 'object'){
+      const nested = wanItemToVideoSource(item.data);
+      if(nested) return nested;
+    }
+    if(item.output && typeof item.output === 'object'){
+      const nested = wanItemToVideoSource(item.output);
+      if(nested) return nested;
+    }
+    if(item.result && typeof item.result === 'object'){
+      const nested = wanItemToVideoSource(item.result);
+      if(nested) return nested;
+    }
+
+    let fileId = item.fileId || item.file_id || null;
+    const hasExplicitUrl = candidateKeys.some(key => typeof item[key] === 'string' && item[key].trim().startsWith('http'));
+    if(!fileId && item.id && (lowerType === 'file' || lowerType === 'output' || (!hasExplicitUrl && (filename || lowerType.includes('video') || lowerMime.startsWith('video'))))){
+      fileId = item.id;
+    }
+    if(fileId){
+      const inferredName = filename || item.name || guessWanFilenameFromUrl(item.path || item.key || '') || 'video.mp4';
+      return { kind: 'file', fileId, filename: inferredName };
+    }
+
+    return null;
+  }
+
+  function extractWanVideos(data){
+    const ready = [];
+    const pending = [];
+    const seenUrls = new Set();
+    const seenFiles = new Set();
+    const visited = new WeakSet();
+
+    function pushSource(src){
+      if(!src) return;
+      if(src.kind === 'file'){
+        const fid = src.fileId;
+        if(fid && !seenFiles.has(fid)){
+          seenFiles.add(fid);
+          pending.push({ fileId: fid, filename: src.filename || 'video.mp4' });
+        }
+        return;
+      }
+      const url = src.url;
+      if(!url || seenUrls.has(url)) return;
+      seenUrls.add(url);
+      const name = src.filename || (src.kind === 'data' ? guessWanFilenameFromDataUri(url) : guessWanFilenameFromUrl(url));
+      const entry = { url, filename: name };
+      if(typeof src.cleanup === 'function') entry.cleanup = src.cleanup;
+      ready.push(entry);
+    }
+
+    function walk(node){
+      if(node === null || node === undefined) return;
+      if(typeof node === 'string'){
+        const trimmed = node.trim();
+        if(!trimmed) return;
+        pushSource(wanItemToVideoSource(trimmed));
+        return;
+      }
+      if(typeof node === 'number' || typeof node === 'boolean') return;
+      if(Array.isArray(node)){
+        for(const item of node) walk(item);
+        return;
+      }
+      if(typeof node === 'object'){
+        if(visited.has(node)) return;
+        visited.add(node);
+        pushSource(wanItemToVideoSource(node));
+        for(const key of Object.keys(node)){
+          if(key === 'id' || key === 'status' || key === 'executionTime' || key === 'delayTime' || key === 'workerId') continue;
+          walk(node[key]);
+        }
+      }
+    }
+
+    walk(data);
+    return { ready, pending };
+  }
+
+  async function downloadWanFile(key, jobId, fileId, fallbackName = 'video.mp4'){
+    if(!fileId) return null;
+    const headers = { 'Authorization': `Bearer ${key}` };
+    const bases = new Set();
+    bases.add(`${WAN_FILE_ENDPOINT}/${fileId}`);
+    bases.add(`${WAN_FILES_ENDPOINT}/${fileId}`);
+    bases.add(`${WAN_BASE_ENDPOINT}/output/${fileId}`);
+    if(jobId){
+      bases.add(`${WAN_RUNS_ENDPOINT}/${jobId}/output/${fileId}`);
+      bases.add(`${WAN_RUNS_ENDPOINT}/${jobId}/file/${fileId}`);
+      bases.add(`${WAN_RUN_ENDPOINT}/${jobId}/output/${fileId}`);
+      bases.add(`${WAN_ENDPOINT}/${jobId}/output/${fileId}`);
+      bases.add(`${WAN_ENDPOINT}/${jobId}/file/${fileId}`);
+    }
+    const queries = ['', '?download=1', '?rp_download=1', '?rp_download=true'];
+    const variants = new Set();
+    for(const base of bases){
+      variants.add(base);
+      variants.add(`${base}/download`);
+    }
+    for(const base of variants){
+      for(const query of queries){
+        const target = `${base}${query}`;
+        try{
+          const resp = await fetch(target, { headers });
+          if(!resp.ok) continue;
+          let json = null;
+          try{
+            const text = await resp.clone().text();
+            if(text && text.trim().startsWith('{')){
+              json = JSON.parse(text);
+            }
+          } catch(err){ json = null; }
+          if(json){
+            const src = wanItemToVideoSource(json);
+            if(src && src.kind !== 'file'){
+              return { url: src.url, filename: src.filename || fallbackName, cleanup: src.cleanup };
+            }
+            continue;
+          }
+          const blob = await resp.blob();
+          const name = parseContentDispositionFilename(resp.headers.get('content-disposition')) || fallbackName;
+          const blobUrl = URL.createObjectURL(blob);
+          return { url: blobUrl, filename: name, cleanup: () => URL.revokeObjectURL(blobUrl) };
+        } catch(err){
+          console.debug('WAN download candidate failed', target, err);
+        }
+      }
+    }
+    return null;
+  }
     function addWanVideo(entry){
       if(!wanel.gallery) return;
       const wrap = document.createElement('div');
@@ -2676,228 +2898,6 @@
       }
       const quoted = header.match(/filename="?([^";]+)"?/i);
       if(quoted && quoted[1]) return quoted[1];
-      return null;
-    }
-
-    function guessWanFilenameFromUrl(url){
-      try{
-        const u = new URL(url);
-        const parts = u.pathname.split('/').filter(Boolean);
-        const name = parts.pop();
-        if(name) return name;
-      }catch(err){
-        if(typeof url === 'string'){
-          const tail = url.split('/').filter(Boolean).pop();
-          if(tail) return tail;
-        }
-      }
-      return 'video.mp4';
-    }
-
-    function guessWanFilenameFromDataUri(uri){
-      const match = /^data:video\/([^;,]+)/i.exec(uri || '');
-      if(match && match[1]){
-        const ext = match[1].split('/').pop();
-        if(ext) return `video.${ext}`;
-      }
-      return 'video.mp4';
-    }
-
-    function wanItemToVideoSource(item){
-      const videoPattern = /\.(?:mp4|webm|mov|mkv|avi|gif|gifv|mpg|mpeg)$/i;
-      if(item === null || item === undefined) return null;
-      if(typeof item === 'string'){
-        const trimmed = item.trim();
-        if(!trimmed) return null;
-        if(trimmed.startsWith('data:video/')){
-          return { kind: 'data', url: trimmed, filename: guessWanFilenameFromDataUri(trimmed) };
-        }
-        if(/^https?:/i.test(trimmed) && videoPattern.test(trimmed)){
-          return { kind: 'url', url: trimmed, filename: guessWanFilenameFromUrl(trimmed) };
-        }
-        return null;
-      }
-      if(Array.isArray(item)){
-        for(const entry of item){
-          const found = wanItemToVideoSource(entry);
-          if(found) return found;
-        }
-        return null;
-      }
-      if(typeof item !== 'object') return null;
-
-      const filename = item.filename || item.file_name || item.name || item.originalName || item.original_filename || null;
-      const typeRaw = item.type || item.kind || item.format || '';
-      const lowerType = typeof typeRaw === 'string' ? typeRaw.toLowerCase() : '';
-      const mimeRaw = item.mime || item.mimetype || item.content_type || item.contentType || '';
-      const lowerMime = typeof mimeRaw === 'string' ? mimeRaw.toLowerCase() : '';
-
-      if(lowerType === 'base64' && typeof item.data === 'string'){
-        const mime = lowerMime || 'video/mp4';
-        return { kind: 'data', url: `data:${mime};base64,${item.data}`, filename: filename || guessWanFilenameFromDataUri(`data:${mime}`) };
-      }
-
-      if(item.data && typeof item.data === 'string'){
-        const trimmed = item.data.trim();
-        if(trimmed.startsWith('data:video/')){
-          return { kind: 'data', url: trimmed, filename: filename || guessWanFilenameFromDataUri(trimmed) };
-        }
-        if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || lowerType.includes('video') || lowerMime.startsWith('video'))){
-          return { kind: 'url', url: trimmed, filename: filename || guessWanFilenameFromUrl(trimmed) };
-        }
-      }
-
-      const candidateKeys = ['url', 'signed_url', 'signedUrl', 'downloadUrl', 'download_url', 'path', 'location', 'uri'];
-      for(const key of candidateKeys){
-        const value = item[key];
-        if(typeof value !== 'string') continue;
-        const trimmed = value.trim();
-        if(!trimmed) continue;
-        if(trimmed.startsWith('data:video/')){
-          return { kind: 'data', url: trimmed, filename: filename || guessWanFilenameFromDataUri(trimmed) };
-        }
-        if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || lowerType.includes('video') || lowerMime.startsWith('video'))){
-          return { kind: 'url', url: trimmed, filename: filename || guessWanFilenameFromUrl(trimmed) };
-        }
-      }
-
-      if(item.bucket && item.key && typeof item.bucket === 'string' && typeof item.key === 'string'){
-        const key = item.key.startsWith('/') ? item.key.slice(1) : item.key;
-        const s3Url = item.key.startsWith('http') ? item.key : `https://${item.bucket}.s3.amazonaws.com/${key}`;
-        if(/^https?:/i.test(s3Url)){
-          return { kind: 'url', url: s3Url, filename: filename || guessWanFilenameFromUrl(s3Url) };
-        }
-      }
-
-      if(item.data && typeof item.data === 'object'){
-        const nested = wanItemToVideoSource(item.data);
-        if(nested) return nested;
-      }
-      if(item.output && typeof item.output === 'object'){
-        const nested = wanItemToVideoSource(item.output);
-        if(nested) return nested;
-      }
-      if(item.result && typeof item.result === 'object'){
-        const nested = wanItemToVideoSource(item.result);
-        if(nested) return nested;
-      }
-
-      let fileId = item.fileId || item.file_id || null;
-      const hasExplicitUrl = candidateKeys.some(key => typeof item[key] === 'string' && item[key].trim().startsWith('http'));
-      if(!fileId && item.id && (lowerType === 'file' || lowerType === 'output' || (!hasExplicitUrl && (filename || lowerType.includes('video') || lowerMime.startsWith('video'))))){
-        fileId = item.id;
-      }
-      if(fileId){
-        const inferredName = filename || item.name || guessWanFilenameFromUrl(item.path || item.key || '') || 'video.mp4';
-        return { kind: 'file', fileId, filename: inferredName };
-      }
-
-      return null;
-    }
-
-    function extractWanVideos(data){
-      const ready = [];
-      const pending = [];
-      const seenUrls = new Set();
-      const seenFiles = new Set();
-      const visited = new WeakSet();
-
-      function pushSource(src){
-        if(!src) return;
-        if(src.kind === 'file'){
-          const fid = src.fileId;
-          if(fid && !seenFiles.has(fid)){
-            seenFiles.add(fid);
-            pending.push({ fileId: fid, filename: src.filename || 'video.mp4' });
-          }
-          return;
-        }
-        const url = src.url;
-        if(!url || seenUrls.has(url)) return;
-        seenUrls.add(url);
-        const name = src.filename || (src.kind === 'data' ? guessWanFilenameFromDataUri(url) : guessWanFilenameFromUrl(url));
-        const entry = { url, filename: name };
-        if(typeof src.cleanup === 'function') entry.cleanup = src.cleanup;
-        ready.push(entry);
-      }
-
-      function walk(node){
-        if(node === null || node === undefined) return;
-        if(typeof node === 'string'){
-          const trimmed = node.trim();
-          if(!trimmed) return;
-          pushSource(wanItemToVideoSource(trimmed));
-          return;
-        }
-        if(typeof node === 'number' || typeof node === 'boolean') return;
-        if(Array.isArray(node)){
-          for(const item of node) walk(item);
-          return;
-        }
-        if(typeof node === 'object'){
-          if(visited.has(node)) return;
-          visited.add(node);
-          pushSource(wanItemToVideoSource(node));
-          for(const key of Object.keys(node)){
-            if(key === 'id' || key === 'status' || key === 'executionTime' || key === 'delayTime' || key === 'workerId') continue;
-            walk(node[key]);
-          }
-        }
-      }
-
-      walk(data);
-      return { ready, pending };
-    }
-
-    async function downloadWanFile(key, jobId, fileId, fallbackName = 'video.mp4'){
-      if(!fileId) return null;
-      const headers = { 'Authorization': `Bearer ${key}` };
-      const bases = new Set();
-      bases.add(`${WAN_FILE_ENDPOINT}/${fileId}`);
-      bases.add(`${WAN_FILES_ENDPOINT}/${fileId}`);
-      bases.add(`${WAN_BASE_ENDPOINT}/output/${fileId}`);
-      if(jobId){
-        bases.add(`${WAN_RUNS_ENDPOINT}/${jobId}/output/${fileId}`);
-        bases.add(`${WAN_RUNS_ENDPOINT}/${jobId}/file/${fileId}`);
-        bases.add(`${WAN_RUN_ENDPOINT}/${jobId}/output/${fileId}`);
-        bases.add(`${WAN_ENDPOINT}/${jobId}/output/${fileId}`);
-        bases.add(`${WAN_ENDPOINT}/${jobId}/file/${fileId}`);
-      }
-      const queries = ['', '?download=1', '?rp_download=1', '?rp_download=true'];
-      const variants = new Set();
-      for(const base of bases){
-        variants.add(base);
-        variants.add(`${base}/download`);
-      }
-      for(const base of variants){
-        for(const query of queries){
-          const target = `${base}${query}`;
-          try{
-            const resp = await fetch(target, { headers });
-            if(!resp.ok) continue;
-            let json = null;
-            try{
-              const text = await resp.clone().text();
-              if(text && text.trim().startsWith('{')){
-                json = JSON.parse(text);
-              }
-            } catch(err){ json = null; }
-            if(json){
-              const src = wanItemToVideoSource(json);
-              if(src && src.kind !== 'file'){
-                return { url: src.url, filename: src.filename || fallbackName, cleanup: src.cleanup };
-              }
-              continue;
-            }
-            const blob = await resp.blob();
-            const name = parseContentDispositionFilename(resp.headers.get('content-disposition')) || fallbackName;
-            const blobUrl = URL.createObjectURL(blob);
-            return { url: blobUrl, filename: name, cleanup: () => URL.revokeObjectURL(blobUrl) };
-          } catch(err){
-            console.debug('WAN download candidate failed', target, err);
-          }
-        }
-      }
       return null;
     }
 
