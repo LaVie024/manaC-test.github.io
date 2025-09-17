@@ -2236,9 +2236,16 @@
       const packet = createWanUploadPacket(filename, info);
       const headers = { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' };
       const bodyString = JSON.stringify(packet.body);
+      const uploadEndpoints = [WAN_FILE_ENDPOINT, WAN_FILES_ENDPOINT];
       let responseData = null;
+      let usedEndpoint = null;
       try{
-        const resp = await fetch(WAN_FILES_ENDPOINT, { method: 'POST', headers, body: bodyString });
+        let resp = null;
+        for (const url of uploadEndpoints){
+          usedEndpoint = url;
+          resp = await fetch(url, { method: 'POST', headers, body: bodyString });
+          if (resp.status !== 404) break; // only fall back on 404
+        }
         const text = await resp.text();
         if(text){
           try{ responseData = JSON.parse(text); }
@@ -2294,7 +2301,7 @@
         base64: info.base64,
         mime: info.mime,
         dataUrl: info.dataUrl,
-        endpoint: WAN_RUN_ENDPOINT,
+        endpoint: usedEndpoint,
         requestBody: packet.body,
         jobId,
         response: finalData
