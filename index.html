@@ -30,6 +30,13 @@
       width:100%; padding:10px 12px; border-radius:9px; border:1px solid var(--border); background:#0c0e14; color:var(--text);
       outline:none; transition:border .15s ease;
     }
+    input[type="file"]{
+      width:100%; padding:8px 10px; border-radius:9px; border:1px solid var(--border); background:#0c0e14; color:var(--text);
+    }
+    input[type="file"]::file-selector-button,
+    input[type="file"]::-webkit-file-upload-button{
+      border:0; border-radius:8px; padding:8px 12px; margin-right:12px; background:#11305a; color:var(--text); cursor:pointer;
+    }
     textarea{min-height:120px; resize:vertical}
     input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus{border-color:#33406b}
 
@@ -86,6 +93,7 @@
   <button class="tab active" data-tab="sdxl">SDXL</button>
   <button class="tab" data-tab="qwen">Qwen-Image</button>
   <button class="tab" data-tab="ace">ACE-Step</button>
+  <button class="tab" data-tab="wan">Wan 2.2 I2V</button>
 </nav>
 
 <div id="apiKeyWrap" style="max-width:1100px; margin:8px auto 0; padding:0 16px; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; align-items:center;">
@@ -451,6 +459,118 @@
 </main>
 
 
+<main id="wan-main" class="hidden">
+  <section class="card" id="wan-controls">
+    <header class="body" style="border-bottom:1px solid var(--border)">
+      <strong>Wan 2.2 I2V Controls</strong>
+      <div style="display:flex; gap:8px; align-items:center">
+        <div class="status" id="wan-timer">00:00.00</div>
+        <div class="status" id="wan-status">Idle</div>
+      </div>
+    </header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">
+        Upload an image, then generate an h265 MP4 video via the ACE-Step RunPod endpoint.
+      </div>
+
+      <label for="wan-prompt">Prompt</label>
+      <textarea id="wan-prompt" placeholder="Describe the motion..."></textarea>
+
+      <label for="wan-image">Source image</label>
+      <input id="wan-image" type="file" accept="image/*" />
+      <div class="hint" id="wan-image-hint">Select a PNG/JPG/WebP. It will be uploaded to /comfyui/input with a random filename.</div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-nsfw" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Enable NSFW prompt routing</span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-lowstep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Use low-step workflow (steps 4–8, CFG forced to 1.0)</span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-negzero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Zero out negative prompt</span>
+      </div>
+
+      <div id="wan-neg-wrap">
+        <label for="wan-negative">Negative prompt</label>
+        <textarea id="wan-negative" placeholder="Things to avoid..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:4px">
+        <div>
+          <label for="wan-mp">Target megapixels</label>
+          <input id="wan-mp" type="number" min="0.50" max="1.00" step="0.01" value="1.00" />
+          <div class="hint">Range 0.50–1.00 MP</div>
+        </div>
+        <div>
+          <label for="wan-length">Video length</label>
+          <input id="wan-length" type="number" min="33" max="81" step="1" value="49" />
+          <div class="hint">Frames, 33–81</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="wan-steps">Steps</label>
+          <input id="wan-steps" type="number" min="10" max="25" step="2" value="16" />
+          <div class="hint" id="wan-steps-hint">Even numbers only</div>
+        </div>
+        <div id="wan-cfg-wrap">
+          <label for="wan-cfg">CFG</label>
+          <input id="wan-cfg" type="number" min="1.0" max="7.0" step="0.1" value="3.5" />
+        </div>
+      </div>
+      <div class="hint" id="wan-cfg-note" style="display:none">CFG is forced to 1.0 while low-step is enabled.</div>
+
+      <div class="row">
+        <div>
+          <label for="wan-sampler">Sampler</label>
+          <select id="wan-sampler"></select>
+        </div>
+        <div>
+          <label for="wan-scheduler">Scheduler</label>
+          <select id="wan-scheduler"></select>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-interp" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Interpolate with RIFE after generation</span>
+      </div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" id="wan-run">Generate</button>
+        <button class="btn" id="wan-curl" type="button">Copy cURL</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="wan-reset" type="button">Reset to defaults</button>
+        <button class="btn danger" id="wan-clear" type="button">Clear outputs</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/e1hyz03h6llhvn/runsync</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (MP4)</strong></header>
+    <div class="gallery" id="wan-gallery"></div>
+    <div class="body">
+      <details>
+        <summary class="mono">Request payload (debug)</summary>
+        <pre class="mono" id="wan-debugReq"></pre>
+      </details>
+      <details>
+        <summary class="mono">Raw response (debug)</summary>
+        <pre class="mono" id="wan-debugResp"></pre>
+      </details>
+    </div>
+  </section>
+</main>
+
+
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
   <script id="workflow-template" type="application/json">{
@@ -471,7 +591,828 @@
   "18": {"inputs": {"boolean": "%remove_bg%", "on_true": ["19", 0], "on_false": ["8", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Remove Background"}},
   "19": {"inputs": {"model": "BiRefNet_dynamic", "mask_blur": 0, "mask_offset": 0, "invert_output": false, "refine_foreground": false, "background": "Alpha", "background_color": "#000000", "image": ["8", 0]}, "class_type": "BiRefNetRMBG", "_meta": {"title": "BiRefNet Remove Background (RMBG)"}}
 }
-  </script>
+</script>
+
+<script id="wan-template" type="application/json">
+{
+  "1": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load High Noise"
+    }
+  },
+  "2": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Low Noise"
+    }
+  },
+  "3": {
+    "inputs": {
+      "lora_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+      "strength_model": 1,
+      "model": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly HN"
+    }
+  },
+  "4": {
+    "inputs": {
+      "lora_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+      "strength_model": 1,
+      "model": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly LN"
+    }
+  },
+  "5": {
+    "inputs": {
+      "lora_name": "NSFW-22-H-e8.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "NSFW H"
+    }
+  },
+  "6": {
+    "inputs": {
+      "value": "%prompt%"
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Positive Prompt"
+    }
+  },
+  "7": {
+    "inputs": {
+      "lora_name": "NSFW-22-L-e8.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "2",
+        0
+      ],
+      "clip": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "NSFW L"
+    }
+  },
+  "8": {
+    "inputs": {
+      "clip_name": "t5xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "9": {
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "10": {
+    "inputs": {
+      "boolean": [
+        "11",
+        0
+      ],
+      "on_true": [
+        "5",
+        0
+      ],
+      "on_false": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Is NSFW High"
+    }
+  },
+  "11": {
+    "inputs": {
+      "value": "%is_nsfw%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Is NSFW"
+    }
+  },
+  "12": {
+    "inputs": {
+      "value": "%low_step%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Low Step"
+    }
+  },
+  "13": {
+    "inputs": {
+      "boolean": [
+        "11",
+        0
+      ],
+      "on_true": [
+        "7",
+        0
+      ],
+      "on_false": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Is NSFW Low"
+    }
+  },
+  "14": {
+    "inputs": {
+      "boolean": [
+        "12",
+        0
+      ],
+      "on_true": [
+        "3",
+        0
+      ],
+      "on_false": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Low Step High"
+    }
+  },
+  "15": {
+    "inputs": {
+      "boolean": [
+        "12",
+        0
+      ],
+      "on_true": [
+        "4",
+        0
+      ],
+      "on_false": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Low Step Low"
+    }
+  },
+  "16": {
+    "inputs": {
+      "text": [
+        "6",
+        0
+      ],
+      "clip": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "SFW Prompt"
+    }
+  },
+  "17": {
+    "inputs": {
+      "text": [
+        "18",
+        0
+      ],
+      "clip": [
+        "5",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "NSFW PH"
+    }
+  },
+  "18": {
+    "inputs": {
+      "string_a": "nsfwsks",
+      "string_b": [
+        "6",
+        0
+      ],
+      "delimiter": ", "
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenate"
+    }
+  },
+  "19": {
+    "inputs": {
+      "text": [
+        "18",
+        0
+      ],
+      "clip": [
+        "7",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "NSFW PL"
+    }
+  },
+  "20": {
+    "inputs": {
+      "value": "%zero_out_negative%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Zero Out Negative"
+    }
+  },
+  "21": {
+    "inputs": {
+      "text": "%negative_prompt%",
+      "clip": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "23": {
+    "inputs": {
+      "boolean_a": [
+        "12",
+        0
+      ],
+      "boolean_b": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "Logic Comparison OR",
+    "_meta": {
+      "title": "Logic Comparison OR"
+    }
+  },
+  "24": {
+    "inputs": {
+      "boolean": [
+        "23",
+        0
+      ],
+      "on_true": [
+        "26",
+        0
+      ],
+      "on_false": [
+        "21",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Neg IfE"
+    }
+  },
+  "25": {
+    "inputs": {
+      "conditioning": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "26": {
+    "inputs": {
+      "boolean": [
+        "11",
+        0
+      ],
+      "on_true": [
+        "27",
+        0
+      ],
+      "on_false": [
+        "25",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "27": {
+    "inputs": {
+      "conditioning": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "28": {
+    "inputs": {
+      "shift": 5,
+      "model": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "29": {
+    "inputs": {
+      "shift": 5,
+      "model": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "30": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 0,
+      "steps": [
+        "32",
+        0
+      ],
+      "cfg": "%cfg%",
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "start_at_step": 0,
+      "end_at_step": [
+        "33",
+        0
+      ],
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "28",
+        0
+      ],
+      "positive": [
+        "34",
+        0
+      ],
+      "negative": [
+        "34",
+        1
+      ],
+      "latent_image": [
+        "34",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler High"
+    }
+  },
+  "31": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": [
+        "32",
+        0
+      ],
+      "cfg": "%cfg%",
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "start_at_step": [
+        "33",
+        0
+      ],
+      "end_at_step": [
+        "32",
+        0
+      ],
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "29",
+        0
+      ],
+      "positive": [
+        "44",
+        0
+      ],
+      "negative": [
+        "34",
+        1
+      ],
+      "latent_image": [
+        "30",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler Low"
+    }
+  },
+  "32": {
+    "inputs": {
+      "value": "%steps%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Steps"
+    }
+  },
+  "33": {
+    "inputs": {
+      "a": [
+        "32",
+        0
+      ],
+      "b": 2,
+      "operation": "divide"
+    },
+    "class_type": "easy mathInt",
+    "_meta": {
+      "title": "Math Int"
+    }
+  },
+  "34": {
+    "inputs": {
+      "width": [
+        "66",
+        1
+      ],
+      "height": [
+        "66",
+        2
+      ],
+      "length": [
+        "43",
+        0
+      ],
+      "batch_size": 1,
+      "positive": [
+        "35",
+        0
+      ],
+      "negative": [
+        "24",
+        0
+      ],
+      "vae": [
+        "9",
+        0
+      ],
+      "start_image": [
+        "66",
+        0
+      ]
+    },
+    "class_type": "WanImageToVideo",
+    "_meta": {
+      "title": "WanImageToVideo High"
+    }
+  },
+  "35": {
+    "inputs": {
+      "boolean": [
+        "11",
+        0
+      ],
+      "on_true": [
+        "17",
+        0
+      ],
+      "on_false": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "36": {
+    "inputs": {
+      "image": "%img%"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "41": {
+    "inputs": {
+      "width": [
+        "66",
+        1
+      ],
+      "height": [
+        "66",
+        2
+      ],
+      "length": [
+        "43",
+        0
+      ],
+      "batch_size": 1,
+      "positive": [
+        "19",
+        0
+      ],
+      "negative": [
+        "24",
+        0
+      ],
+      "vae": [
+        "9",
+        0
+      ],
+      "start_image": [
+        "66",
+        0
+      ]
+    },
+    "class_type": "WanImageToVideo",
+    "_meta": {
+      "title": "WanImageToVideo Low"
+    }
+  },
+  "43": {
+    "inputs": {
+      "value": "%length%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Length"
+    }
+  },
+  "44": {
+    "inputs": {
+      "boolean": [
+        "11",
+        0
+      ],
+      "on_true": [
+        "41",
+        0
+      ],
+      "on_false": [
+        "34",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Prompt Switch"
+    }
+  },
+  "45": {
+    "inputs": {
+      "samples": [
+        "31",
+        0
+      ],
+      "vae": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "46": {
+    "inputs": {
+      "ckpt_name": "rife49.pth",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 2,
+      "fast_mode": true,
+      "ensemble": true,
+      "scale_factor": 1,
+      "frames": [
+        "45",
+        0
+      ]
+    },
+    "class_type": "RIFE VFI",
+    "_meta": {
+      "title": "RIFE VFI (recommend rife47 and rife49)"
+    }
+  },
+  "47": {
+    "inputs": {
+      "frame_rate": [
+        "50",
+        0
+      ],
+      "loop_count": 0,
+      "filename_prefix": "AnimateDiff",
+      "format": "video/h265-mp4",
+      "pix_fmt": "yuv420p10le",
+      "crf": 20,
+      "save_metadata": true,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "49",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "49": {
+    "inputs": {
+      "boolean": [
+        "53",
+        0
+      ],
+      "on_true": [
+        "46",
+        0
+      ],
+      "on_false": [
+        "45",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "50": {
+    "inputs": {
+      "boolean": [
+        "53",
+        0
+      ],
+      "on_true": [
+        "52",
+        0
+      ],
+      "on_false": [
+        "51",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "51": {
+    "inputs": {
+      "value": 16
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Int"
+    }
+  },
+  "52": {
+    "inputs": {
+      "value": 24
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Int"
+    }
+  },
+  "53": {
+    "inputs": {
+      "value": "%interpolate%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Interpolate with RIFE"
+    }
+  },
+  "65": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "megapixels": "%mp%",
+      "image": [
+        "36",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "Scale Image to Total Pixels"
+    }
+  },
+  "66": {
+    "inputs": {
+      "width": [
+        "67",
+        4
+      ],
+      "height": [
+        "67",
+        5
+      ],
+      "upscale_method": "nearest-exact",
+      "keep_proportion": "stretch",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 16,
+      "device": "gpu",
+      "image": [
+        "65",
+        0
+      ]
+    },
+    "class_type": "ImageResizeKJv2",
+    "_meta": {
+      "title": "Resize Image v2"
+    }
+  },
+  "67": {
+    "inputs": {
+      "image": [
+        "65",
+        0
+      ]
+    },
+    "class_type": "Image Size to Number",
+    "_meta": {
+      "title": "Image Size to Number"
+    }
+  }
+}
+</script>
 
 <script id="qwen-template" type="application/json">
 {
@@ -658,6 +1599,13 @@
     const ACE_FILES_ENDPOINT = `${ACE_BASE_ENDPOINT}/files`;
     const ACE_RUNS_ENDPOINT = `${ACE_BASE_ENDPOINT}/runs`;
     const ACE_RUN_ENDPOINT = `${ACE_BASE_ENDPOINT}/run`;
+    const WAN_ENDPOINT = ACE_ENDPOINT;
+    const WAN_STATUS_ENDPOINT = ACE_STATUS_ENDPOINT;
+    const WAN_BASE_ENDPOINT = ACE_BASE_ENDPOINT;
+    const WAN_FILE_ENDPOINT = `${WAN_BASE_ENDPOINT}/file`;
+    const WAN_FILES_ENDPOINT = `${WAN_BASE_ENDPOINT}/files`;
+    const WAN_RUNS_ENDPOINT = `${WAN_BASE_ENDPOINT}/runs`;
+    const WAN_RUN_ENDPOINT = `${WAN_BASE_ENDPOINT}/run`;
     const SAMPLERS = [
       'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
       'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral', 
@@ -708,6 +1656,85 @@
           handle = null;
           update();
         }
+      };
+    }
+
+    function formatBytes(bytes){
+      const value = Number(bytes);
+      if(!Number.isFinite(value) || value < 0) return '';
+      if(value < 1024) return `${value} B`;
+      if(value < 1024 * 1024) return `${(value / 1024).toFixed(1).replace(/\.0$/, '')} KB`;
+      return `${(value / (1024 * 1024)).toFixed(1).replace(/\.0$/, '')} MB`;
+    }
+
+    function readFileAsBase64(file){
+      return new Promise((resolve, reject) => {
+        if(!file){ reject(new Error('No file provided')); return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          if(typeof result !== 'string'){ reject(new Error('Unexpected file result')); return; }
+          const comma = result.indexOf(',');
+          const base64 = comma >= 0 ? result.slice(comma + 1) : result;
+          const mimeMatch = /^data:([^;,]+)/i.exec(result);
+          const mime = mimeMatch && mimeMatch[1] ? mimeMatch[1] : (file.type || 'application/octet-stream');
+          let ext = '';
+          if(file.name && file.name.includes('.')){
+            ext = file.name.split('.').pop() || '';
+          }
+          if(!ext && mime){
+            const mimeExt = mime.split('/').pop();
+            if(mimeExt) ext = mimeExt.replace(/[^a-zA-Z0-9]/g, '');
+          }
+          if(!ext) ext = 'png';
+          resolve({ base64, dataUrl: result, mime, extension: ext.toLowerCase() });
+        };
+        reader.onerror = () => reject(reader.error || new Error('File read error'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function generateWanFilename(ext){
+      const safeExt = (ext || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+      const stamp = Date.now().toString(36);
+      const rand = Math.random().toString(36).slice(2, 10);
+      return `wan_${stamp}_${rand}.${safeExt}`;
+    }
+
+    function createWanUploadPacket(filename, info){
+      const remotePath = `/comfyui/input/${filename}`;
+      const remoteNoSlash = `comfyui/input/${filename}`;
+      const base64 = info.base64;
+      const mime = info.mime || 'image/png';
+      return {
+        body: {
+          filename: remotePath,
+          fileName: remotePath,
+          name: remotePath,
+          path: remotePath,
+          file_path: remotePath,
+          filePath: remotePath,
+          full_path: remotePath,
+          fullPath: remotePath,
+          relative_path: remoteNoSlash,
+          relativePath: remoteNoSlash,
+          target: remotePath,
+          folder: 'comfyui/input',
+          directory: 'comfyui/input',
+          data: base64,
+          fileData: base64,
+          content: base64,
+          contents: base64,
+          base64: base64,
+          encoding: 'base64',
+          mime,
+          mimetype: mime,
+          content_type: mime,
+          contentType: mime,
+          type: 'base64'
+        },
+        remotePath,
+        remotePathNoSlash: remoteNoSlash
       };
     }
 
@@ -947,6 +1974,407 @@
       navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
     });
 
+    // --- Wan 2.2 helpers ---
+    const wan = id => document.getElementById(id);
+    const wanel = {
+      apiKey: document.getElementById('apiKey'),
+      prompt: wan('wan-prompt'),
+      image: wan('wan-image'),
+      imageHint: wan('wan-image-hint'),
+      nsfw: wan('wan-nsfw'),
+      lowstep: wan('wan-lowstep'),
+      negzero: wan('wan-negzero'),
+      negative: wan('wan-negative'),
+      negWrap: wan('wan-neg-wrap'),
+      mp: wan('wan-mp'),
+      length: wan('wan-length'),
+      steps: wan('wan-steps'),
+      stepsHint: wan('wan-steps-hint'),
+      cfgWrap: wan('wan-cfg-wrap'),
+      cfg: wan('wan-cfg'),
+      cfgNote: wan('wan-cfg-note'),
+      sampler: wan('wan-sampler'),
+      scheduler: wan('wan-scheduler'),
+      interp: wan('wan-interp'),
+      runBtn: wan('wan-run'),
+      curlBtn: wan('wan-curl'),
+      resetBtn: wan('wan-reset'),
+      clearBtn: wan('wan-clear'),
+      status: wan('wan-status'),
+      timer: wan('wan-timer'),
+      gallery: wan('wan-gallery'),
+      debugReq: wan('wan-debugReq'),
+      debugResp: wan('wan-debugResp'),
+    };
+
+    const wanTimer = makeTimer(wanel.timer);
+    const wanState = { blobCleanups: [], lastUpload: null };
+
+    if(wanel.sampler) populateSelect(wanel.sampler, SAMPLERS, 'euler');
+    if(wanel.scheduler) populateSelect(wanel.scheduler, SCHEDULERS, 'simple');
+
+    function sanitizeWanMp(){
+      if(!wanel.mp) return 1.0;
+      let val = parseFloat(wanel.mp.value || '1');
+      if(!Number.isFinite(val)) val = 1;
+      if(val < 0.5) val = 0.5;
+      if(val > 1.0) val = 1.0;
+      val = Math.round(val * 100) / 100;
+      wanel.mp.value = val.toFixed(2);
+      return val;
+    }
+
+    function sanitizeWanLength(){
+      if(!wanel.length) return 49;
+      let val = parseInt(wanel.length.value || '49', 10);
+      if(!Number.isFinite(val)) val = 49;
+      if(val < 33) val = 33;
+      if(val > 81) val = 81;
+      wanel.length.value = val;
+      return val;
+    }
+
+    function sanitizeWanCfg(){
+      if(!wanel.cfg) return 3.5;
+      let val = parseFloat(wanel.cfg.value || '3.5');
+      if(!Number.isFinite(val)) val = 3.5;
+      if(val < 1.0) val = 1.0;
+      if(val > 7.0) val = 7.0;
+      val = Math.round(val * 10) / 10;
+      wanel.cfg.value = val.toFixed(1);
+      return val;
+    }
+
+    function sanitizeWanSteps(){
+      if(!wanel.steps) return 16;
+      const low = !!(wanel.lowstep && wanel.lowstep.checked);
+      const min = low ? 4 : 10;
+      const max = low ? 8 : 25;
+      let val = parseInt(wanel.steps.value || (low ? '4' : '16'), 10);
+      if(!Number.isFinite(val)) val = low ? 4 : 16;
+      if(val < min) val = min;
+      if(val > max) val = max;
+      if(val % 2 !== 0){
+        val = Math.min(max, val + 1);
+        if(val % 2 !== 0) val = Math.max(min, val - 1);
+        if(val % 2 !== 0) val = min;
+      }
+      wanel.steps.min = min;
+      wanel.steps.max = max;
+      wanel.steps.step = 2;
+      wanel.steps.value = val;
+      if(wanel.stepsHint){
+        wanel.stepsHint.textContent = low ? 'Range 4–8 (even numbers)' : 'Range 10–25 (even numbers)';
+      }
+      return val;
+    }
+
+    function updateWanVisibility(){
+      const low = !!(wanel.lowstep && wanel.lowstep.checked);
+      const zero = !!(wanel.negzero && wanel.negzero.checked);
+      if(wanel.negWrap) wanel.negWrap.style.display = (!low && !zero) ? '' : 'none';
+      if(wanel.cfgWrap) wanel.cfgWrap.style.display = low ? 'none' : '';
+      if(wanel.cfgNote) wanel.cfgNote.style.display = low ? '' : 'none';
+      sanitizeWanSteps();
+      if(!low) sanitizeWanCfg();
+    }
+
+    function clearWanOutputs(){
+      if(wanel.gallery) wanel.gallery.innerHTML = '';
+      while(wanState.blobCleanups.length){
+        const fn = wanState.blobCleanups.pop();
+        try{ if(typeof fn === 'function') fn(); } catch(err){ console.debug('WAN cleanup error', err); }
+      }
+    }
+
+    function setWanBusy(b){
+      if(wanel.runBtn) wanel.runBtn.disabled = b;
+      if(wanel.timer){ b ? wanTimer.start() : wanTimer.stop(); }
+    }
+
+    function getWanTemplate(){
+      const el = document.getElementById('wan-template');
+      if(!el) throw new Error('Missing wan-template');
+      return JSON.parse(el.textContent.trim());
+    }
+
+    function buildWanPlaceholderMap(uploadInfo){
+      if(!uploadInfo || !uploadInfo.shortName) throw new Error('Missing uploaded filename');
+      const low = !!(wanel.lowstep && wanel.lowstep.checked);
+      const zero = !!(wanel.negzero && wanel.negzero.checked);
+      const nsfw = !!(wanel.nsfw && wanel.nsfw.checked);
+      const steps = sanitizeWanSteps();
+      const mpVal = sanitizeWanMp();
+      const lengthVal = sanitizeWanLength();
+      let cfgVal = 1.0;
+      if(!low) cfgVal = sanitizeWanCfg();
+      const cfgOut = low ? 1.0 : Math.round(cfgVal * 100) / 100;
+      const negative = (!low && !zero && wanel.negative) ? (wanel.negative.value || '') : '';
+      return {
+        prompt: wanel.prompt ? wanel.prompt.value || '' : '',
+        negative_prompt: negative,
+        is_nsfw: nsfw,
+        low_step: low,
+        zero_out_negative: zero,
+        steps,
+        cfg: cfgOut,
+        sampler: wanel.sampler ? wanel.sampler.value : 'euler',
+        scheduler: wanel.scheduler ? wanel.scheduler.value : 'simple',
+        img: uploadInfo.shortName,
+        mp: Math.round(mpVal * 100) / 100,
+        length: lengthVal,
+        interpolate: !!(wanel.interp && wanel.interp.checked)
+      };
+    }
+
+    function buildWanPayload(uploadInfo){
+      const template = getWanTemplate();
+      const map = buildWanPlaceholderMap(uploadInfo);
+      const resolved = deepReplacePlaceholders(template, map);
+      return { input: { workflow: resolved } };
+    }
+
+    async function uploadWanImage(file, key){
+      const info = await readFileAsBase64(file);
+      const filename = generateWanFilename(info.extension);
+      const packet = createWanUploadPacket(filename, info);
+      const headers = { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' };
+      const bodyString = JSON.stringify(packet.body);
+      const endpoints = [
+        WAN_FILES_ENDPOINT,
+        WAN_FILE_ENDPOINT,
+        `${WAN_BASE_ENDPOINT}/upload`,
+        `${WAN_ENDPOINT}/files`,
+        `${WAN_ENDPOINT}/file`,
+        `${WAN_ENDPOINT}/upload`
+      ];
+      for(const endpoint of endpoints){
+        try{
+          const resp = await fetch(endpoint, { method: 'POST', headers, body: bodyString });
+          if(!resp.ok) continue;
+          let finalName = filename;
+          let finalPath = packet.remotePath;
+          try{
+            const text = await resp.text();
+            if(text){
+              const json = JSON.parse(text);
+              const pathCandidate = json.path || json.file_path || json.filePath || json.full_path || json.name || json.filename || json.key || json.location;
+              if(typeof pathCandidate === 'string' && pathCandidate.trim()){
+                finalPath = pathCandidate;
+                const base = pathCandidate.split(/[\\/]/).pop();
+                if(base) finalName = base;
+              }
+              const nameCandidate = json.filename || json.fileName || json.name || json.originalName || json.key;
+              if(typeof nameCandidate === 'string' && nameCandidate.trim()){
+                const base = nameCandidate.split(/[\\/]/).pop();
+                if(base) finalName = base;
+              }
+            }
+          } catch(err){ /* ignore */ }
+          return {
+            shortName: finalName,
+            remotePath: finalPath,
+            packet,
+            base64: info.base64,
+            mime: info.mime,
+            dataUrl: info.dataUrl,
+            endpoint,
+            requestBody: packet.body
+          };
+        } catch(err){
+          console.debug('WAN upload attempt failed', endpoint, err);
+        }
+      }
+      throw new Error('Image upload failed');
+    }
+
+    function addWanVideo(entry){
+      if(!wanel.gallery) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'shot';
+      const header = document.createElement('div');
+      header.className = 'header';
+      const headerInner = document.createElement('header');
+      const name = entry.filename || 'video.mp4';
+      const title = document.createElement('span');
+      title.className = 'mono';
+      title.textContent = name;
+      title.title = name;
+      const link = document.createElement('a');
+      link.className = 'btn';
+      link.href = entry.url;
+      link.download = name;
+      link.textContent = 'Download';
+      headerInner.appendChild(title);
+      headerInner.appendChild(link);
+      header.appendChild(headerInner);
+      wrap.appendChild(header);
+      const video = document.createElement('video');
+      video.controls = true;
+      video.preload = 'metadata';
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.style.width = '100%';
+      video.src = entry.url;
+      wrap.appendChild(video);
+      if(entry.cleanup && typeof entry.cleanup === 'function') wanState.blobCleanups.push(entry.cleanup);
+      wanel.gallery.prepend(wrap);
+    }
+
+    function makeWanCurl(uploadDetails, payload){
+      const key = (wanel.apiKey && wanel.apiKey.value || '').trim() || '<api_key>';
+      const uploadEndpoint = uploadDetails && uploadDetails.endpoint ? uploadDetails.endpoint : WAN_FILES_ENDPOINT;
+      const uploadBody = uploadDetails && uploadDetails.requestBody ? uploadDetails.requestBody : null;
+      const segments = [];
+      if(uploadBody){
+        segments.push([
+          '# Upload image',
+          'curl -sX POST',
+          `  -H "Authorization: Bearer ${key}"`,
+          '  -H "Content-Type: application/json"',
+          `  -d '${JSON.stringify(uploadBody)}'`,
+          `  ${uploadEndpoint}`
+        ].join(' \n'));
+      }
+      segments.push([
+        '# Start workflow',
+        'curl -sX POST',
+        `  -H "Authorization: Bearer ${key}"`,
+        '  -H "Content-Type: application/json"',
+        `  -d '${JSON.stringify(payload)}'`,
+        `  ${WAN_ENDPOINT}`
+      ].join(' \n'));
+      return segments.join('\n\n');
+    }
+
+    async function runWan(){
+      const key = (wanel.apiKey && wanel.apiKey.value || '').trim();
+      if(!key){ if(wanel.status) wanel.status.textContent = 'API key required'; return; }
+      const file = wanel.image && wanel.image.files && wanel.image.files[0];
+      if(!file){ if(wanel.status) wanel.status.textContent = 'Select an image first'; return; }
+      try{
+        setWanBusy(true);
+        if(wanel.status) wanel.status.textContent = 'Uploading image…';
+        const uploadInfo = await uploadWanImage(file, key);
+        wanState.lastUpload = uploadInfo;
+        if(wanel.status) wanel.status.textContent = 'Running…';
+        const payload = buildWanPayload({ shortName: uploadInfo.shortName });
+        if(wanel.debugReq) wanel.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(WAN_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        let data = await resp.json();
+        let jobId = data && data.id ? data.id : null;
+        if(wanel.debugResp) wanel.debugResp.textContent = JSON.stringify(data, null, 2);
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if(data.status !== 'COMPLETED'){
+          if(data.id){
+            if(wanel.status) wanel.status.textContent = 'Waiting for job...';
+            data = await pollStatus(key, data.id, wanel.debugResp, WAN_STATUS_ENDPOINT);
+            if(data && data.id) jobId = data.id;
+          } else {
+            throw new Error(`Job status: ${data.status}`);
+          }
+        }
+        const { ready, pending } = extractWanVideos(data);
+        const videos = [...ready];
+        if(pending.length && wanel.status) wanel.status.textContent = 'Fetching video files…';
+        for(const item of pending){
+          const downloaded = await downloadWanFile(key, jobId, item.fileId, item.filename);
+          if(downloaded) videos.push(downloaded);
+        }
+        if(!videos.length) throw new Error('No video returned');
+        for(const entry of videos){
+          addWanVideo(entry);
+        }
+        if(wanel.status) wanel.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      } catch(err){
+        console.error(err);
+        if(wanel.status) wanel.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      } finally { setWanBusy(false); }
+    }
+
+    if(wanel.lowstep) wanel.lowstep.addEventListener('change', updateWanVisibility);
+    if(wanel.negzero) wanel.negzero.addEventListener('change', updateWanVisibility);
+    if(wanel.steps) wanel.steps.addEventListener('change', sanitizeWanSteps);
+    if(wanel.cfg) wanel.cfg.addEventListener('change', sanitizeWanCfg);
+    if(wanel.mp) wanel.mp.addEventListener('change', sanitizeWanMp);
+    if(wanel.length) wanel.length.addEventListener('change', sanitizeWanLength);
+    if(wanel.image) wanel.image.addEventListener('change', () => {
+      const file = wanel.image && wanel.image.files && wanel.image.files[0];
+      if(file){
+        const size = formatBytes(file.size);
+        if(wanel.imageHint) wanel.imageHint.textContent = size ? `${file.name} (${size})` : file.name;
+      } else if(wanel.imageHint){
+        wanel.imageHint.textContent = 'Select a PNG/JPG/WebP. It will be uploaded to /comfyui/input with a random filename.';
+      }
+      wanState.lastUpload = null;
+    });
+
+    if(wanel.runBtn) wanel.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); runWan(); });
+
+    if(wanel.curlBtn) wanel.curlBtn.addEventListener('click', async ()=>{
+      const file = wanel.image && wanel.image.files && wanel.image.files[0];
+      if(!file && !wanState.lastUpload){ if(wanel.status) wanel.status.textContent = 'Select an image first'; return; }
+      try{
+        let uploadDetails = wanState.lastUpload ? { endpoint: wanState.lastUpload.endpoint, requestBody: wanState.lastUpload.requestBody } : null;
+        let placeholderInfo = wanState.lastUpload ? { shortName: wanState.lastUpload.shortName } : null;
+        if(!uploadDetails){
+          const info = await readFileAsBase64(file);
+          const filename = generateWanFilename(info.extension);
+          const packet = createWanUploadPacket(filename, info);
+          uploadDetails = { endpoint: WAN_FILES_ENDPOINT, requestBody: packet.body };
+          placeholderInfo = { shortName: filename };
+        }
+        const payload = buildWanPayload(placeholderInfo);
+        const text = makeWanCurl(uploadDetails, payload);
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(text);
+          if(wanel.status) wanel.status.textContent = 'cURL copied';
+        }
+      } catch(err){
+        console.error(err);
+        if(wanel.status) wanel.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      }
+    });
+
+    if(wanel.resetBtn) wanel.resetBtn.addEventListener('click', ()=>{
+      if(wanel.prompt) wanel.prompt.value = '';
+      if(wanel.negative) wanel.negative.value = '';
+      if(wanel.nsfw) wanel.nsfw.checked = false;
+      if(wanel.lowstep) wanel.lowstep.checked = false;
+      if(wanel.negzero) wanel.negzero.checked = false;
+      if(wanel.interp) wanel.interp.checked = true;
+      if(wanel.image) wanel.image.value = '';
+      if(wanel.imageHint) wanel.imageHint.textContent = 'Select a PNG/JPG/WebP. It will be uploaded to /comfyui/input with a random filename.';
+      if(wanel.mp) wanel.mp.value = '1.00';
+      if(wanel.length) wanel.length.value = 49;
+      if(wanel.steps) wanel.steps.value = 16;
+      if(wanel.cfg) wanel.cfg.value = 3.5;
+      if(wanel.sampler) wanel.sampler.value = 'euler';
+      if(wanel.scheduler) wanel.scheduler.value = 'simple';
+      wanState.lastUpload = null;
+      updateWanVisibility();
+      sanitizeWanMp();
+      sanitizeWanLength();
+      sanitizeWanSteps();
+      if(wanel.status) wanel.status.textContent = 'Reset to defaults';
+    });
+
+    if(wanel.clearBtn) wanel.clearBtn.addEventListener('click', ()=>{
+      clearWanOutputs();
+      if(wanel.status) wanel.status.textContent = 'Outputs cleared';
+    });
+
+    // Initialize Wan defaults
+    sanitizeWanMp();
+    sanitizeWanLength();
+    sanitizeWanSteps();
+    updateWanVisibility();
+
     // --- ACE-Step helpers ---
     const ace = id => document.getElementById(id);
     const acel = {
@@ -1135,6 +2563,228 @@
       }
       const quoted = header.match(/filename="?([^";]+)"?/i);
       if(quoted && quoted[1]) return quoted[1];
+      return null;
+    }
+
+    function guessWanFilenameFromUrl(url){
+      try{
+        const u = new URL(url);
+        const parts = u.pathname.split('/').filter(Boolean);
+        const name = parts.pop();
+        if(name) return name;
+      }catch(err){
+        if(typeof url === 'string'){
+          const tail = url.split('/').filter(Boolean).pop();
+          if(tail) return tail;
+        }
+      }
+      return 'video.mp4';
+    }
+
+    function guessWanFilenameFromDataUri(uri){
+      const match = /^data:video\/([^;,]+)/i.exec(uri || '');
+      if(match && match[1]){
+        const ext = match[1].split('/').pop();
+        if(ext) return `video.${ext}`;
+      }
+      return 'video.mp4';
+    }
+
+    function wanItemToVideoSource(item){
+      const videoPattern = /\.(?:mp4|webm|mov|mkv|avi|gif|gifv|mpg|mpeg)$/i;
+      if(item === null || item === undefined) return null;
+      if(typeof item === 'string'){
+        const trimmed = item.trim();
+        if(!trimmed) return null;
+        if(trimmed.startsWith('data:video/')){
+          return { kind: 'data', url: trimmed, filename: guessWanFilenameFromDataUri(trimmed) };
+        }
+        if(/^https?:/i.test(trimmed) && videoPattern.test(trimmed)){
+          return { kind: 'url', url: trimmed, filename: guessWanFilenameFromUrl(trimmed) };
+        }
+        return null;
+      }
+      if(Array.isArray(item)){
+        for(const entry of item){
+          const found = wanItemToVideoSource(entry);
+          if(found) return found;
+        }
+        return null;
+      }
+      if(typeof item !== 'object') return null;
+
+      const filename = item.filename || item.file_name || item.name || item.originalName || item.original_filename || null;
+      const typeRaw = item.type || item.kind || item.format || '';
+      const lowerType = typeof typeRaw === 'string' ? typeRaw.toLowerCase() : '';
+      const mimeRaw = item.mime || item.mimetype || item.content_type || item.contentType || '';
+      const lowerMime = typeof mimeRaw === 'string' ? mimeRaw.toLowerCase() : '';
+
+      if(lowerType === 'base64' && typeof item.data === 'string'){
+        const mime = lowerMime || 'video/mp4';
+        return { kind: 'data', url: `data:${mime};base64,${item.data}`, filename: filename || guessWanFilenameFromDataUri(`data:${mime}`) };
+      }
+
+      if(item.data && typeof item.data === 'string'){
+        const trimmed = item.data.trim();
+        if(trimmed.startsWith('data:video/')){
+          return { kind: 'data', url: trimmed, filename: filename || guessWanFilenameFromDataUri(trimmed) };
+        }
+        if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || lowerType.includes('video') || lowerMime.startsWith('video'))){
+          return { kind: 'url', url: trimmed, filename: filename || guessWanFilenameFromUrl(trimmed) };
+        }
+      }
+
+      const candidateKeys = ['url', 'signed_url', 'signedUrl', 'downloadUrl', 'download_url', 'path', 'location', 'uri'];
+      for(const key of candidateKeys){
+        const value = item[key];
+        if(typeof value !== 'string') continue;
+        const trimmed = value.trim();
+        if(!trimmed) continue;
+        if(trimmed.startsWith('data:video/')){
+          return { kind: 'data', url: trimmed, filename: filename || guessWanFilenameFromDataUri(trimmed) };
+        }
+        if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || lowerType.includes('video') || lowerMime.startsWith('video'))){
+          return { kind: 'url', url: trimmed, filename: filename || guessWanFilenameFromUrl(trimmed) };
+        }
+      }
+
+      if(item.bucket && item.key && typeof item.bucket === 'string' && typeof item.key === 'string'){
+        const key = item.key.startsWith('/') ? item.key.slice(1) : item.key;
+        const s3Url = item.key.startsWith('http') ? item.key : `https://${item.bucket}.s3.amazonaws.com/${key}`;
+        if(/^https?:/i.test(s3Url)){
+          return { kind: 'url', url: s3Url, filename: filename || guessWanFilenameFromUrl(s3Url) };
+        }
+      }
+
+      if(item.data && typeof item.data === 'object'){
+        const nested = wanItemToVideoSource(item.data);
+        if(nested) return nested;
+      }
+      if(item.output && typeof item.output === 'object'){
+        const nested = wanItemToVideoSource(item.output);
+        if(nested) return nested;
+      }
+      if(item.result && typeof item.result === 'object'){
+        const nested = wanItemToVideoSource(item.result);
+        if(nested) return nested;
+      }
+
+      let fileId = item.fileId || item.file_id || null;
+      const hasExplicitUrl = candidateKeys.some(key => typeof item[key] === 'string' && item[key].trim().startsWith('http'));
+      if(!fileId && item.id && (lowerType === 'file' || lowerType === 'output' || (!hasExplicitUrl && (filename || lowerType.includes('video') || lowerMime.startsWith('video'))))){
+        fileId = item.id;
+      }
+      if(fileId){
+        const inferredName = filename || item.name || guessWanFilenameFromUrl(item.path || item.key || '') || 'video.mp4';
+        return { kind: 'file', fileId, filename: inferredName };
+      }
+
+      return null;
+    }
+
+    function extractWanVideos(data){
+      const ready = [];
+      const pending = [];
+      const seenUrls = new Set();
+      const seenFiles = new Set();
+      const visited = new WeakSet();
+
+      function pushSource(src){
+        if(!src) return;
+        if(src.kind === 'file'){
+          const fid = src.fileId;
+          if(fid && !seenFiles.has(fid)){
+            seenFiles.add(fid);
+            pending.push({ fileId: fid, filename: src.filename || 'video.mp4' });
+          }
+          return;
+        }
+        const url = src.url;
+        if(!url || seenUrls.has(url)) return;
+        seenUrls.add(url);
+        const name = src.filename || (src.kind === 'data' ? guessWanFilenameFromDataUri(url) : guessWanFilenameFromUrl(url));
+        const entry = { url, filename: name };
+        if(typeof src.cleanup === 'function') entry.cleanup = src.cleanup;
+        ready.push(entry);
+      }
+
+      function walk(node){
+        if(node === null || node === undefined) return;
+        if(typeof node === 'string'){
+          const trimmed = node.trim();
+          if(!trimmed) return;
+          pushSource(wanItemToVideoSource(trimmed));
+          return;
+        }
+        if(typeof node === 'number' || typeof node === 'boolean') return;
+        if(Array.isArray(node)){
+          for(const item of node) walk(item);
+          return;
+        }
+        if(typeof node === 'object'){
+          if(visited.has(node)) return;
+          visited.add(node);
+          pushSource(wanItemToVideoSource(node));
+          for(const key of Object.keys(node)){
+            if(key === 'id' || key === 'status' || key === 'executionTime' || key === 'delayTime' || key === 'workerId') continue;
+            walk(node[key]);
+          }
+        }
+      }
+
+      walk(data);
+      return { ready, pending };
+    }
+
+    async function downloadWanFile(key, jobId, fileId, fallbackName = 'video.mp4'){
+      if(!fileId) return null;
+      const headers = { 'Authorization': `Bearer ${key}` };
+      const bases = new Set();
+      bases.add(`${WAN_FILE_ENDPOINT}/${fileId}`);
+      bases.add(`${WAN_FILES_ENDPOINT}/${fileId}`);
+      bases.add(`${WAN_BASE_ENDPOINT}/output/${fileId}`);
+      if(jobId){
+        bases.add(`${WAN_RUNS_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${WAN_RUNS_ENDPOINT}/${jobId}/file/${fileId}`);
+        bases.add(`${WAN_RUN_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${WAN_ENDPOINT}/${jobId}/output/${fileId}`);
+        bases.add(`${WAN_ENDPOINT}/${jobId}/file/${fileId}`);
+      }
+      const queries = ['', '?download=1', '?rp_download=1', '?rp_download=true'];
+      const variants = new Set();
+      for(const base of bases){
+        variants.add(base);
+        variants.add(`${base}/download`);
+      }
+      for(const base of variants){
+        for(const query of queries){
+          const target = `${base}${query}`;
+          try{
+            const resp = await fetch(target, { headers });
+            if(!resp.ok) continue;
+            let json = null;
+            try{
+              const text = await resp.clone().text();
+              if(text && text.trim().startsWith('{')){
+                json = JSON.parse(text);
+              }
+            } catch(err){ json = null; }
+            if(json){
+              const src = wanItemToVideoSource(json);
+              if(src && src.kind !== 'file'){
+                return { url: src.url, filename: src.filename || fallbackName, cleanup: src.cleanup };
+              }
+              continue;
+            }
+            const blob = await resp.blob();
+            const name = parseContentDispositionFilename(resp.headers.get('content-disposition')) || fallbackName;
+            const blobUrl = URL.createObjectURL(blob);
+            return { url: blobUrl, filename: name, cleanup: () => URL.revokeObjectURL(blobUrl) };
+          } catch(err){
+            console.debug('WAN download candidate failed', target, err);
+          }
+        }
+      }
       return null;
     }
 
@@ -1619,12 +3269,14 @@
     const sdxlMain = document.querySelector('body > main') || document.querySelector('main');
     const qwenMain = document.getElementById('qwen-main');
     const aceMain = document.getElementById('ace-main');
+    const wanMain = document.getElementById('wan-main');
     const tabbar = document.getElementById('tabbar');
     if (!sdxlMain || !tabbar) return;
     sdxlMain.id = 'sdxl-main';
     const sections = { sdxl: sdxlMain };
     if(qwenMain) sections.qwen = qwenMain;
     if(aceMain) sections.ace = aceMain;
+    if(wanMain) sections.wan = wanMain;
     tabbar.addEventListener('click', (e)=>{
       const btn = e.target.closest('.tab'); if(!btn) return;
       const tab = btn.dataset.tab;
