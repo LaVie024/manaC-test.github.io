@@ -1706,36 +1706,132 @@
       const remoteNoSlash = `comfyui/input/${filename}`;
       const base64 = info.base64;
       const mime = info.mime || 'image/png';
-      return {
-        body: {
-          filename: remotePath,
-          fileName: remotePath,
-          name: remotePath,
-          path: remotePath,
-          file_path: remotePath,
-          filePath: remotePath,
-          full_path: remotePath,
-          fullPath: remotePath,
-          relative_path: remoteNoSlash,
-          relativePath: remoteNoSlash,
-          target: remotePath,
-          folder: 'comfyui/input',
-          directory: 'comfyui/input',
-          data: base64,
-          fileData: base64,
-          content: base64,
-          contents: base64,
-          base64: base64,
-          encoding: 'base64',
-          mime,
-          mimetype: mime,
-          content_type: mime,
-          contentType: mime,
-          type: 'base64'
-        },
-        remotePath,
-        remotePathNoSlash: remoteNoSlash
+      const input = {
+        filename,
+        file_name: filename,
+        fileName: filename,
+        name: filename,
+        originalName: filename,
+        path: remotePath,
+        file_path: remotePath,
+        filePath: remotePath,
+        full_path: remotePath,
+        fullPath: remotePath,
+        relative_path: remoteNoSlash,
+        relativePath: remoteNoSlash,
+        target: remotePath,
+        destination: remotePath,
+        folder: 'comfyui/input',
+        directory: 'comfyui/input',
+        filepath: remotePath,
+        file: remotePath,
+        data: base64,
+        fileData: base64,
+        filedata: base64,
+        content: base64,
+        contents: base64,
+        base64,
+        encoding: 'base64',
+        mime,
+        mimetype: mime,
+        content_type: mime,
+        contentType: mime,
+        type: 'base64'
       };
+      return {
+        body: { input },
+        remotePath,
+        remotePathNoSlash: remoteNoSlash,
+        remoteName: filename
+      };
+    }
+
+    function parseWanUploadResult(data, fallbackName, fallbackPath){
+      const initialPath = typeof fallbackPath === 'string' && fallbackPath ? fallbackPath : null;
+      const result = {
+        shortName: fallbackName,
+        remotePath: initialPath,
+        remotePathNoSlash: initialPath ? (initialPath.startsWith('/') ? initialPath.slice(1) : initialPath) : null
+      };
+      if(!data) return result;
+
+      const visited = new WeakSet();
+      let found = false;
+
+      function applyPath(value){
+        if(typeof value !== 'string' || found) return false;
+        let trimmed = value.trim();
+        if(!trimmed || trimmed.length > 4096) return false;
+        if(trimmed.startsWith('data:')) return false;
+        const sanitized = trimmed.replace(/\/g, '/');
+        const lower = sanitized.toLowerCase();
+
+        const idx = lower.indexOf('comfyui/input/');
+        if(idx >= 0){
+          let rest = sanitized.slice(idx);
+          rest = rest.replace(/^\/+/g, '');
+          if(!rest.toLowerCase().startsWith('comfyui/input/')){
+            rest = `comfyui/input/${rest.replace(/^comfyui\/input\//i, '')}`;
+          }
+          rest = `/${rest.replace(/^\/+/g, '')}`;
+          rest = rest.replace(/\/{2,}/g, '/');
+          const base = rest.split('/').filter(Boolean).pop();
+          if(base){
+            result.shortName = base;
+            result.remotePath = rest;
+            result.remotePathNoSlash = rest.startsWith('/') ? rest.slice(1) : rest;
+            found = true;
+            return true;
+          }
+        }
+
+        const nameMatch = sanitized.match(/([A-Za-z0-9._-]+\.(?:png|jpe?g|webp|bmp|gif))/i);
+        if(nameMatch && nameMatch[1]){
+          const base = nameMatch[1];
+          result.shortName = base;
+          if(!result.remotePath){
+            const newPath = `/comfyui/input/${base}`;
+            result.remotePath = newPath;
+            result.remotePathNoSlash = newPath.slice(1);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      function walk(node){
+        if(found || node === null || node === undefined) return;
+        if(typeof node === 'string'){ applyPath(node); return; }
+        if(typeof node === 'number' || typeof node === 'boolean') return;
+        if(Array.isArray(node)){
+          for(const item of node){ if(found) break; walk(item); }
+          return;
+        }
+        if(typeof node === 'object'){
+          if(visited.has(node)) return;
+          visited.add(node);
+          for(const key of Object.keys(node)){
+            const val = node[key];
+            if(typeof val === 'string' && applyPath(val)) return;
+          }
+          for(const key of Object.keys(node)){
+            walk(node[key]);
+            if(found) return;
+          }
+        }
+      }
+
+      walk(data);
+
+      if(!result.remotePath && result.shortName){
+        const path = `/comfyui/input/${result.shortName}`;
+        result.remotePath = path;
+        result.remotePathNoSlash = path.slice(1);
+      } else if(result.remotePath && result.remotePathNoSlash === null){
+        result.remotePathNoSlash = result.remotePath.startsWith('/') ? result.remotePath.slice(1) : result.remotePath;
+      }
+
+      return result;
     }
 
     const qs = id => document.getElementById(id);
@@ -2140,52 +2236,69 @@
       const packet = createWanUploadPacket(filename, info);
       const headers = { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' };
       const bodyString = JSON.stringify(packet.body);
-      const endpoints = [
-        WAN_FILES_ENDPOINT,
-        WAN_FILE_ENDPOINT,
-        `${WAN_BASE_ENDPOINT}/upload`,
-        `${WAN_ENDPOINT}/files`,
-        `${WAN_ENDPOINT}/file`,
-        `${WAN_ENDPOINT}/upload`
-      ];
-      for(const endpoint of endpoints){
-        try{
-          const resp = await fetch(endpoint, { method: 'POST', headers, body: bodyString });
-          if(!resp.ok) continue;
-          let finalName = filename;
-          let finalPath = packet.remotePath;
-          try{
-            const text = await resp.text();
-            if(text){
-              const json = JSON.parse(text);
-              const pathCandidate = json.path || json.file_path || json.filePath || json.full_path || json.name || json.filename || json.key || json.location;
-              if(typeof pathCandidate === 'string' && pathCandidate.trim()){
-                finalPath = pathCandidate;
-                const base = pathCandidate.split(/[\\/]/).pop();
-                if(base) finalName = base;
-              }
-              const nameCandidate = json.filename || json.fileName || json.name || json.originalName || json.key;
-              if(typeof nameCandidate === 'string' && nameCandidate.trim()){
-                const base = nameCandidate.split(/[\\/]/).pop();
-                if(base) finalName = base;
-              }
+      let responseData = null;
+      try{
+        const resp = await fetch(WAN_RUN_ENDPOINT, { method: 'POST', headers, body: bodyString });
+        const text = await resp.text();
+        if(text){
+          try{ responseData = JSON.parse(text); }
+          catch(err){ responseData = null; }
+        }
+        if(!resp.ok){
+          let message = null;
+          const errSource = responseData && typeof responseData === 'object' ? responseData : null;
+          if(errSource){
+            const errObj = errSource.error && typeof errSource.error === 'object' ? errSource.error : null;
+            if(errObj){
+              message = errObj.message || errObj.msg || errObj.detail || null;
             }
-          } catch(err){ /* ignore */ }
-          return {
-            shortName: finalName,
-            remotePath: finalPath,
-            packet,
-            base64: info.base64,
-            mime: info.mime,
-            dataUrl: info.dataUrl,
-            endpoint,
-            requestBody: packet.body
-          };
-        } catch(err){
-          console.debug('WAN upload attempt failed', endpoint, err);
+            if(!message && typeof errSource.error === 'string') message = errSource.error;
+            if(!message) message = errSource.message || errSource.detail || null;
+          }
+          if(message && typeof message !== 'string') message = JSON.stringify(message);
+          throw new Error(message ? `HTTP ${resp.status}: ${message}` : `HTTP ${resp.status}`);
+        }
+      } catch(err){
+        throw new Error(`Upload request failed: ${err.message}`);
+      }
+
+      if(!responseData || typeof responseData !== 'object'){
+        throw new Error('Unexpected upload response');
+      }
+
+      const jobId = responseData.id || responseData.jobId || responseData.job_id || null;
+      let finalData = responseData;
+      if(responseData.status && responseData.status !== 'COMPLETED'){
+        if(jobId){
+          if(wanel.status) wanel.status.textContent = 'Waiting for upload job…';
+          try{
+            finalData = await pollStatus(key, jobId, null, WAN_STATUS_ENDPOINT);
+          } catch(err){
+            throw new Error(`Upload status error: ${err.message}`);
+          }
+        } else {
+          throw new Error(`Upload job status: ${responseData.status}`);
         }
       }
-      throw new Error('Image upload failed');
+
+      const parsed = parseWanUploadResult(finalData, filename, packet.remotePath);
+      const remotePath = parsed.remotePath || packet.remotePath;
+      const remotePathNoSlash = parsed.remotePathNoSlash || (remotePath ? (remotePath.startsWith('/') ? remotePath.slice(1) : remotePath) : null);
+      const shortName = parsed.shortName || filename;
+
+      return {
+        shortName,
+        remotePath,
+        remotePathNoSlash,
+        packet,
+        base64: info.base64,
+        mime: info.mime,
+        dataUrl: info.dataUrl,
+        endpoint: WAN_RUN_ENDPOINT,
+        requestBody: packet.body,
+        jobId,
+        response: finalData
+      };
     }
 
     function addWanVideo(entry){
@@ -2224,12 +2337,12 @@
 
     function makeWanCurl(uploadDetails, payload){
       const key = (wanel.apiKey && wanel.apiKey.value || '').trim() || '<api_key>';
-      const uploadEndpoint = uploadDetails && uploadDetails.endpoint ? uploadDetails.endpoint : WAN_FILES_ENDPOINT;
+      const uploadEndpoint = uploadDetails && uploadDetails.endpoint ? uploadDetails.endpoint : WAN_RUN_ENDPOINT;
       const uploadBody = uploadDetails && uploadDetails.requestBody ? uploadDetails.requestBody : null;
       const segments = [];
       if(uploadBody){
         segments.push([
-          '# Upload image',
+          '# Upload image to /comfyui/input',
           'curl -sX POST',
           `  -H "Authorization: Bearer ${key}"`,
           '  -H "Content-Type: application/json"',
