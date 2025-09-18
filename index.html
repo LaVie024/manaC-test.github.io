@@ -594,7 +594,7 @@
 
 <script id="qwen-template" type="application/json">
 {
-  "1": {"inputs":{"unet_name":"qwen_image_fp8_e4m3fn.safetensors","weight_dtype":"fp8_e4m3fn"},"class_type":"UNETLoader","_meta":{"title":"Load Diffusion Model"}},
+  "1": {"inputs":{"unet_name":"qwen_image__e4m3fn.safetensors","weight_dtype":"_e4m3fn"},"class_type":"UNETLoader","_meta":{"title":"Load Diffusion Model"}},
   "2": {"inputs":{"clip_name":"qwen_2.5_vl_7b_fp8_scaled.safetensors","type":"qwen_image","device":"default"},"class_type":"CLIPLoader","_meta":{"title":"Load CLIP"}},
   "3": {"inputs":{"vae_name":"qwen_image_vae.safetensors"},"class_type":"VAELoader","_meta":{"title":"Load VAE"}},
   "5": {"inputs":{"value":"%use_low_step%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Low Step"}},
@@ -617,14 +617,14 @@
 
 <script id="wan-template" type="application/json">
 {
-  "1":{"inputs":{"unet_name":"wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load High Noise"}},
-  "2":{"inputs":{"unet_name":"wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load Low Noise"}},
+  "1":{"inputs":{"unet_name":"wan2.2_i2v_high_noise_14B_fp16.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load High Noise"}},
+  "2":{"inputs":{"unet_name":"wan2.2_i2v_low_noise_14B_fp16.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load Low Noise"}},
   "3":{"inputs":{"lora_name":"wan2.2_lightx2v_high.safetensors","strength_model":1,"model":["10",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly HN"}},
   "4":{"inputs":{"lora_name":"wan2.2_lightx2v_low.safetensors","strength_model":1,"model":["13",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly LN"}},
   "5":{"inputs":{"lora_name":"NSFW-22-H-e8.safetensors","strength_model":1,"strength_clip":1,"model":["1",0],"clip":["8",0]},"class_type":"LoraLoader","_meta":{"title":"NSFW H"}},
   "6":{"inputs":{"value":"%prompt%"},"class_type":"PrimitiveStringMultiline","_meta":{"title":"Positive Prompt"}},
   "7":{"inputs":{"lora_name":"NSFW-22-L-e8.safetensors","strength_model":1,"strength_clip":1,"model":["2",0],"clip":["8",0]},"class_type":"LoraLoader","_meta":{"title":"NSFW L"}},
-  "8":{"inputs":{"clip_name":"umt5_xxl_fp8_e4m3fn_scaled.safetensors","type":"wan","device":"default"},"class_type":"CLIPLoader","_meta":{"title":"Load CLIP"}},
+  "8":{"inputs":{"clip_name":"umt5_xxl_fp16.safetensors","type":"wan","device":"default"},"class_type":"CLIPLoader","_meta":{"title":"Load CLIP"}},
   "9":{"inputs":{"vae_name":"wan_2.1_vae.safetensors"},"class_type":"VAELoader","_meta":{"title":"Load VAE"}},
   "10":{"inputs":{"boolean":["11",0],"on_true":["5",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"Is NSFW High"}},
   "11":{"inputs":{"value":"%is_nsfw%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Is NSFW"}},
