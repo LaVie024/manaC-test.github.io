@@ -55,6 +55,7 @@
     .shot{border:1px solid var(--border); background:#0c0e14; border-radius:10px; overflow:hidden}
     .shot header{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border)}
     .shot img{display:block; width:100%; height:auto}
+    .shot video{display:block; width:100%; height:auto; background:#000}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px}
     details pre{max-height:300px; overflow:auto; background:#0b0e14; border:1px solid var(--border); border-radius:8px; padding:12px}
     .error{color:var(--danger)}
@@ -86,6 +87,7 @@
   <button class="tab active" data-tab="sdxl">SDXL</button>
   <button class="tab" data-tab="qwen">Qwen-Image</button>
   <button class="tab" data-tab="ace">ACE-Step</button>
+  <button class="tab" data-tab="wan">Wan 2.2</button>
 </nav>
 
 <div id="apiKeyWrap" style="max-width:1100px; margin:8px auto 0; padding:0 16px; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; align-items:center;">
@@ -452,6 +454,118 @@
 </main>
 
 
+<main id="wan-main" class="hidden">
+  <section class="card" id="wan-controls">
+    <header class="body" style="border-bottom:1px solid var(--border)">
+      <strong>Wan 2.2 Controls</strong>
+      <div style="display:flex; gap:8px; align-items:center">
+        <div class="status" id="wan-timer">00:00.00</div>
+        <div class="status" id="wan-status">Idle</div>
+      </div>
+    </header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">
+        Uses the same RunPod API key field above; endpoint matches ACE-Step (video/mp4 output).
+      </div>
+
+      <label for="wan-img-url">Image URL</label>
+      <input id="wan-img-url" type="text" placeholder="https://..." autocomplete="off" spellcheck="false" />
+      <div class="hint">Direct link to the starting image.</div>
+
+      <label for="wan-prompt">Prompt</label>
+      <textarea id="wan-prompt" placeholder="Describe the motion..."></textarea>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-nsfw" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">NSFW prompt (adds safety prefix)</span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-lowstep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Low-step mode (steps 4–8, CFG forced to 1.0; hides negative)</span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-zero-negative" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Zero out negative prompt</span>
+      </div>
+
+      <div id="wan-negative-wrap">
+        <label for="wan-negative">Negative prompt</label>
+        <textarea id="wan-negative" placeholder="Things to avoid..."></textarea>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="wan-steps">Steps</label>
+          <input id="wan-steps" type="number" min="10" max="25" step="2" value="16" />
+          <div class="hint" id="wan-steps-hint">Even values from 10–24.</div>
+        </div>
+        <div id="wan-cfg-wrap">
+          <label for="wan-cfg">CFG</label>
+          <input id="wan-cfg" type="number" min="1.0" max="6.0" step="0.1" value="3.5" />
+          <div class="hint" id="wan-cfg-hint">Range 1.0–6.0 (ignored in low-step).</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="wan-sampler">Sampler</label>
+          <select id="wan-sampler"></select>
+        </div>
+        <div>
+          <label for="wan-scheduler">Scheduler</label>
+          <select id="wan-scheduler"></select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="wan-length">Video length</label>
+          <input id="wan-length" type="number" min="33" max="81" step="1" value="48" />
+          <div class="hint">Range 33–81 frames.</div>
+        </div>
+        <div>
+          <label for="wan-mp">Megapixels</label>
+          <input id="wan-mp" type="number" min="0.50" max="1.00" step="0.01" value="1.00" />
+          <div class="hint">Range 0.50–1.00 (two decimals).</div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-interpolate" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Interpolate frames with RIFE after generation</span>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="wan-run">Generate</button>
+        <button class="btn" id="wan-curl" type="button">Copy cURL</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="wan-reset" type="button">Reset to defaults</button>
+        <button class="btn danger" id="wan-clear" type="button">Clear outputs</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/e1hyz03h6llhvn/runsync</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (H.265 MP4)</strong></header>
+    <div class="gallery" id="wan-gallery"></div>
+    <div class="body">
+      <details>
+        <summary class="mono">Request payload (debug)</summary>
+        <pre class="mono" id="wan-debugReq"></pre>
+      </details>
+      <details>
+        <summary class="mono">Raw response (debug)</summary>
+        <pre class="mono" id="wan-debugResp"></pre>
+      </details>
+    </div>
+  </section>
+</main>
+
+
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
   <script id="workflow-template" type="application/json">{
@@ -494,6 +608,58 @@
   "20": {"inputs":{"boolean":["5",0],"on_true":["21",0],"on_false":["22",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
   "21": {"inputs":{"value":1},"class_type":"PrimitiveFloat","_meta":{"title":"LSCFG"}},
   "22": {"inputs":{"value":"%cfg%"},"class_type":"PrimitiveFloat","_meta":{"title":"Standard CFG"}}
+}
+</script>
+
+<script id="wan-template" type="application/json">
+{
+  "1": {"inputs":{"unet_name":"wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load High Noise"}},
+  "2": {"inputs":{"unet_name":"wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load Low Noise"}},
+  "3": {"inputs":{"lora_name":"wan2.2_lightx2v_high.safetensors","strength_model":1,"model":["10",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly HN"}},
+  "4": {"inputs":{"lora_name":"wan2.2_lightx2v_low.safetensors","strength_model":1,"model":["13",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly LN"}},
+  "5": {"inputs":{"lora_name":"NSFW-22-H-e8.safetensors","strength_model":1,"strength_clip":1,"model":["1",0],"clip":["8",0]},"class_type":"LoraLoader","_meta":{"title":"NSFW H"}},
+  "6": {"inputs":{"value":"%prompt%"},"class_type":"PrimitiveStringMultiline","_meta":{"title":"Positive Prompt"}},
+  "7": {"inputs":{"lora_name":"NSFW-22-L-e8.safetensors","strength_model":1,"strength_clip":1,"model":["2",0],"clip":["8",0]},"class_type":"LoraLoader","_meta":{"title":"NSFW L"}},
+  "8": {"inputs":{"clip_name":"t5xxl_fp8_e4m3fn_scaled.safetensors","type":"wan","device":"default"},"class_type":"CLIPLoader","_meta":{"title":"Load CLIP"}},
+  "9": {"inputs":{"vae_name":"wan_2.1_vae.safetensors"},"class_type":"VAELoader","_meta":{"title":"Load VAE"}},
+  "10": {"inputs":{"boolean":["11",0],"on_true":["5",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"Is NSFW High"}},
+  "11": {"inputs":{"value":"%is_nsfw%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Is NSFW"}},
+  "12": {"inputs":{"value":"%low_step%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Low Step"}},
+  "13": {"inputs":{"boolean":["11",0],"on_true":["7",0],"on_false":["2",0]},"class_type":"easy ifElse","_meta":{"title":"Is NSFW Low"}},
+  "14": {"inputs":{"boolean":["12",0],"on_true":["3",0],"on_false":["10",0]},"class_type":"easy ifElse","_meta":{"title":"Low Step High"}},
+  "15": {"inputs":{"boolean":["12",0],"on_true":["4",0],"on_false":["13",0]},"class_type":"easy ifElse","_meta":{"title":"Low Step Low"}},
+  "16": {"inputs":{"text":["71",0],"clip":["70",0]},"class_type":"CLIPTextEncode","_meta":{"title":"Main Prompt"}},
+  "18": {"inputs":{"string_a":"nsfwsks","string_b":["6",0],"delimiter":", "},"class_type":"StringConcatenate","_meta":{"title":"Concatenate"}},
+  "19": {"inputs":{"text":["18",0],"clip":["7",1]},"class_type":"CLIPTextEncode","_meta":{"title":"NSFW PL"}},
+  "20": {"inputs":{"value":"%zero_out_negative%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Zero Out Negative"}},
+  "21": {"inputs":{"text":"%negative_prompt%","clip":["8",0]},"class_type":"CLIPTextEncode","_meta":{"title":"Negative Prompt"}},
+  "23": {"inputs":{"boolean_a":["12",0],"boolean_b":["20",0]},"class_type":"Logic Comparison OR","_meta":{"title":"Logic Comparison OR"}},
+  "28": {"inputs":{"shift":5,"model":["14",0]},"class_type":"ModelSamplingSD3","_meta":{"title":"ModelSamplingSD3"}},
+  "29": {"inputs":{"shift":5,"model":["15",0]},"class_type":"ModelSamplingSD3","_meta":{"title":"ModelSamplingSD3"}},
+  "30": {"inputs":{"add_noise":"enable","noise_seed":0,"steps":["32",0],"cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","start_at_step":0,"end_at_step":["33",0],"return_with_leftover_noise":"disable","model":["28",0],"positive":["34",0],"negative":["34",1],"latent_image":["34",2]},"class_type":"KSamplerAdvanced","_meta":{"title":"KSampler High"}},
+  "31": {"inputs":{"add_noise":"disable","noise_seed":0,"steps":["32",0],"cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","start_at_step":["33",0],"end_at_step":["32",0],"return_with_leftover_noise":"disable","model":["29",0],"positive":["44",0],"negative":["34",1],"latent_image":["30",0]},"class_type":"KSamplerAdvanced","_meta":{"title":"KSampler Low"}},
+  "32": {"inputs":{"value":"%steps%"},"class_type":"PrimitiveInt","_meta":{"title":"Steps"}},
+  "33": {"inputs":{"a":["32",0],"b":2,"operation":"divide"},"class_type":"easy mathInt","_meta":{"title":"Math Int"}},
+  "34": {"inputs":{"width":["66",1],"height":["66",2],"length":["43",0],"batch_size":1,"positive":["16",0],"negative":["73",0],"vae":["9",0],"start_image":["66",0]},"class_type":"WanImageToVideo","_meta":{"title":"WanImageToVideo High"}},
+  "41": {"inputs":{"width":["66",1],"height":["66",2],"length":["43",0],"batch_size":1,"positive":["19",0],"negative":["73",0],"vae":["9",0],"start_image":["66",0]},"class_type":"WanImageToVideo","_meta":{"title":"WanImageToVideo Low"}},
+  "43": {"inputs":{"value":"%length%"},"class_type":"PrimitiveInt","_meta":{"title":"Length"}},
+  "44": {"inputs":{"boolean":["11",0],"on_true":["41",0],"on_false":["34",0]},"class_type":"easy ifElse","_meta":{"title":"Prompt Switch"}},
+  "45": {"inputs":{"samples":["31",0],"vae":["9",0]},"class_type":"VAEDecode","_meta":{"title":"VAE Decode"}},
+  "46": {"inputs":{"ckpt_name":"rife49.pth","clear_cache_after_n_frames":10,"multiplier":2,"fast_mode":true,"ensemble":true,"scale_factor":1,"frames":["45",0]},"class_type":"RIFE VFI","_meta":{"title":"RIFE VFI (recommend rife47 and rife49)"}},
+  "47": {"inputs":{"frame_rate":["50",0],"loop_count":0,"filename_prefix":"AnimateDiff","format":"video/h265-mp4","pix_fmt":"yuv420p10le","crf":20,"save_metadata":true,"pingpong":false,"save_output":true,"images":["49",0]},"class_type":"VHS_VideoCombine","_meta":{"title":"Video Combine 🎥🅥🅗🅢"}},
+  "49": {"inputs":{"boolean":["53",0],"on_true":["46",0],"on_false":["45",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
+  "50": {"inputs":{"boolean":["53",0],"on_true":["52",0],"on_false":["51",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
+  "51": {"inputs":{"value":16},"class_type":"PrimitiveInt","_meta":{"title":"Int"}},
+  "52": {"inputs":{"value":24},"class_type":"PrimitiveInt","_meta":{"title":"Int"}},
+  "53": {"inputs":{"value":"%interpolate%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Interpolate with RIFE"}},
+  "65": {"inputs":{"upscale_method":"lanczos","megapixels":"%mp%","image":["69",0]},"class_type":"ImageScaleToTotalPixels","_meta":{"title":"Scale Image to Total Pixels"}},
+  "66": {"inputs":{"width":["67",4],"height":["67",5],"upscale_method":"nearest-exact","keep_proportion":"stretch","pad_color":"0, 0, 0","crop_position":"center","divisible_by":16,"device":"gpu","image":["69",0]},"class_type":"ImageResizeKJv2","_meta":{"title":"Resize Image v2"}},
+  "67": {"inputs":{"image":["65",0]},"class_type":"Image Size to Number","_meta":{"title":"Image Size to Number"}},
+  "69": {"inputs":{"url":"%img_url%","cache":true},"class_type":"LoadImageByUrl //Browser","_meta":{"title":"Load Image By URL"}},
+  "70": {"inputs":{"boolean":["11",0],"on_true":["5",1],"on_false":["8",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
+  "71": {"inputs":{"boolean":["11",0],"on_true":["18",0],"on_false":["6",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
+  "72": {"inputs":{"conditioning":["16",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},
+  "73": {"inputs":{"boolean":["23",0],"on_true":["72",0],"on_false":["21",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}}
 }
 </script>
 
@@ -654,6 +820,8 @@
     const STATUS_ENDPOINT = ENDPOINT.replace('/runsync', '/status');
     const ACE_ENDPOINT = 'https://api.runpod.ai/v2/e1hyz03h6llhvn/runsync';
     const ACE_STATUS_ENDPOINT = ACE_ENDPOINT.replace('/runsync', '/status');
+    const WAN_ENDPOINT = ACE_ENDPOINT;
+    const WAN_STATUS_ENDPOINT = ACE_STATUS_ENDPOINT;
     const ACE_BASE_ENDPOINT = ACE_ENDPOINT.replace(/\/runsync$/, '');
     const ACE_FILE_ENDPOINT = `${ACE_BASE_ENDPOINT}/file`;
     const ACE_FILES_ENDPOINT = `${ACE_BASE_ENDPOINT}/files`;
@@ -1620,12 +1788,14 @@
     const sdxlMain = document.querySelector('body > main') || document.querySelector('main');
     const qwenMain = document.getElementById('qwen-main');
     const aceMain = document.getElementById('ace-main');
+    const wanMain = document.getElementById('wan-main');
     const tabbar = document.getElementById('tabbar');
     if (!sdxlMain || !tabbar) return;
     sdxlMain.id = 'sdxl-main';
     const sections = { sdxl: sdxlMain };
     if(qwenMain) sections.qwen = qwenMain;
     if(aceMain) sections.ace = aceMain;
+    if(wanMain) sections.wan = wanMain;
     tabbar.addEventListener('click', (e)=>{
       const btn = e.target.closest('.tab'); if(!btn) return;
       const tab = btn.dataset.tab;
@@ -1638,6 +1808,431 @@
       }
     });
   })();
+
+  // --- Wan 2.2 helpers ---
+  const w = id => document.getElementById(id);
+  const wanel = {
+    apiKey: document.getElementById('apiKey'),
+    prompt: w('wan-prompt'),
+    negative: w('wan-negative'), negWrap: w('wan-negative-wrap'),
+    nsfw: w('wan-nsfw'), lowStep: w('wan-lowstep'), zeroNegative: w('wan-zero-negative'),
+    steps: w('wan-steps'), stepsHint: w('wan-steps-hint'),
+    cfg: w('wan-cfg'), cfgHint: w('wan-cfg-hint'), cfgWrap: w('wan-cfg-wrap'),
+    sampler: w('wan-sampler'), scheduler: w('wan-scheduler'),
+    length: w('wan-length'), mp: w('wan-mp'),
+    imgUrl: w('wan-img-url'), interpolate: w('wan-interpolate'),
+    status: w('wan-status'), timer: w('wan-timer'), gallery: w('wan-gallery'),
+    runBtn: w('wan-run'), curlBtn: w('wan-curl'), resetBtn: w('wan-reset'), clearBtn: w('wan-clear'),
+    debugReq: w('wan-debugReq'), debugResp: w('wan-debugResp'),
+  };
+
+  const wantimer = makeTimer(wanel.timer);
+  const wanBlobCleanups = [];
+
+  populateSelect(wanel.sampler, SAMPLERS, 'euler');
+  populateSelect(wanel.scheduler, SCHEDULERS, 'simple');
+
+  function updateWanNegativeVisibility(){
+    if(!wanel.negWrap) return;
+    const show = !(wanel.lowStep && wanel.lowStep.checked) && !(wanel.zeroNegative && wanel.zeroNegative.checked);
+    wanel.negWrap.style.display = show ? '' : 'none';
+  }
+
+  function clampWanSteps(){
+    const low = !!(wanel.lowStep && wanel.lowStep.checked);
+    if(!wanel.steps) return low ? 6 : 16;
+    let raw = parseInt(wanel.steps.value || (low ? '6' : '16'), 10);
+    if(!Number.isFinite(raw)) raw = low ? 6 : 16;
+    const min = low ? 4 : 10;
+    const max = low ? 8 : 25;
+    raw = Math.max(min, Math.min(max, raw));
+    if(raw % 2 !== 0){
+      raw += 1;
+      if(raw > max) raw -= 2;
+    }
+    if(raw % 2 !== 0){
+      raw = min % 2 === 0 ? min : min + 1;
+    }
+    wanel.steps.value = raw;
+    return raw;
+  }
+
+  function clampWanLength(){
+    if(!wanel.length) return 48;
+    let raw = parseInt(wanel.length.value || '48', 10);
+    if(!Number.isFinite(raw)) raw = 48;
+    raw = Math.max(33, Math.min(81, raw));
+    wanel.length.value = raw;
+    return raw;
+  }
+
+  function clampWanMp(){
+    if(!wanel.mp) return 1.0;
+    let raw = parseFloat(wanel.mp.value || '1');
+    if(!Number.isFinite(raw)) raw = 1.0;
+    raw = Math.max(0.5, Math.min(1.0, raw));
+    raw = Math.round(raw * 100) / 100;
+    wanel.mp.value = raw.toFixed(2);
+    return raw;
+  }
+
+  function clampWanCfg(){
+    if(!wanel.cfg) return 3.5;
+    if(wanel.cfg.disabled) return 1.0;
+    let raw = parseFloat(wanel.cfg.value || '3.5');
+    if(!Number.isFinite(raw)) raw = 3.5;
+    raw = Math.max(1.0, Math.min(6.0, raw));
+    wanel.cfg.value = raw.toFixed(1);
+    return raw;
+  }
+
+  function updateWanLowStepState(){
+    const low = !!(wanel.lowStep && wanel.lowStep.checked);
+    if(wanel.steps){
+      wanel.steps.min = low ? 4 : 10;
+      wanel.steps.max = low ? 8 : 25;
+      wanel.steps.step = 2;
+    }
+    if(wanel.stepsHint) wanel.stepsHint.textContent = low ? 'Even values from 4–8 (low-step mode).' : 'Even values from 10–24.';
+    if(wanel.cfgHint) wanel.cfgHint.textContent = low ? 'CFG forced to 1.0 in low-step mode.' : 'Range 1.0–6.0 (ignored in low-step).';
+    if(wanel.cfg){
+      if(low){
+        if(!wanel.cfg.dataset.prevValue) wanel.cfg.dataset.prevValue = wanel.cfg.value || '3.5';
+        wanel.cfg.value = '1.0';
+        wanel.cfg.disabled = true;
+      } else {
+        wanel.cfg.disabled = false;
+        const prev = wanel.cfg.dataset.prevValue;
+        let restored = prev;
+        if(restored !== undefined){
+          const prevNum = parseFloat(restored);
+          restored = Number.isFinite(prevNum) ? Math.max(1.0, Math.min(6.0, prevNum)).toFixed(1) : '3.5';
+        } else {
+          const current = parseFloat(wanel.cfg.value || '3.5');
+          restored = Number.isFinite(current) ? Math.max(1.0, Math.min(6.0, current)).toFixed(1) : '3.5';
+        }
+        wanel.cfg.value = restored;
+        delete wanel.cfg.dataset.prevValue;
+      }
+    }
+    clampWanSteps();
+    if(!low) clampWanCfg();
+    updateWanNegativeVisibility();
+  }
+
+  function guessWanFilenameFromUrl(url){
+    try{
+      const u = new URL(url);
+      const parts = u.pathname.split('/').filter(Boolean);
+      const name = parts.pop();
+      if(name) return name;
+    }catch(err){
+      if(typeof url === 'string'){
+        const tail = url.split('/').filter(Boolean).pop();
+        if(tail) return tail;
+      }
+    }
+    return 'video.mp4';
+  }
+
+  function guessWanFilenameFromDataUri(uri){
+    const match = /^data:video\/([^;,]+)/i.exec(uri || '');
+    if(match && match[1]){
+      const ext = match[1].split('/').pop();
+      if(ext) return `video.${ext}`;
+    }
+    return 'video.mp4';
+  }
+
+  function extractWanVideos(data){
+    const ready = [];
+    const pending = [];
+    const seenUrls = new Set();
+    const seenFiles = new Set();
+    const visited = new WeakSet();
+    const videoPattern = /\.(?:mp4|webm|mov|m4v)(?:\?.*)?$/i;
+
+    function pushUrl(url, filename){
+      if(!url || seenUrls.has(url)) return;
+      seenUrls.add(url);
+      ready.push({ url, filename: filename || guessWanFilenameFromUrl(url) });
+    }
+
+    function pushFile(fileId, filename){
+      if(!fileId || seenFiles.has(fileId)) return;
+      seenFiles.add(fileId);
+      pending.push({ fileId, filename: filename || 'video.mp4' });
+    }
+
+    function walk(node){
+      if(node === null || node === undefined) return;
+      if(typeof node === 'string'){
+        const trimmed = node.trim();
+        if(!trimmed) return;
+        if(trimmed.startsWith('data:video/')){
+          pushUrl(trimmed, guessWanFilenameFromDataUri(trimmed));
+        } else if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || trimmed.includes('/file/') || trimmed.includes('/output/'))){
+          pushUrl(trimmed, guessWanFilenameFromUrl(trimmed));
+        }
+        return;
+      }
+      if(typeof node === 'number' || typeof node === 'boolean') return;
+      if(Array.isArray(node)){
+        for(const item of node) walk(item);
+        return;
+      }
+      if(typeof node !== 'object') return;
+      if(visited.has(node)) return;
+      visited.add(node);
+
+      const type = typeof node.type === 'string' ? node.type.toLowerCase() : '';
+      const mime = typeof node.mime === 'string' ? node.mime.toLowerCase() :
+        typeof node.content_type === 'string' ? node.content_type.toLowerCase() :
+        typeof node.contentType === 'string' ? node.contentType.toLowerCase() : '';
+      const filename = node.filename || node.file_name || node.name || null;
+
+      if(type === 'base64' && typeof node.data === 'string'){
+        const mimeType = mime && mime.startsWith('video/') ? mime : 'video/mp4';
+        pushUrl(`data:${mimeType};base64,${node.data}`, filename || guessWanFilenameFromDataUri(`data:${mimeType}`));
+      }
+
+      const dataField = node.data;
+      if(typeof dataField === 'string' || Array.isArray(dataField) || (dataField && typeof dataField === 'object')){
+        walk(dataField);
+      }
+
+      const urlFields = [node.url, node.path, node.location, node.signed_url, node.signedUrl, node.download_url, node.downloadUrl];
+      for(const value of urlFields){
+        if(typeof value !== 'string') continue;
+        const trimmed = value.trim();
+        if(!trimmed) continue;
+        if(trimmed.startsWith('data:video/')){
+          pushUrl(trimmed, filename || guessWanFilenameFromDataUri(trimmed));
+        } else if(/^https?:/i.test(trimmed) && (videoPattern.test(trimmed) || type.includes('video') || mime.startsWith('video'))){
+          pushUrl(trimmed, filename || guessWanFilenameFromUrl(trimmed));
+        }
+      }
+
+      if(node.output !== undefined) walk(node.output);
+      if(node.videos !== undefined) walk(node.videos);
+      if(node.images !== undefined) walk(node.images);
+      if(node.frames !== undefined) walk(node.frames);
+
+      let fileId = node.fileId || node.file_id || null;
+      const hasExplicitUrl = urlFields.some(v => typeof v === 'string' && v.trim().startsWith('http'));
+      if(!fileId && node.id && (type.includes('video') || mime.startsWith('video') || filename) && !hasExplicitUrl){
+        fileId = node.id;
+      }
+      if(fileId){
+        pushFile(fileId, filename || 'video.mp4');
+      }
+
+      for(const key of Object.keys(node)){
+        if(key === 'id' || key === 'status' || key === 'executionTime' || key === 'delayTime' || key === 'workerId') continue;
+        if(key === 'data' || key === 'output' || key === 'url' || key === 'path' || key === 'location' || key === 'signed_url' || key === 'signedUrl' || key === 'download_url' || key === 'downloadUrl') continue;
+        walk(node[key]);
+      }
+    }
+
+    walk(data);
+    return { ready, pending };
+  }
+
+  function addWanVideo(entry){
+    if(!entry || !entry.url || !wanel.gallery) return;
+    const name = entry.filename || guessWanFilenameFromUrl(entry.url);
+    const wrap = document.createElement('div');
+    wrap.className = 'shot';
+    const header = document.createElement('div'); header.className = 'header';
+    header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${entry.url}" download>Download</a></header>`;
+    wrap.appendChild(header);
+    const video = document.createElement('video');
+    video.controls = true;
+    video.preload = 'metadata';
+    video.src = entry.url;
+    video.playsInline = true;
+    video.style.width = '100%';
+    wrap.appendChild(video);
+    if(entry.cleanup && typeof entry.cleanup === 'function') wanBlobCleanups.push(entry.cleanup);
+    wanel.gallery.prepend(wrap);
+  }
+
+  function getWanTemplate(){
+    const el = document.getElementById('wan-template');
+    if(!el) throw new Error('Missing wan-template');
+    const raw = el.textContent.trim();
+    return JSON.parse(raw);
+  }
+
+  function buildWanPlaceholderMap(){
+    const lowStep = !!(wanel.lowStep && wanel.lowStep.checked);
+    const zeroNeg = !!(wanel.zeroNegative && wanel.zeroNegative.checked);
+    const cfgVal = clampWanCfg();
+    const stepsVal = clampWanSteps();
+    const mpVal = clampWanMp();
+    const lengthVal = clampWanLength();
+    updateWanNegativeVisibility();
+    const imgUrl = (wanel.imgUrl && wanel.imgUrl.value || '').trim();
+    return {
+      prompt: wanel.prompt ? wanel.prompt.value || '' : '',
+      negative_prompt: (!lowStep && !zeroNeg && wanel.negative) ? (wanel.negative.value || '') : '',
+      is_nsfw: !!(wanel.nsfw && wanel.nsfw.checked),
+      low_step: lowStep,
+      zero_out_negative: zeroNeg,
+      cfg: lowStep ? 1.0 : parseFloat(cfgVal.toFixed(1)),
+      sampler: wanel.sampler ? wanel.sampler.value : 'euler',
+      scheduler: wanel.scheduler ? wanel.scheduler.value : 'simple',
+      steps: stepsVal,
+      img_url: imgUrl,
+      mp: parseFloat(mpVal.toFixed(2)),
+      length: lengthVal,
+      interpolate: !!(wanel.interpolate && wanel.interpolate.checked)
+    };
+  }
+
+  function buildWanPayload(){
+    const template = getWanTemplate();
+    const map = buildWanPlaceholderMap();
+    const resolved = deepReplacePlaceholders(template, map);
+    return { input: { workflow: resolved } };
+  }
+
+  function makeWanCurl(payload){
+    const key = (wanel.apiKey && wanel.apiKey.value || '').trim() || '<api_key>';
+    return [
+      'curl -sX POST',
+      `  -H "Authorization: Bearer ${key}"`,
+      '  -H "Content-Type: application/json"',
+      `  -d '${JSON.stringify(payload)}'`,
+      `  ${WAN_ENDPOINT}`
+    ].join(' \n');
+  }
+
+  function setWanBusy(b){
+    if(wanel.runBtn) wanel.runBtn.disabled = b;
+    if(wanel.status) wanel.status.textContent = b ? 'Running…' : 'Idle';
+    if(wanel.timer){ b ? wantimer.start() : wantimer.stop(); }
+  }
+
+  async function runWan(){
+    const key = (wanel.apiKey && wanel.apiKey.value || '').trim();
+    if(!key){ if(wanel.status) wanel.status.textContent = 'API key required'; return; }
+    const imgUrl = (wanel.imgUrl && wanel.imgUrl.value || '').trim();
+    if(!imgUrl){ if(wanel.status) wanel.status.textContent = 'Image URL required'; return; }
+    try{
+      setWanBusy(true);
+      const payload = buildWanPayload();
+      if(wanel.debugReq) wanel.debugReq.textContent = JSON.stringify(payload, null, 2);
+      const resp = await fetch(WAN_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      });
+      let data = await resp.json();
+      if(wanel.debugResp) wanel.debugResp.textContent = JSON.stringify(data, null, 2);
+      let jobId = data && data.id ? data.id : null;
+
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if(data.status !== 'COMPLETED'){
+        if(data.id){
+          if(wanel.status) wanel.status.textContent = 'Waiting for job...';
+          data = await pollStatus(key, data.id, wanel.debugResp, WAN_STATUS_ENDPOINT);
+          if(data && data.id) jobId = data.id;
+        } else {
+          throw new Error(`Job status: ${data.status}`);
+        }
+      }
+
+      const { ready, pending } = extractWanVideos(data);
+      const clips = [...ready];
+      if(pending.length && wanel.status) wanel.status.textContent = 'Fetching video files…';
+      for(const file of pending){
+        const downloaded = await downloadAceFile(key, jobId, file.fileId, file.filename);
+        if(downloaded){
+          clips.push(downloaded);
+        }
+      }
+      if(!clips.length){
+        const workerStatus = data && data.output && data.output.status ? data.output.status : null;
+        throw new Error(workerStatus ? `No video returned (worker status: ${workerStatus})` : 'No video returned');
+      }
+
+      for(const item of clips){
+        addWanVideo(item);
+      }
+      if(wanel.status) wanel.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+    } catch(err){
+      console.error(err);
+      if(wanel.status) wanel.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+    } finally { setWanBusy(false); }
+  }
+
+  function resetWanDefaults(){
+    if(wanel.prompt) wanel.prompt.value = '';
+    if(wanel.negative) wanel.negative.value = '';
+    if(wanel.nsfw) wanel.nsfw.checked = false;
+    if(wanel.lowStep) wanel.lowStep.checked = false;
+    if(wanel.zeroNegative) wanel.zeroNegative.checked = false;
+    if(wanel.steps) wanel.steps.value = 16;
+    if(wanel.cfg){
+      wanel.cfg.disabled = false;
+      delete wanel.cfg.dataset.prevValue;
+      wanel.cfg.value = '3.5';
+    }
+    if(wanel.sampler) wanel.sampler.value = 'euler';
+    if(wanel.scheduler) wanel.scheduler.value = 'simple';
+    if(wanel.length) wanel.length.value = 48;
+    if(wanel.mp) wanel.mp.value = '1.00';
+    if(wanel.imgUrl) wanel.imgUrl.value = '';
+    if(wanel.interpolate) wanel.interpolate.checked = true;
+    updateWanLowStepState();
+    clampWanCfg();
+    clampWanMp();
+    clampWanLength();
+    updateWanNegativeVisibility();
+  }
+
+  if(wanel.lowStep) wanel.lowStep.addEventListener('change', updateWanLowStepState);
+  if(wanel.zeroNegative) wanel.zeroNegative.addEventListener('change', updateWanNegativeVisibility);
+  if(wanel.steps){
+    wanel.steps.addEventListener('change', clampWanSteps);
+    wanel.steps.addEventListener('blur', clampWanSteps);
+  }
+  if(wanel.cfg){
+    wanel.cfg.addEventListener('change', clampWanCfg);
+    wanel.cfg.addEventListener('blur', clampWanCfg);
+  }
+  if(wanel.mp){
+    wanel.mp.addEventListener('change', clampWanMp);
+    wanel.mp.addEventListener('blur', clampWanMp);
+  }
+  if(wanel.length){
+    wanel.length.addEventListener('change', clampWanLength);
+    wanel.length.addEventListener('blur', clampWanLength);
+  }
+
+  if(wanel.runBtn) wanel.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); runWan(); });
+  if(wanel.curlBtn) wanel.curlBtn.addEventListener('click', ()=>{
+    const payload = buildWanPayload();
+    const text = makeWanCurl(payload);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>{ if(wanel.status) wanel.status.textContent = 'cURL copied'; });
+    }
+  });
+  if(wanel.resetBtn) wanel.resetBtn.addEventListener('click', ()=>{
+    resetWanDefaults();
+    if(wanel.status) wanel.status.textContent = 'Reset to defaults';
+  });
+  if(wanel.clearBtn) wanel.clearBtn.addEventListener('click', ()=>{
+    if(wanel.gallery) wanel.gallery.innerHTML = '';
+    while(wanBlobCleanups.length){
+      const fn = wanBlobCleanups.pop();
+      try{ if(typeof fn === 'function') fn(); } catch(err){ console.debug('WAN cleanup error', err); }
+    }
+    if(wanel.status) wanel.status.textContent = 'Outputs cleared';
+  });
+
+  resetWanDefaults();
 
   // --- Qwen element helpers ---
   const q = id => document.getElementById(id);
