@@ -141,7 +141,18 @@
             <option>1280x768</option>
             <option>1344x768</option>
             <option>1408x704</option>
+            <option value="custom">Custom...</option>
           </select>
+          <div id="customDimsWrap" class="row" style="display:none; margin-top:10px">
+            <div>
+              <label for="customWidth">Width</label>
+              <input id="customWidth" type="number" min="512" max="2048" step="1" value="1024" />
+            </div>
+            <div>
+              <label for="customHeight">Height</label>
+              <input id="customHeight" type="number" min="512" max="2048" step="1" value="1024" />
+            </div>
+          </div>
         </div>
 
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
@@ -890,7 +901,7 @@
     const el = {
       apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
       negZero: qs('negZero'), negative: qs('negative'), negWrap: qs('negWrap'),
-      dims: qs('dims'), rmbg: qs('rmbg'),
+      dims: qs('dims'), customDimsWrap: qs('customDimsWrap'), customWidth: qs('customWidth'), customHeight: qs('customHeight'), rmbg: qs('rmbg'),
       seed: qs('seed'), seedHint: qs('seedHint'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
       sampler: qs('sampler'), scheduler: qs('scheduler'),
       hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
@@ -900,7 +911,35 @@
 
     const timer = makeTimer(el.timer);
 
+    const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
+    let lastPresetDims = el.dims && el.dims.value && el.dims.value !== 'custom' ? el.dims.value : '1024x1024';
+    let customDimsDirty = false;
+
     el.seedHintDefault = el.seedHint ? el.seedHint.textContent : '';
+
+    function updateCustomDimsVisibility(){
+      if(!el.customDimsWrap || !el.dims) return;
+      const isCustom = el.dims.value === 'custom';
+      el.customDimsWrap.style.display = isCustom ? '' : 'none';
+    }
+
+    if(el.customWidth) el.customWidth.addEventListener('input', () => { customDimsDirty = true; });
+    if(el.customHeight) el.customHeight.addEventListener('input', () => { customDimsDirty = true; });
+
+    if(el.dims) el.dims.addEventListener('change', () => {
+      if(el.dims.value === 'custom'){
+        if(!customDimsDirty && lastPresetDims){
+          const [presetW, presetH] = lastPresetDims.split('x').map(n => parseInt(n, 10));
+          if(el.customWidth && !Number.isNaN(presetW)) el.customWidth.value = clampNumber(presetW, 512, 2048);
+          if(el.customHeight && !Number.isNaN(presetH)) el.customHeight.value = clampNumber(presetH, 512, 2048);
+        }
+      } else {
+        lastPresetDims = el.dims.value;
+      }
+      updateCustomDimsVisibility();
+    });
+
+    updateCustomDimsVisibility();
 
     populateSelect(el.sampler, SAMPLERS, 'euler');
     populateSelect(el.scheduler, SCHEDULERS, 'normal');
@@ -944,6 +983,11 @@
       el.negative.value = '';
       el.negZero.checked = false; el.negWrap.style.display = '';
       el.dims.value = '1024x1024';
+      lastPresetDims = '1024x1024';
+      customDimsDirty = false;
+      if(el.customWidth) el.customWidth.value = 1024;
+      if(el.customHeight) el.customHeight.value = 1024;
+      updateCustomDimsVisibility();
       el.rmbg.checked = false;
       el.seed.value = -1; el.steps.value = 25; el.cfg.value = 5.0; el.sampler.value = 'euler'; el.scheduler.value = 'normal'; setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
       el.hiresToggle.checked = false; el.hiresWrap.style.display = 'none'; el.hiresScale.value = 1.50; el.hiresSteps.value = 20; el.hiresCfg.value = 5.0; el.hiresDenoise.value = 0.56; el.hiresSampler.value='euler'; el.hiresScheduler.value='normal'; setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
@@ -987,7 +1031,24 @@
     }
 
     function buildPlaceholderMap(){
-      const [w,h] = el.dims.value.split('x').map(n => parseInt(n,10));
+      let width = 1024;
+      let height = 1024;
+      if(el.dims){
+        if(el.dims.value === 'custom'){
+          if(el.customWidth){
+            const customWidth = parseInt(el.customWidth.value || '1024', 10);
+            if(!Number.isNaN(customWidth)) width = clampNumber(customWidth, 512, 2048);
+          }
+          if(el.customHeight){
+            const customHeight = parseInt(el.customHeight.value || '1024', 10);
+            if(!Number.isNaN(customHeight)) height = clampNumber(customHeight, 512, 2048);
+          }
+        } else if(el.dims.value){
+          const [parsedW, parsedH] = el.dims.value.split('x').map(n => parseInt(n, 10));
+          if(!Number.isNaN(parsedW)) width = parsedW;
+          if(!Number.isNaN(parsedH)) height = parsedH;
+        }
+      }
       const negZero = !!el.negZero.checked;
       const hiresOn = !!el.hiresToggle.checked;
       let seedVal = parseInt(el.seed.value || '-1', 10);
@@ -1003,7 +1064,7 @@
         prompt: el.prompt.value || '',
         neg_zero_out: negZero,
         negative_prompt: negZero ? '' : (el.negative.value || ''),
-        width: w, height: h,
+        width: width, height: height,
         remove_bg: !!el.rmbg.checked,
         seed: seedVal,
         steps: parseInt(el.steps.value || '25', 10),
@@ -1783,7 +1844,13 @@
 
     // Initialize
     (function(){
+      if(!el.dims) return;
       el.dims.value = '1024x1024';
+      lastPresetDims = '1024x1024';
+      customDimsDirty = false;
+      if(el.customWidth) el.customWidth.value = 1024;
+      if(el.customHeight) el.customHeight.value = 1024;
+      updateCustomDimsVisibility();
     })();
   </script>
 
