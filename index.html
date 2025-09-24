@@ -169,6 +169,12 @@
           </div>
         </div>
 
+        <div style="margin-top:10px">
+          <label for="batchSize">Batch size</label>
+          <input id="batchSize" type="range" min="1" max="4" step="1" value="1" />
+          <div class="hint" id="batchSizeHint">1 image per run</div>
+        </div>
+
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
           <label class="switch"><input id="rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
           <span class="hint">Remove background (BiRefNet)</span>
@@ -620,7 +626,7 @@
 
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
-  <script id="workflow-template" type="application/json">{"1":{"inputs":{"ckpt_name":"%model%"},"class_type":"CheckpointLoaderSimple","_meta":{"title":"Load Checkpoint"}},"2":{"inputs":{"text":"%prompt%","clip":["15",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Main)"}},"3":{"inputs":{"text":"%rouwei_prefix%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Rouwei)"}},"4":{"inputs":{"conditioning1":["3",0],"conditioning2":["2",0]},"class_type":"ImpactConcatConditionings","_meta":{"title":"Concat Conditionings"}},"5":{"inputs":{"boolean":["6",0],"on_true":["4",0],"on_false":["2",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},"6":{"inputs":{"string":"%model%","substring":"rouwei","case_sensitive":true},"class_type":"StringContains","_meta":{"title":"Contains"}},"7":{"inputs":{"conditioning":["5",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},"8":{"inputs":{"boolean":"%neg_zero_out%","on_true":["7",0],"on_false":["9",0]},"class_type":"easy ifElse","_meta":{"title":"Zero Out Negative"}},"9":{"inputs":{"text":"%negative_prompt%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Negative Prompt"}},"10":{"inputs":{"seed":"%seed%","steps":"%steps%","cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","denoise":1,"model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["16",0]},"class_type":"KSampler","_meta":{"title":"KSampler (initial)"}},"11":{"inputs":{"model":["15",0]},"class_type":"Mahiro","_meta":{"title":"Mahiro"}},"12":{"inputs":{"boolean":"%enable_mahiro%","on_true":["11",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"Enable Mahiro"}},"13":{"inputs":{"eta":1,"norm_threshold":20,"momentum":0,"model":["12",0]},"class_type":"APG","_meta":{"title":"Adaptive Projected Guidance"}},"14":{"inputs":{"boolean":"%enable_apg%","on_true":["13",0],"on_false":["12",0]},"class_type":"easy ifElse","_meta":{"title":"Enable APG"}},"15":{"inputs":{"PowerLoraLoaderHeaderWidget":{"type":"PowerLoraLoaderHeaderWidget"},"lora_1":{"on":"%lora1_toggle%","lora":"%lora1_name%","strength":"%lora1_strength%"},"lora_2":{"on":"%lora2_toggle%","lora":"%lora2_name%","strength":"%lora2_strength%"},"lora_3":{"on":"%lora3_toggle%","lora":"%lora3_name%","strength":"%lora3_strength%"},"\u2795 Add Lora":"","model":["1",0],"clip":["1",1]},"class_type":"Power Lora Loader (rgthree)","_meta":{"title":"Power Lora Loader (rgthree)"}},"16":{"inputs":{"width":"%width%","height":"%height%","batch_size":1},"class_type":"EmptyLatentImage","_meta":{"title":"Empty Latent Image"}},"17":{"inputs":{"upscale_method":"nearest-exact","scale_by":"%hiresfix_scale_by%","samples":["10",0]},"class_type":"LatentUpscaleBy","_meta":{"title":"Upscale Latent By"}},"18":{"inputs":{"seed":"%hiresfix_seed%","steps":"%hiresfix_steps%","cfg":"%hiresfix_cfg%","sampler_name":"%hiresfix_sampler%","scheduler":"%hiresfix_scheduler%","denoise":"%hiresfix_denoise%","model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["17",0]},"class_type":"KSampler","_meta":{"title":"KSampler (hiresfix)"}},"19":{"inputs":{"samples":["23",0],"vae":["1",2]},"class_type":"VAEDecode","_meta":{"title":"VAE Decode"}},"20":{"inputs":{"filename_prefix":"ComfyUI","filename_keys":"","foldername_prefix":"","foldername_keys":"","delimiter":"-","save_job_data":"disabled","job_data_per_image":false,"job_custom_text":"","save_metadata":false,"counter_digits":4,"counter_position":"last","one_counter_per_folder":true,"image_preview":true,"output_ext":".avif","quality":99,"images":["22",0]},"class_type":"SaveImageExtended","_meta":{"title":"\ud83d\udcbe Save Image Extended"}},"21":{"inputs":{"model":"BiRefNet_dynamic","mask_blur":0,"mask_offset":0,"invert_output":false,"refine_foreground":false,"background":"Alpha","background_color":"#000000","image":["19",0]},"class_type":"BiRefNetRMBG","_meta":{"title":"BiRefNet Remove Background (RMBG)"}},"22":{"inputs":{"boolean":"%remove_bg%","on_true":["21",0],"on_false":["19",0]},"class_type":"easy ifElse","_meta":{"title":"Remove Background"}},"23":{"inputs":{"boolean":"%use_hiresfix%","on_true":["18",0],"on_false":["10",0]},"class_type":"easy ifElse","_meta":{"title":"HiresFix Enable"}}}</script>
+  <script id="workflow-template" type="application/json">{"1":{"inputs":{"ckpt_name":"%model%"},"class_type":"CheckpointLoaderSimple","_meta":{"title":"Load Checkpoint"}},"2":{"inputs":{"text":"%prompt%","clip":["15",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Main)"}},"3":{"inputs":{"text":"%rouwei_prefix%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Rouwei)"}},"4":{"inputs":{"conditioning1":["3",0],"conditioning2":["2",0]},"class_type":"ImpactConcatConditionings","_meta":{"title":"Concat Conditionings"}},"5":{"inputs":{"boolean":["6",0],"on_true":["4",0],"on_false":["2",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},"6":{"inputs":{"string":"%model%","substring":"rouwei","case_sensitive":true},"class_type":"StringContains","_meta":{"title":"Contains"}},"7":{"inputs":{"conditioning":["5",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},"8":{"inputs":{"boolean":"%neg_zero_out%","on_true":["7",0],"on_false":["9",0]},"class_type":"easy ifElse","_meta":{"title":"Zero Out Negative"}},"9":{"inputs":{"text":"%negative_prompt%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Negative Prompt"}},"10":{"inputs":{"seed":"%seed%","steps":"%steps%","cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","denoise":1,"model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["16",0]},"class_type":"KSampler","_meta":{"title":"KSampler (initial)"}},"11":{"inputs":{"model":["15",0]},"class_type":"Mahiro","_meta":{"title":"Mahiro"}},"12":{"inputs":{"boolean":"%enable_mahiro%","on_true":["11",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"Enable Mahiro"}},"13":{"inputs":{"eta":1,"norm_threshold":20,"momentum":0,"model":["12",0]},"class_type":"APG","_meta":{"title":"Adaptive Projected Guidance"}},"14":{"inputs":{"boolean":"%enable_apg%","on_true":["13",0],"on_false":["12",0]},"class_type":"easy ifElse","_meta":{"title":"Enable APG"}},"15":{"inputs":{"PowerLoraLoaderHeaderWidget":{"type":"PowerLoraLoaderHeaderWidget"},"lora_1":{"on":"%lora1_toggle%","lora":"%lora1_name%","strength":"%lora1_strength%"},"lora_2":{"on":"%lora2_toggle%","lora":"%lora2_name%","strength":"%lora2_strength%"},"lora_3":{"on":"%lora3_toggle%","lora":"%lora3_name%","strength":"%lora3_strength%"},"\u2795 Add Lora":"","model":["1",0],"clip":["1",1]},"class_type":"Power Lora Loader (rgthree)","_meta":{"title":"Power Lora Loader (rgthree)"}},"16":{"inputs":{"width":"%width%","height":"%height%","batch_size":"%batch_size%"},"class_type":"EmptyLatentImage","_meta":{"title":"Empty Latent Image"}},"17":{"inputs":{"upscale_method":"nearest-exact","scale_by":"%hiresfix_scale_by%","samples":["10",0]},"class_type":"LatentUpscaleBy","_meta":{"title":"Upscale Latent By"}},"18":{"inputs":{"seed":"%hiresfix_seed%","steps":"%hiresfix_steps%","cfg":"%hiresfix_cfg%","sampler_name":"%hiresfix_sampler%","scheduler":"%hiresfix_scheduler%","denoise":"%hiresfix_denoise%","model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["17",0]},"class_type":"KSampler","_meta":{"title":"KSampler (hiresfix)"}},"19":{"inputs":{"samples":["23",0],"vae":["1",2]},"class_type":"VAEDecode","_meta":{"title":"VAE Decode"}},"20":{"inputs":{"filename_prefix":"ComfyUI","filename_keys":"","foldername_prefix":"","foldername_keys":"","delimiter":"-","save_job_data":"disabled","job_data_per_image":false,"job_custom_text":"","save_metadata":false,"counter_digits":4,"counter_position":"last","one_counter_per_folder":true,"image_preview":true,"output_ext":".avif","quality":99,"images":["22",0]},"class_type":"SaveImageExtended","_meta":{"title":"\ud83d\udcbe Save Image Extended"}},"21":{"inputs":{"model":"BiRefNet_dynamic","mask_blur":0,"mask_offset":0,"invert_output":false,"refine_foreground":false,"background":"Alpha","background_color":"#000000","image":["19",0]},"class_type":"BiRefNetRMBG","_meta":{"title":"BiRefNet Remove Background (RMBG)"}},"22":{"inputs":{"boolean":"%remove_bg%","on_true":["21",0],"on_false":["19",0]},"class_type":"easy ifElse","_meta":{"title":"Remove Background"}},"23":{"inputs":{"boolean":"%use_hiresfix%","on_true":["18",0],"on_false":["10",0]},"class_type":"easy ifElse","_meta":{"title":"HiresFix Enable"}}}</script>
 
 <script id="qwen-template" type="application/json">
 {
@@ -927,7 +933,9 @@
       apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
       negZero: qs('negZero'), negZeroRow: qs('negZeroRow'), negative: qs('negative'), negWrap: qs('negWrap'),
       rouweiWrap: qs('rouweiWrap'), rouweiPrefix: qs('rouweiPrefix'),
-      dims: qs('dims'), customDimsWrap: qs('customDimsWrap'), customWidth: qs('customWidth'), customHeight: qs('customHeight'), rmbg: qs('rmbg'),
+      dims: qs('dims'), customDimsWrap: qs('customDimsWrap'), customWidth: qs('customWidth'), customHeight: qs('customHeight'),
+      batchSize: qs('batchSize'), batchSizeHint: qs('batchSizeHint'),
+      rmbg: qs('rmbg'),
       mahiroToggle: qs('mahiroToggle'), apgToggle: qs('apgToggle'),
       addLoraBtn: qs('addLoraBtn'), loraList: qs('loraList'),
       seed: qs('seed'), seedHint: qs('seedHint'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
@@ -1107,8 +1115,22 @@
       el.customDimsWrap.style.display = isCustom ? '' : 'none';
     }
 
+    function updateBatchSizeDisplay(){
+      if(!el.batchSize) return 1;
+      let raw = parseInt(el.batchSize.value || '1', 10);
+      if(!Number.isFinite(raw)) raw = 1;
+      raw = clampNumber(raw, 1, 4);
+      el.batchSize.value = raw;
+      if(el.batchSizeHint){
+        el.batchSizeHint.textContent = `${raw} image${raw === 1 ? '' : 's'} per run`;
+      }
+      return raw;
+    }
+
     if(el.customWidth) el.customWidth.addEventListener('input', () => { customDimsDirty = true; });
     if(el.customHeight) el.customHeight.addEventListener('input', () => { customDimsDirty = true; });
+
+    if(el.batchSize) el.batchSize.addEventListener('input', updateBatchSizeDisplay);
 
     if(el.dims) el.dims.addEventListener('change', () => {
       if(el.dims.value === 'custom'){
@@ -1124,6 +1146,7 @@
     });
 
     updateCustomDimsVisibility();
+    updateBatchSizeDisplay();
 
     populateSelect(el.sampler, SAMPLERS, 'euler');
     populateSelect(el.scheduler, SCHEDULERS, 'normal');
@@ -1179,6 +1202,7 @@
       if(el.customWidth) el.customWidth.value = 1024;
       if(el.customHeight) el.customHeight.value = 1024;
       updateCustomDimsVisibility();
+      if(el.batchSize){ el.batchSize.value = 1; updateBatchSizeDisplay(); }
       if(el.rmbg) el.rmbg.checked = false;
       if(el.mahiroToggle) el.mahiroToggle.checked = true;
       if(el.apgToggle) el.apgToggle.checked = true;
@@ -1261,6 +1285,7 @@
           if(!Number.isNaN(parsedH)) height = parsedH;
         }
       }
+      const batchSizeVal = updateBatchSizeDisplay();
       const rouweiSelected = isRouweiSelected();
       const negZeroToggle = el.negZero ? !!el.negZero.checked : false;
       const negZero = rouweiSelected ? false : negZeroToggle;
@@ -1307,6 +1332,7 @@
         neg_zero_out: negZero,
         negative_prompt: negZero ? '' : negativeText,
         width: width, height: height,
+        batch_size: batchSizeVal,
         remove_bg: !!(el.rmbg && el.rmbg.checked),
         seed: seedVal,
         steps: stepsVal,
