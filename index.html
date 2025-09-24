@@ -314,7 +314,7 @@
 
       <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
         <label class="switch"><input id="q-lowstep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-        <span class="hint">Use low-step (forces steps=8; hides steps & negative)</span>
+        <span class="hint">Use low-step (toggle between 4 and 8 steps; hides negative)</span>
       </div>
 
       <div id="q-negwrap">
@@ -344,6 +344,10 @@
         <div id="q-steps-wrap">
           <label for="q-steps">Steps</label>
           <input id="q-steps" type="number" min="10" max="30" step="1" value="20" />
+          <div id="q-steps-toggle" style="display:none; margin-top:8px; align-items:center; gap:8px;">
+            <label class="switch" style="margin:0"><input id="q-steps-toggle-input" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint" id="q-steps-toggle-hint">8 steps</span>
+          </div>
         </div>
         <div>
           <label for="q-cfg">CFG</label>
@@ -629,7 +633,7 @@
   "8": {"inputs":{"width":"%width%","height":"%height%","batch_size":1},"class_type":"EmptySD3LatentImage","_meta":{"title":"EmptySD3LatentImage"}},
   "9": {"inputs":{"seed":"%seed%","steps":"%steps%","cfg":["20",0],"sampler_name":"%sampler%","scheduler":"%scheduler%","denoise":1,"model":["10",0],"positive":["6",0],"negative":["14",0],"latent_image":["8",0]},"class_type":"KSampler","_meta":{"title":"KSampler"}},
   "10": {"inputs":{"shift":"%model_shift%","model":["12",0]},"class_type":"ModelSamplingAuraFlow","_meta":{"title":"ModelSamplingAuraFlow"}},
-  "11": {"inputs":{"lora_name":"Qwen-Image-Lightning-8steps-V2.0.safetensors","strength_model":1,"model":["1",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly"}},
+  "11": {"inputs":{"lora_name":"%low_step_lora%","strength_model":1,"model":["1",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly"}},
   "12": {"inputs":{"boolean":["5",0],"on_true":["11",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
   "13": {"inputs":{"conditioning":["6",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},
   "14": {"inputs":{"boolean":["5",0],"on_true":["13",0],"on_false":["7",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
@@ -2583,6 +2587,7 @@
     negative: q('q-negative'), negwrap: q('q-negwrap'),
     width: q('q-width'), height: q('q-height'),
     seed: q('q-seed'), seedHint: q('q-seedHint'), steps: q('q-steps'), stepsWrap: q('q-steps-wrap'),
+    stepsToggleWrap: q('q-steps-toggle'), stepsToggle: q('q-steps-toggle-input'), stepsToggleHint: q('q-steps-toggle-hint'),
     cfg: q('q-cfg'), sampler: q('q-sampler'), scheduler: q('q-scheduler'),
     modelShift: q('q-model-shift'),
     runBtn: q('q-run'), curlBtn: q('q-curl'), resetBtn: q('q-reset'), clearBtn: q('q-clear'),
@@ -2596,17 +2601,29 @@
   populateSelect(qel.sampler, SAMPLERS, 'euler');
   populateSelect(qel.scheduler, SCHEDULERS, 'normal');
 
-  // Low-step toggle behavior
-  qel.lowstep.addEventListener('change', ()=>{
-    const on = qel.lowstep.checked;
-    qel.negwrap.style.display = on ? 'none' : '';
-    qel.stepsWrap.style.display = on ? 'none' : '';
-    if(on){ qel.steps.value = 8; }
-  });
+  function updateLowstepStepsHint(){
+    if(!qel.stepsToggleHint) return;
+    const useEight = !!(qel.stepsToggle && qel.stepsToggle.checked);
+    qel.stepsToggleHint.textContent = useEight ? '8 steps' : '4 steps';
+  }
+
+  function updateLowstepUI(){
+    const on = !!(qel.lowstep && qel.lowstep.checked);
+    if(qel.negwrap) qel.negwrap.style.display = on ? 'none' : '';
+    if(qel.steps) qel.steps.style.display = on ? 'none' : '';
+    if(qel.stepsToggleWrap) qel.stepsToggleWrap.style.display = on ? 'flex' : 'none';
+    updateLowstepStepsHint();
+  }
+
+  if(qel.lowstep) qel.lowstep.addEventListener('change', updateLowstepUI);
+  if(qel.stepsToggle) qel.stepsToggle.addEventListener('change', updateLowstepStepsHint);
+  updateLowstepUI();
 
   qel.resetBtn.addEventListener('click', ()=>{
     qel.prompt.value = '';
-    qel.lowstep.checked = false; qel.negwrap.style.display=''; qel.stepsWrap.style.display='';
+    qel.lowstep.checked = false;
+    if(qel.stepsToggle) qel.stepsToggle.checked = true;
+    updateLowstepUI();
     qel.negative.value = '';
     qel.width.value = 1024; qel.height.value = 1024;
     qel.seed.value = -1; qel.steps.value = 20; qel.cfg.value = 2.0;
@@ -2626,8 +2643,21 @@
     } else if(qel.seedHint){
       qel.seedHint.textContent = qel.seedHintDefault;
     }
-    const low = !!qel.lowstep.checked;
-    const steps = low ? 8 : Math.max(10, Math.min(30, parseInt(qel.steps.value || '20',10)));
+    const low = !!(qel.lowstep && qel.lowstep.checked);
+    const lowToggleEight = !!(qel.stepsToggle && qel.stepsToggle.checked);
+    let steps;
+    let lowStepLora = 'Qwen-Image-Lightning-8steps-V2.0.safetensors';
+    if(low){
+      if(lowToggleEight){
+        steps = 8;
+        lowStepLora = 'Qwen-Image-Lightning-8steps-V2.0.safetensors';
+      } else {
+        steps = 4;
+        lowStepLora = 'Qwen-Image-Lightning-4steps-V2.0.safetensors';
+      }
+    } else {
+      steps = Math.max(10, Math.min(30, parseInt(qel.steps.value || '20',10)));
+    }
     const cfg = Math.max(1.0, Math.min(3.5, parseFloat((qel.cfg.value || '2.0').toString())));
     const w = Math.max(64, Math.min(1920, parseInt(qel.width.value || '1024',10)));
     const h = Math.max(64, Math.min(1920, parseInt(qel.height.value || '1024',10)));
@@ -2641,7 +2671,8 @@
       cfg: parseFloat(cfg.toFixed(1)),
       sampler: qel.sampler.value,
       scheduler: qel.scheduler.value,
-      model_shift: shift
+      model_shift: shift,
+      low_step_lora: lowStepLora
     };
   }
 
