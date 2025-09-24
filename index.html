@@ -24,6 +24,13 @@
     .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
     .row-3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px}
     .row-4{display:grid; grid-template-columns: repeat(4,1fr); gap:10px}
+    .lora-section{margin-top:16px}
+    .lora-entry{border:1px solid var(--border); background:#0c0e14; border-radius:10px; padding:10px; margin-top:10px}
+    .lora-entry-top{display:flex; align-items:center; justify-content:space-between; gap:8px}
+    .lora-toggle{display:flex; align-items:center; gap:8px}
+    .lora-remove{background:none; border:0; color:var(--muted); font-size:20px; line-height:1; cursor:pointer; padding:4px; border-radius:6px}
+    .lora-remove:hover{color:var(--danger); background:rgba(255,89,100,0.1)}
+    .lora-entry label:first-of-type{margin-top:0}
 
     label{display:block; margin:10px 0 4px; font-weight:600; font-size:12px; color:#cdd6eb}
     input[type="text"], input[type="number"], select, textarea{
@@ -112,13 +119,14 @@
           <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
           <option value="ΣIH-1.5.safetensors">ΣIH-1.5.safetensors</option>
           <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
-          <option value="oneObsession_v15Noobai.safetensors">oneObsession_v15Noobai.safetensors</option>
+          <option value="oneObsession_v16Noobai.safetensors">oneObsession_v16Noobai.safetensors</option>
+          <option value="rouwei_v080Vpred.safetensors">rouwei_v080Vpred.safetensors</option>
         </select>
 
         <label for="prompt">Prompt</label>
         <textarea id="prompt" placeholder="Describe the image..."></textarea>
 
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <div id="negZeroRow" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
           <label class="switch"><input id="negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
           <span class="hint">Zero out negative prompt</span>
         </div>
@@ -126,6 +134,12 @@
         <div id="negWrap">
           <label for="negative">Negative prompt</label>
           <textarea id="negative" placeholder="Things to avoid..."></textarea>
+        </div>
+
+        <div id="rouweiWrap" style="display:none; margin-top:10px">
+          <label for="rouweiPrefix">Rouwei prefix</label>
+          <textarea id="rouweiPrefix" placeholder="Required artist and quality tags for rouwei..."></textarea>
+          <div class="hint">Required when using rouwei_v080Vpred.safetensors.</div>
         </div>
 
         <div>
@@ -158,6 +172,24 @@
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
           <label class="switch"><input id="rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
           <span class="hint">Remove background (BiRefNet)</span>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="mahiroToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Enable Mahiro</span>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="apgToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Enable Adaptive Projected Guidance</span>
+        </div>
+
+        <div class="lora-section">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
+            <strong>LoRA</strong>
+            <button class="btn" id="addLoraBtn" type="button">Add LoRA</button>
+          </div>
+          <div id="loraList"></div>
         </div>
 
         <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
@@ -584,25 +616,7 @@
 
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
-  <script id="workflow-template" type="application/json">{
-  "3": {"inputs": {"seed": "%seed%", "steps": "%steps%", "cfg": "%cfg%", "sampler_name": "%sampler%", "scheduler": "%scheduler%", "denoise": 1, "model": ["13", 0], "positive": ["6", 0], "negative": ["11", 0], "latent_image": ["5", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler (Initial)"}},
-  "4": {"inputs": {"ckpt_name": "%model%"}, "class_type": "CheckpointLoaderSimple", "_meta": {"title": "Load Checkpoint"}},
-  "5": {"inputs": {"width": "%width%", "height": "%height%", "batch_size": 1}, "class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent Image"}},
-  "6": {"inputs": {"text": "%prompt%", "clip": ["4", 1]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Prompt)"}},
-  "8": {"inputs": {"samples": ["15", 0], "vae": ["4", 2]}, "class_type": "VAEDecode", "_meta": {"title": "VAE Decode"}},
-  "9": {"inputs": {"filename_prefix": "ComfyUI", "filename_keys": "", "foldername_prefix": "", "foldername_keys": "", "delimiter": "-", "save_job_data": "disabled", "job_data_per_image": false, "job_custom_text": "", "save_metadata": false, "counter_digits": 4, "counter_position": "last", "one_counter_per_folder": true, "image_preview": true, "output_ext": ".avif", "quality": 99, "images": ["18", 0]}, "class_type": "SaveImageExtended", "_meta": {"title": "\ud83d\udcbe Save Image Extended"}},
-  "10": {"inputs": {"conditioning": ["6", 0]}, "class_type": "ConditioningZeroOut", "_meta": {"title": "ConditioningZeroOut"}},
-  "11": {"inputs": {"boolean": "%neg_zero_out%", "on_true": ["10", 0], "on_false": ["12", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Zero Out Negative"}},
-  "12": {"inputs": {"text": "%negative_prompt%", "clip": ["4", 1]}, "class_type": "CLIPTextEncode", "_meta": {"title": "CLIP Text Encode (Prompt)"}},
-  "13": {"inputs": {"model": ["14", 0], "eta": 1, "norm_threshold": 20, "momentum": 0}, "class_type": "APG", "_meta": {"title": "Adaptive Projected Guidance"}},
-  "14": {"inputs": {"model": ["4", 0]}, "class_type": "Mahiro", "_meta": {"title": "Mahiro"}},
-  "15": {"inputs": {"boolean": "%use_hiresfix%", "on_true": ["17", 0], "on_false": ["3", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Use HiresFix"}},
-  "16": {"inputs": {"upscale_method": "nearest-exact", "scale_by": "%hiresfix_scale_by%", "samples": ["3", 0]}, "class_type": "LatentUpscaleBy", "_meta": {"title": "Upscale Latent By"}},
-  "17": {"inputs": {"seed": "%hiresfix_seed%", "steps": "%hiresfix_steps%", "cfg": "%hiresfix_cfg%", "sampler_name": "%hiresfix_sampler%", "scheduler": "%hiresfix_scheduler%", "denoise": "%hiresfix_denoise%", "model": ["13", 0], "positive": ["6", 0], "negative": ["11", 0], "latent_image": ["16", 0]}, "class_type": "KSampler", "_meta": {"title": "KSampler"}},
-  "18": {"inputs": {"boolean": "%remove_bg%", "on_true": ["19", 0], "on_false": ["8", 0]}, "class_type": "easy ifElse", "_meta": {"title": "Remove Background"}},
-  "19": {"inputs": {"model": "BiRefNet_dynamic", "mask_blur": 0, "mask_offset": 0, "invert_output": false, "refine_foreground": false, "background": "Alpha", "background_color": "#000000", "image": ["8", 0]}, "class_type": "BiRefNetRMBG", "_meta": {"title": "BiRefNet Remove Background (RMBG)"}}
-}
-  </script>
+  <script id="workflow-template" type="application/json">{"1":{"inputs":{"ckpt_name":"%model%"},"class_type":"CheckpointLoaderSimple","_meta":{"title":"Load Checkpoint"}},"2":{"inputs":{"text":"%prompt%","clip":["15",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Main)"}},"3":{"inputs":{"text":"%rouwei_prefix%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Rouwei)"}},"4":{"inputs":{"conditioning1":["3",0],"conditioning2":["2",0]},"class_type":"ImpactConcatConditionings","_meta":{"title":"Concat Conditionings"}},"5":{"inputs":{"boolean":["6",0],"on_true":["4",0],"on_false":["2",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},"6":{"inputs":{"string":"%model%","substring":"rouwei","case_sensitive":true},"class_type":"StringContains","_meta":{"title":"Contains"}},"7":{"inputs":{"conditioning":["5",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},"8":{"inputs":{"boolean":"%neg_zero_out%","on_true":["7",0],"on_false":["9",0]},"class_type":"easy ifElse","_meta":{"title":"Zero Out Negative"}},"9":{"inputs":{"text":"%negative_prompt%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Negative Prompt"}},"10":{"inputs":{"seed":"%seed%","steps":"%steps%","cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","denoise":1,"model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["16",0]},"class_type":"KSampler","_meta":{"title":"KSampler (initial)"}},"11":{"inputs":{"model":["15",0]},"class_type":"Mahiro","_meta":{"title":"Mahiro"}},"12":{"inputs":{"boolean":"%enable_mahiro%","on_true":["11",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"Enable Mahiro"}},"13":{"inputs":{"eta":1,"norm_threshold":20,"momentum":0,"model":["12",0]},"class_type":"APG","_meta":{"title":"Adaptive Projected Guidance"}},"14":{"inputs":{"boolean":"%enable_apg%","on_true":["13",0],"on_false":["12",0]},"class_type":"easy ifElse","_meta":{"title":"Enable APG"}},"15":{"inputs":{"PowerLoraLoaderHeaderWidget":{"type":"PowerLoraLoaderHeaderWidget"},"lora_1":{"on":"%lora1_toggle%","lora":"%lora1_name%","strength":"%lora1_strength%"},"lora_2":{"on":"%lora2_toggle%","lora":"%lora2_name%","strength":"%lora2_strength%"},"lora_3":{"on":"%lora3_toggle%","lora":"%lora3_name%","strength":"%lora3_strength%"},"\u2795 Add Lora":"","model":["1",0],"clip":["1",1]},"class_type":"Power Lora Loader (rgthree)","_meta":{"title":"Power Lora Loader (rgthree)"}},"16":{"inputs":{"width":"%width%","height":"%height%","batch_size":1},"class_type":"EmptyLatentImage","_meta":{"title":"Empty Latent Image"}},"17":{"inputs":{"upscale_method":"nearest-exact","scale_by":"%hiresfix_scale_by%","samples":["10",0]},"class_type":"LatentUpscaleBy","_meta":{"title":"Upscale Latent By"}},"18":{"inputs":{"seed":"%hiresfix_seed%","steps":"%hiresfix_steps%","cfg":"%hiresfix_cfg%","sampler_name":"%hiresfix_sampler%","scheduler":"%hiresfix_scheduler%","denoise":"%hiresfix_denoise%","model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["17",0]},"class_type":"KSampler","_meta":{"title":"KSampler (hiresfix)"}},"19":{"inputs":{"samples":["23",0],"vae":["1",2]},"class_type":"VAEDecode","_meta":{"title":"VAE Decode"}},"20":{"inputs":{"filename_prefix":"ComfyUI","filename_keys":"","foldername_prefix":"","foldername_keys":"","delimiter":"-","save_job_data":"disabled","job_data_per_image":false,"job_custom_text":"","save_metadata":false,"counter_digits":4,"counter_position":"last","one_counter_per_folder":true,"image_preview":true,"output_ext":".avif","quality":99,"images":["22",0]},"class_type":"SaveImageExtended","_meta":{"title":"\ud83d\udcbe Save Image Extended"}},"21":{"inputs":{"model":"BiRefNet_dynamic","mask_blur":0,"mask_offset":0,"invert_output":false,"refine_foreground":false,"background":"Alpha","background_color":"#000000","image":["19",0]},"class_type":"BiRefNetRMBG","_meta":{"title":"BiRefNet Remove Background (RMBG)"}},"22":{"inputs":{"boolean":"%remove_bg%","on_true":["21",0],"on_false":["19",0]},"class_type":"easy ifElse","_meta":{"title":"Remove Background"}},"23":{"inputs":{"boolean":"%use_hiresfix%","on_true":["17",0],"on_false":["10",0]},"class_type":"easy ifElse","_meta":{"title":"HiresFix Enable"}}}</script>
 
 <script id="qwen-template" type="application/json">
 {
@@ -846,13 +860,20 @@
     const ACE_RUN_ENDPOINT = `${ACE_BASE_ENDPOINT}/run`;
     const SAMPLERS = [
       'euler', 'euler_ancestral', 'euler_cfg_pp', 'euler_ancestral_cfg_pp',
-      'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral', 
+      'heunpp2', 'lcm', 'dpmpp_2m', 'dpmpp_2m_cfg_pp', 'dpmpp_2s_ancestral',
       'dpmpp_sde', 'dpmpp_2s_ancestral_cfg_pp', 'dpmpp_2m_sde_heun',
-      'res_multistep', 'res_multistep_cfg_pp', 'res_multistep_ancestral_cfg_pp', 
+      'res_multistep', 'res_multistep_cfg_pp', 'res_multistep_ancestral_cfg_pp',
       'res_2s_ode', 'sa_solver_pece', 'ipndm', 'deis', 'er_sde', 'seeds_2',
       'gradient_estimation', 'gradient_estimation_cfg_pp', 'uni_pc'
     ];
     const SCHEDULERS = ['normal', 'simple', 'sgm_uniform', 'karras', 'exponential', 'beta', 'zeta', 'linear_quadratic', 'kl_optimal'];
+    const LORA_OPTIONS = [
+      'Smooth_Booster_v3.safetensors',
+      'Matte_Skin_Illustrious_v4.safetensors',
+      'noobai_vp10_stabilizer_v0.271_fp16.safetensors',
+      'noobai_vpred_1_masterpieces.safetensors'
+    ];
+    const MAX_LORAS = 3;
 
     function genRandomSeed(){
       if(window.crypto && crypto.getRandomValues){
@@ -900,8 +921,11 @@
     const qs = id => document.getElementById(id);
     const el = {
       apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
-      negZero: qs('negZero'), negative: qs('negative'), negWrap: qs('negWrap'),
+      negZero: qs('negZero'), negZeroRow: qs('negZeroRow'), negative: qs('negative'), negWrap: qs('negWrap'),
+      rouweiWrap: qs('rouweiWrap'), rouweiPrefix: qs('rouweiPrefix'),
       dims: qs('dims'), customDimsWrap: qs('customDimsWrap'), customWidth: qs('customWidth'), customHeight: qs('customHeight'), rmbg: qs('rmbg'),
+      mahiroToggle: qs('mahiroToggle'), apgToggle: qs('apgToggle'),
+      addLoraBtn: qs('addLoraBtn'), loraList: qs('loraList'),
       seed: qs('seed'), seedHint: qs('seedHint'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
       sampler: qs('sampler'), scheduler: qs('scheduler'),
       hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
@@ -910,12 +934,168 @@
     };
 
     const timer = makeTimer(el.timer);
+    const loraEntries = [];
 
     const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
     let lastPresetDims = el.dims && el.dims.value && el.dims.value !== 'custom' ? el.dims.value : '1024x1024';
     let customDimsDirty = false;
 
     el.seedHintDefault = el.seedHint ? el.seedHint.textContent : '';
+
+    function isRouweiSelected(){
+      return !!(el.model && typeof el.model.value === 'string' && el.model.value.includes('rouwei'));
+    }
+
+    function updateNegativeVisibility(){
+      const rouwei = isRouweiSelected();
+      if(el.negWrap){
+        el.negWrap.style.display = (el.negZero && el.negZero.checked && !rouwei) ? 'none' : '';
+      }
+    }
+
+    function updateRouweiState(){
+      const rouwei = isRouweiSelected();
+      if(el.rouweiWrap){
+        el.rouweiWrap.style.display = rouwei ? '' : 'none';
+      }
+      if(rouwei){
+        if(el.negZero) el.negZero.checked = false;
+        if(el.negZeroRow) el.negZeroRow.style.display = 'none';
+      } else if(el.negZeroRow){
+        el.negZeroRow.style.display = '';
+      }
+      updateNegativeVisibility();
+    }
+
+    function clampLoraStrength(value){
+      let v = parseFloat(value);
+      if(!Number.isFinite(v)) v = 0.6;
+      if(v < 0.01) v = 0.01;
+      if(v > 1) v = 1;
+      return Math.round(v * 100) / 100;
+    }
+
+    function formatLoraStrength(value){
+      const clamped = clampLoraStrength(value);
+      let str = clamped.toFixed(2);
+      str = str.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+      return str;
+    }
+
+    function updateLoraStrengthInput(input){
+      if(!input) return;
+      input.value = formatLoraStrength(input.value || '0.6');
+    }
+
+    function updateAddLoraState(){
+      if(!el.addLoraBtn) return;
+      el.addLoraBtn.disabled = loraEntries.length >= MAX_LORAS;
+    }
+
+    function removeLoraEntry(entry){
+      const idx = loraEntries.indexOf(entry);
+      if(idx !== -1) loraEntries.splice(idx, 1);
+      if(entry && entry.wrap && entry.wrap.parentNode){
+        entry.wrap.parentNode.removeChild(entry.wrap);
+      }
+      updateAddLoraState();
+    }
+
+    function createLoraEntry(initial = {}){
+      if(!el.loraList || loraEntries.length >= MAX_LORAS) return null;
+      const wrap = document.createElement('div');
+      wrap.className = 'lora-entry';
+
+      const entry = { wrap, toggle: null, select: null, strength: null };
+
+      const top = document.createElement('div');
+      top.className = 'lora-entry-top';
+      const toggleRow = document.createElement('div');
+      toggleRow.className = 'lora-toggle';
+      const switchLabel = document.createElement('label');
+      switchLabel.className = 'switch';
+      const toggleInput = document.createElement('input');
+      toggleInput.type = 'checkbox';
+      toggleInput.checked = initial.toggle !== undefined ? !!initial.toggle : true;
+      const track = document.createElement('span');
+      track.className = 'track';
+      const thumb = document.createElement('span');
+      thumb.className = 'thumb';
+      track.appendChild(thumb);
+      switchLabel.appendChild(toggleInput);
+      switchLabel.appendChild(track);
+      const toggleHint = document.createElement('span');
+      toggleHint.className = 'hint';
+      toggleHint.textContent = 'Enabled';
+      toggleRow.appendChild(switchLabel);
+      toggleRow.appendChild(toggleHint);
+      top.appendChild(toggleRow);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'lora-remove';
+      removeBtn.setAttribute('aria-label', 'Remove LoRA');
+      removeBtn.innerHTML = '&times;';
+      top.appendChild(removeBtn);
+      wrap.appendChild(top);
+
+      const unique = Math.random().toString(36).slice(2, 9);
+      const selectId = `lora-name-${unique}`;
+      const strengthId = `lora-strength-${unique}`;
+
+      const nameLabel = document.createElement('label');
+      nameLabel.setAttribute('for', selectId);
+      nameLabel.textContent = 'LoRA';
+      wrap.appendChild(nameLabel);
+
+      const select = document.createElement('select');
+      select.id = selectId;
+      for(const opt of LORA_OPTIONS){
+        const optionEl = document.createElement('option');
+        optionEl.value = opt;
+        optionEl.textContent = opt;
+        select.appendChild(optionEl);
+      }
+      if(initial.name && LORA_OPTIONS.includes(initial.name)){
+        select.value = initial.name;
+      }
+      wrap.appendChild(select);
+
+      const strengthLabel = document.createElement('label');
+      strengthLabel.setAttribute('for', strengthId);
+      strengthLabel.textContent = 'Strength';
+      wrap.appendChild(strengthLabel);
+
+      const strengthInput = document.createElement('input');
+      strengthInput.type = 'number';
+      strengthInput.id = strengthId;
+      strengthInput.min = '0.01';
+      strengthInput.max = '1.00';
+      strengthInput.step = '0.01';
+      strengthInput.value = initial.strength !== undefined ? String(initial.strength) : '0.6';
+      updateLoraStrengthInput(strengthInput);
+      strengthInput.addEventListener('change', () => updateLoraStrengthInput(strengthInput));
+      wrap.appendChild(strengthInput);
+
+      entry.toggle = toggleInput;
+      entry.select = select;
+      entry.strength = strengthInput;
+
+      removeBtn.addEventListener('click', () => removeLoraEntry(entry));
+
+      loraEntries.push(entry);
+      el.loraList.appendChild(wrap);
+      updateAddLoraState();
+      return entry;
+    }
+
+    function clearLoras(){
+      while(loraEntries.length){
+        removeLoraEntry(loraEntries[0]);
+      }
+      if(el.loraList) el.loraList.innerHTML = '';
+      updateAddLoraState();
+    }
 
     function updateCustomDimsVisibility(){
       if(!el.customDimsWrap || !el.dims) return;
@@ -965,9 +1145,14 @@
     el.sampler.addEventListener('change', () => setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint));
     el.hiresSampler.addEventListener('change', () => setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint));
 
-    el.negZero.addEventListener('change', () => {
-      el.negWrap.style.display = el.negZero.checked ? 'none' : '';
-    });
+    if(el.negZero) el.negZero.addEventListener('change', updateNegativeVisibility);
+
+    if(el.model) el.model.addEventListener('change', updateRouweiState);
+
+    if(el.addLoraBtn) el.addLoraBtn.addEventListener('click', () => { createLoraEntry(); });
+
+    updateAddLoraState();
+    updateRouweiState();
 
     el.hiresToggle.addEventListener('change', () => {
       el.hiresWrap.style.display = el.hiresToggle.checked ? '' : 'none';
@@ -977,22 +1162,45 @@
       el.hiresSeedWrap.style.display = el.hiresSeedCustom.checked ? '' : 'none';
     });
 
-    el.resetBtn.addEventListener('click', () => {
+    if(el.resetBtn) el.resetBtn.addEventListener('click', () => {
       // Minimal reset to spec defaults
-      el.prompt.value = '';
-      el.negative.value = '';
-      el.negZero.checked = false; el.negWrap.style.display = '';
-      el.dims.value = '1024x1024';
+      if(el.prompt) el.prompt.value = '';
+      if(el.negative) el.negative.value = '';
+      if(el.negZero) el.negZero.checked = false;
+      if(el.negWrap) el.negWrap.style.display = '';
+      if(el.rouweiPrefix) el.rouweiPrefix.value = '';
+      if(el.dims) el.dims.value = '1024x1024';
       lastPresetDims = '1024x1024';
       customDimsDirty = false;
       if(el.customWidth) el.customWidth.value = 1024;
       if(el.customHeight) el.customHeight.value = 1024;
       updateCustomDimsVisibility();
-      el.rmbg.checked = false;
-      el.seed.value = -1; el.steps.value = 25; el.cfg.value = 5.0; el.sampler.value = 'euler'; el.scheduler.value = 'normal'; setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
-      el.hiresToggle.checked = false; el.hiresWrap.style.display = 'none'; el.hiresScale.value = 1.50; el.hiresSteps.value = 20; el.hiresCfg.value = 5.0; el.hiresDenoise.value = 0.56; el.hiresSampler.value='euler'; el.hiresScheduler.value='normal'; setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
-      el.hiresSeedCustom.checked = false; el.hiresSeedWrap.style.display = 'none'; el.hiresSeed.value=-1;
+      if(el.rmbg) el.rmbg.checked = false;
+      if(el.mahiroToggle) el.mahiroToggle.checked = true;
+      if(el.apgToggle) el.apgToggle.checked = true;
+      clearLoras();
+      if(el.seed) el.seed.value = -1;
+      if(el.steps) el.steps.value = 25;
+      if(el.cfg) el.cfg.value = 5.0;
+      if(el.sampler && el.cfg){
+        el.sampler.value = 'euler';
+        setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
+      }
+      if(el.scheduler) el.scheduler.value = 'normal';
+      if(el.hiresToggle){ el.hiresToggle.checked = false; if(el.hiresWrap) el.hiresWrap.style.display = 'none'; }
+      if(el.hiresScale) el.hiresScale.value = 1.50;
+      if(el.hiresSteps) el.hiresSteps.value = 20;
+      if(el.hiresCfg){
+        el.hiresCfg.value = 5.0;
+        if(el.hiresSampler) setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
+      }
+      if(el.hiresDenoise) el.hiresDenoise.value = 0.56;
+      if(el.hiresSampler) el.hiresSampler.value='euler';
+      if(el.hiresScheduler) el.hiresScheduler.value='normal';
+      if(el.hiresSeedCustom){ el.hiresSeedCustom.checked = false; if(el.hiresSeedWrap) el.hiresSeedWrap.style.display = 'none'; }
+      if(el.hiresSeed) el.hiresSeed.value=-1;
       if(el.seedHint) el.seedHint.textContent = el.seedHintDefault;
+      updateRouweiState();
       el.status.textContent = 'Reset to defaults';
     });
 
@@ -1049,36 +1257,77 @@
           if(!Number.isNaN(parsedH)) height = parsedH;
         }
       }
-      const negZero = !!el.negZero.checked;
-      const hiresOn = !!el.hiresToggle.checked;
-      let seedVal = parseInt(el.seed.value || '-1', 10);
+      const rouweiSelected = isRouweiSelected();
+      const negZeroToggle = el.negZero ? !!el.negZero.checked : false;
+      const negZero = rouweiSelected ? false : negZeroToggle;
+      const hiresOn = !!(el.hiresToggle && el.hiresToggle.checked);
+      let seedVal = parseInt((el.seed && el.seed.value) || '-1', 10);
       if(seedVal === -1){
         seedVal = genRandomSeed();
         if(el.seedHint) el.seedHint.textContent = `Random seed: ${seedVal}`;
       } else if(el.seedHint){
         el.seedHint.textContent = el.seedHintDefault;
       }
-      const hiresSeed = el.hiresSeedCustom.checked ? parseInt(el.hiresSeed.value || '-1', 10) : seedVal;
+      const useHiresSeed = el.hiresSeedCustom && el.hiresSeedCustom.checked;
+      const hiresSeed = useHiresSeed && el.hiresSeed ? parseInt(el.hiresSeed.value || '-1', 10) : seedVal;
+      const enableMahiro = el.mahiroToggle ? !!el.mahiroToggle.checked : true;
+      const enableApg = el.apgToggle ? !!el.apgToggle.checked : true;
+      const rouweiPrefix = el.rouweiPrefix ? el.rouweiPrefix.value || '' : '';
+      const modelValue = el.model ? el.model.value : '';
+      const promptText = el.prompt ? el.prompt.value || '' : '';
+      const negativeText = el.negative ? el.negative.value || '' : '';
+      const samplerValue = el.sampler ? el.sampler.value : '';
+      const schedulerValue = el.scheduler ? el.scheduler.value : '';
+      const hiresSamplerValue = el.hiresSampler ? el.hiresSampler.value : '';
+      const hiresSchedulerValue = el.hiresScheduler ? el.hiresScheduler.value : '';
+      const hiresScaleVal = el.hiresScale ? parseFloat(el.hiresScale.value || '1.50') : 1.5;
+      const hiresStepsVal = parseInt((el.hiresSteps && el.hiresSteps.value) || '20', 10);
+      const hiresCfgVal = parseFloat((el.hiresCfg && el.hiresCfg.value) || '5.0');
+      const hiresDenoiseVal = parseFloat((el.hiresDenoise && el.hiresDenoise.value) || '0.56');
+      const stepsVal = parseInt((el.steps && el.steps.value) || '25', 10);
+      const cfgVal = parseFloat((el.cfg && el.cfg.value) || '5.0');
+      const hiresfixDenoise = hiresDenoiseVal;
+      const loras = loraEntries.map(entry => ({
+        toggle: !!(entry.toggle && entry.toggle.checked),
+        name: entry.select ? entry.select.value : '',
+        strength: clampLoraStrength(entry.strength ? entry.strength.value : 0.6)
+      }));
+      const defaultLora = { toggle: false, name: '', strength: 0.6 };
+      while(loras.length < MAX_LORAS){
+        loras.push({ ...defaultLora });
+      }
       return {
-        model: el.model.value,
-        prompt: el.prompt.value || '',
+        model: modelValue,
+        prompt: promptText,
+        rouwei_prefix: rouweiPrefix,
         neg_zero_out: negZero,
-        negative_prompt: negZero ? '' : (el.negative.value || ''),
+        negative_prompt: negZero ? '' : negativeText,
         width: width, height: height,
-        remove_bg: !!el.rmbg.checked,
+        remove_bg: !!(el.rmbg && el.rmbg.checked),
         seed: seedVal,
-        steps: parseInt(el.steps.value || '25', 10),
-        cfg: parseFloat(el.cfg.value || '5.0'),
-        sampler: el.sampler.value,
-        scheduler: el.scheduler.value,
+        steps: stepsVal,
+        cfg: cfgVal,
+        sampler: samplerValue,
+        scheduler: schedulerValue,
+        enable_mahiro: enableMahiro,
+        enable_apg: enableApg,
         use_hiresfix: hiresOn,
-        hiresfix_scale_by: parseFloat(el.hiresScale.value || '1.50'),
+        hiresfix_scale_by: hiresScaleVal,
         hiresfix_seed: hiresSeed,
-        hiresfix_steps: parseInt(el.hiresSteps.value || '20', 10),
-        hiresfix_cfg: parseFloat(el.hiresCfg.value || '5.0'),
-        hiresfix_sampler: el.hiresSampler.value,
-        hiresfix_scheduler: el.hiresScheduler.value,
-        hiresfix_denoise: parseFloat(el.hiresDenoise.value || '0.56'),
+        hiresfix_steps: hiresStepsVal,
+        hiresfix_cfg: hiresCfgVal,
+        hiresfix_sampler: hiresSamplerValue,
+        hiresfix_scheduler: hiresSchedulerValue,
+        hiresfix_denoise: hiresfixDenoise,
+        lora1_toggle: loras[0].toggle,
+        lora1_name: loras[0].name,
+        lora1_strength: loras[0].strength,
+        lora2_toggle: loras[1].toggle,
+        lora2_name: loras[1].name,
+        lora2_strength: loras[1].strength,
+        lora3_toggle: loras[2].toggle,
+        lora3_name: loras[2].name,
+        lora3_strength: loras[2].strength,
       };
     }
 
@@ -1127,6 +1376,10 @@
     async function run(){
       const key = el.apiKey.value.trim();
       if (!key){ el.status.textContent = 'API key required'; return; }
+      if(isRouweiSelected() && (!el.rouweiPrefix || !el.rouweiPrefix.value.trim())){
+        el.status.innerHTML = '<span class="error">Rouwei prefix required when using rouwei_v080Vpred.safetensors</span>';
+        return;
+      }
       try{
         setBusy(true);
         const payload = buildPayload();
