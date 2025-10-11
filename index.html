@@ -73,6 +73,38 @@
 .tab{padding:8px 12px; border:1px solid var(--border); background:#0d1320; color:var(--text); border-radius:10px; cursor:pointer; user-select:none}
 .tab.active{background:#11305a}
 .hidden{display:none}
+.tabs.subtabs{grid-column:1 / -1; margin:0 0 12px; padding:0; justify-content:flex-start}
+.tabs.subtabs .tab{background:#111425}
+.tabs.subtabs .tab.active{background:#1b2f55}
+.sdxl-subtab{display:contents}
+.sdxl-subtab.hidden{display:none}
+
+.mask-editor{--editor-width:1024; --editor-height:1024; position:relative; width:100%; border:1px solid var(--border); border-radius:12px; background:#0c0e14; aspect-ratio: var(--editor-width) / var(--editor-height); overflow:hidden; touch-action:none; margin-top:12px}
+.mask-editor-inner{position:absolute; inset:0}
+.mask-region{position:absolute; border:2px solid rgba(255,255,255,0.9); border-radius:8px; background:rgba(255,255,255,0.18); cursor:move; color:transparent}
+.mask-region.disabled{opacity:0.35}
+.mask-region.selected{box-shadow:0 0 0 2px rgba(90,169,255,0.65)}
+.mask-handle{position:absolute; width:12px; height:12px; border-radius:50%; border:1px solid var(--panel); background:var(--text); box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.mask-handle[data-handle="nw"]{top:-6px; left:-6px; cursor:nwse-resize}
+.mask-handle[data-handle="ne"]{top:-6px; right:-6px; cursor:nesw-resize}
+.mask-handle[data-handle="sw"]{bottom:-6px; left:-6px; cursor:nesw-resize}
+.mask-handle[data-handle="se"]{bottom:-6px; right:-6px; cursor:nwse-resize}
+
+.region-manager{margin-top:18px}
+.region-manager-top{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.region-list{margin-top:12px}
+.region-entry{border:1px solid var(--border); background:#0c0e14; border-radius:10px; padding:10px; margin-top:10px}
+.region-entry.selected{border-color:#2f3b5f; box-shadow:0 0 0 1px rgba(90,169,255,0.3)}
+.region-entry-top{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.region-chip{display:inline-flex; align-items:center; gap:8px; font-weight:600}
+.region-chip .swatch{width:14px; height:14px; border-radius:4px; display:inline-block}
+.region-remove{background:none; border:0; color:var(--muted); font-size:20px; line-height:1; cursor:pointer; padding:4px; border-radius:6px}
+.region-remove:hover{color:var(--danger); background:rgba(255,89,100,0.1)}
+.region-entry.disabled{opacity:0.7}
+.region-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px}
+.region-grid label{margin-top:0}
+.region-grid input{width:100%}
+
 
     .lightbox{position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;}
     .lightbox.hidden{display:none}
@@ -105,200 +137,408 @@
 
 
   <main>
-    <section class="card" id="controls">
-      <header class="body" style="border-bottom:1px solid var(--border)">
-        <strong>Controls</strong>
-        <div style="display:flex; gap:8px; align-items:center">
-          <div class="status" id="timer">00:00.00</div>
-          <div class="status" id="status">Idle</div>
-        </div>
-      </header>
-      <div class="body">
-        <label for="model">Model</label>
-        <select id="model">
-          <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
-          <option value="ΣIH-1.5.safetensors">ΣIH-1.5.safetensors</option>
-          <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
-          <option value="oneObsession_v16Noobai.safetensors">oneObsession_v16Noobai.safetensors</option>
-          <option value="rouwei_v080Vpred.safetensors">rouwei_v080Vpred.safetensors</option>
-        </select>
+    <nav class="tabs subtabs" id="sdxl-subtabbar">
+      <button class="tab active" data-subtab="standard">Standard SDXL</button>
+      <button class="tab" data-subtab="regional">Regional Prompter</button>
+    </nav>
 
-        <label for="prompt">Prompt</label>
-        <textarea id="prompt" placeholder="Describe the image..."></textarea>
-
-        <div id="negZeroRow" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-          <label class="switch"><input id="negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-          <span class="hint">Zero out negative prompt</span>
-        </div>
-
-        <div id="negWrap">
-          <label for="negative">Negative prompt</label>
-          <textarea id="negative" placeholder="Things to avoid..."></textarea>
-        </div>
-
-        <div id="rouweiWrap" style="display:none; margin-top:10px">
-          <label for="rouweiPrefix">Rouwei prefix</label>
-          <textarea id="rouweiPrefix" placeholder="Required artist and quality tags for rouwei..."></textarea>
-          <div class="hint">Required when using rouwei_v080Vpred.safetensors.</div>
-        </div>
-
-        <div>
-          <label for="dims">Dimensions</label>
-          <select id="dims">
-            <option>704x1408</option>
-            <option>768x1344</option>
-            <option>768x1280</option>
-            <option>720x1280</option>
-            <option>896x1152</option>
-            <option>1024x1024</option>
-            <option>1152x896</option>
-            <option>1280x768</option>
-            <option>1344x768</option>
-            <option>1408x704</option>
-            <option value="custom">Custom...</option>
+    <div class="sdxl-subtab" data-subtab="standard">
+      <section class="card" id="controls">
+        <header class="body" style="border-bottom:1px solid var(--border)">
+          <strong>Controls</strong>
+          <div style="display:flex; gap:8px; align-items:center">
+            <div class="status" id="timer">00:00.00</div>
+            <div class="status" id="status">Idle</div>
+          </div>
+        </header>
+        <div class="body">
+          <label for="model">Model</label>
+          <select id="model">
+            <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
+            <option value="ΣIH-1.5.safetensors">ΣIH-1.5.safetensors</option>
+            <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
+            <option value="oneObsession_v16Noobai.safetensors">oneObsession_v16Noobai.safetensors</option>
+            <option value="rouwei_v080Vpred.safetensors">rouwei_v080Vpred.safetensors</option>
           </select>
-          <div id="customDimsWrap" class="row" style="display:none; margin-top:10px">
+
+          <label for="prompt">Prompt</label>
+          <textarea id="prompt" placeholder="Describe the image..."></textarea>
+
+          <div id="negZeroRow" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Zero out negative prompt</span>
+          </div>
+
+          <div id="negWrap">
+            <label for="negative">Negative prompt</label>
+            <textarea id="negative" placeholder="Things to avoid..."></textarea>
+          </div>
+
+          <div id="rouweiWrap" style="display:none; margin-top:10px">
+            <label for="rouweiPrefix">Rouwei prefix</label>
+            <textarea id="rouweiPrefix" placeholder="Required artist and quality tags for rouwei..."></textarea>
+            <div class="hint">Required when using rouwei_v080Vpred.safetensors.</div>
+          </div>
+
+          <div>
+            <label for="dims">Dimensions</label>
+            <select id="dims">
+              <option>704x1408</option>
+              <option>768x1344</option>
+              <option>768x1280</option>
+              <option>720x1280</option>
+              <option>896x1152</option>
+              <option>1024x1024</option>
+              <option>1152x896</option>
+              <option>1280x768</option>
+              <option>1344x768</option>
+              <option>1408x704</option>
+              <option value="custom">Custom...</option>
+            </select>
+            <div id="customDimsWrap" class="row" style="display:none; margin-top:10px">
+              <div>
+                <label for="customWidth">Width</label>
+                <input id="customWidth" type="number" min="512" max="2048" step="1" value="1024" />
+              </div>
+              <div>
+                <label for="customHeight">Height</label>
+                <input id="customHeight" type="number" min="512" max="2048" step="1" value="1024" />
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <label for="batchSize">Batch size</label>
+            <input id="batchSize" type="range" min="1" max="4" step="1" value="1" />
+            <div class="hint" id="batchSizeHint">1 image per run</div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Remove background (BiRefNet)</span>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="mahiroToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Enable Mahiro</span>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="apgToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Enable Adaptive Projected Guidance</span>
+          </div>
+
+          <div class="lora-section">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
+              <strong>LoRA</strong>
+              <button class="btn" id="addLoraBtn" type="button">Add LoRA</button>
+            </div>
+            <div id="loraList"></div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+          <strong></strong>
+          <div class="row-3">
             <div>
-              <label for="customWidth">Width</label>
-              <input id="customWidth" type="number" min="512" max="2048" step="1" value="1024" />
+              <label for="seed">Seed</label>
+              <input id="seed" type="number" step="1" value="-1" />
+              <div class="hint" id="seedHint">Use -1 for random</div>
             </div>
             <div>
-              <label for="customHeight">Height</label>
-              <input id="customHeight" type="number" min="512" max="2048" step="1" value="1024" />
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:10px">
-          <label for="batchSize">Batch size</label>
-          <input id="batchSize" type="range" min="1" max="4" step="1" value="1" />
-          <div class="hint" id="batchSizeHint">1 image per run</div>
-        </div>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-          <label class="switch"><input id="rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-          <span class="hint">Remove background (BiRefNet)</span>
-        </div>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-          <label class="switch"><input id="mahiroToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
-          <span class="hint">Enable Mahiro</span>
-        </div>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-          <label class="switch"><input id="apgToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
-          <span class="hint">Enable Adaptive Projected Guidance</span>
-        </div>
-
-        <div class="lora-section">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
-            <strong>LoRA</strong>
-            <button class="btn" id="addLoraBtn" type="button">Add LoRA</button>
-          </div>
-          <div id="loraList"></div>
-        </div>
-
-        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <strong></strong>
-        <div class="row-3">
-          <div>
-            <label for="seed">Seed</label>
-            <input id="seed" type="number" step="1" value="-1" />
-            <div class="hint" id="seedHint">Use -1 for random</div>
-          </div>
-          <div>
-            <label for="steps">Steps</label>
-            <input id="steps" type="number" min="15" max="35" step="1" value="25" />
-          </div>
-          <div>
-            <label for="cfg">CFG</label>
-            <input id="cfg" type="number" step="0.1" value="5.0" />
-            <div class="hint" id="cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label for="sampler">Sampler</label>
-            <select id="sampler"></select>
-          </div>
-          <div>
-            <label for="scheduler">Scheduler</label>
-            <select id="scheduler"></select>
-          </div>
-        </div>
-
-        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <div style="display:flex; align-items:center; justify-content:space-between; margin:8px 0">
-          <strong>HiresFix</strong>
-          <label class="switch"><input id="hiresToggle" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-        </div>
-        <div id="hiresWrap" style="display:none">
-          <div class="row-4">
-            <div>
-              <label for="hiresScale">Scale by</label>
-              <input id="hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
+              <label for="steps">Steps</label>
+              <input id="steps" type="number" min="15" max="35" step="1" value="25" />
             </div>
             <div>
-              <label for="hiresSteps">Steps</label>
-              <input id="hiresSteps" type="number" min="15" max="25" step="1" value="20" />
-            </div>
-            <div>
-              <label for="hiresCfg">CFG</label>
-              <input id="hiresCfg" type="number" step="0.1" value="5.0" />
-              <div class="hint" id="hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
-            </div>
-            <div>
-              <label for="hiresDenoise">Denoise</label>
-              <input id="hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
+              <label for="cfg">CFG</label>
+              <input id="cfg" type="number" step="0.1" value="5.0" />
+              <div class="hint" id="cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
             </div>
           </div>
           <div class="row">
             <div>
-              <label for="hiresSampler">Sampler</label>
-              <select id="hiresSampler"></select>
+              <label for="sampler">Sampler</label>
+              <select id="sampler"></select>
             </div>
             <div>
-              <label for="hiresScheduler">Scheduler</label>
-              <select id="hiresScheduler"></select>
+              <label for="scheduler">Scheduler</label>
+              <select id="scheduler"></select>
             </div>
           </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+          <div style="display:flex; align-items:center; justify-content:space-between; margin:8px 0">
+            <strong>HiresFix</strong>
+            <label class="switch"><input id="hiresToggle" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+          </div>
+          <div id="hiresWrap" style="display:none">
+            <div class="row-4">
+              <div>
+                <label for="hiresScale">Scale by</label>
+                <input id="hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
+              </div>
+              <div>
+                <label for="hiresSteps">Steps</label>
+                <input id="hiresSteps" type="number" min="15" max="25" step="1" value="20" />
+              </div>
+              <div>
+                <label for="hiresCfg">CFG</label>
+                <input id="hiresCfg" type="number" step="0.1" value="5.0" />
+                <div class="hint" id="hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+              </div>
+              <div>
+                <label for="hiresDenoise">Denoise</label>
+                <input id="hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="hiresSampler">Sampler</label>
+                <select id="hiresSampler"></select>
+              </div>
+              <div>
+                <label for="hiresScheduler">Scheduler</label>
+                <select id="hiresScheduler"></select>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+              <label class="switch"><input id="hiresSeedCustom" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Use custom HiresFix seed</span>
+            </div>
+            <div id="hiresSeedWrap" style="display:none">
+              <label for="hiresSeed">HiresFix seed</label>
+              <input id="hiresSeed" type="number" step="1" value="-1" />
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+          <div class="row">
+            <button class="btn primary" id="runBtn">Generate</button>
+            <button class="btn" id="curlBtn" type="button">Copy cURL</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="resetBtn" type="button">Reset to defaults</button>
+            <button class="btn danger" id="clearBtn" type="button">Clear gallery</button>
+          </div>
+          <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkr7n873/runsync</span></p>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (AVIF)</strong></header>
+        <div class="gallery" id="gallery"></div>
+        <div class="body">
+          <details>
+            <summary class="mono">Request payload (debug)</summary>
+            <pre class="mono" id="debugReq"></pre>
+          </details>
+          <details>
+            <summary class="mono">Raw response (debug)</summary>
+            <pre class="mono" id="debugResp"></pre>
+          </details>
+        </div>
+      </section>
+    </div>
+
+    <div class="sdxl-subtab hidden" data-subtab="regional">
+      <section class="card" id="regional-controls">
+        <header class="body" style="border-bottom:1px solid var(--border)">
+          <strong>Regional Prompter Controls</strong>
+          <div style="display:flex; gap:8px; align-items:center">
+            <div class="status" id="rp-timer">00:00.00</div>
+            <div class="status" id="rp-status">Idle</div>
+          </div>
+        </header>
+        <div class="body">
+          <label for="rp-model">Model</label>
+          <select id="rp-model">
+            <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
+            <option value="ΣIH-1.5.safetensors">ΣIH-1.5.safetensors</option>
+            <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
+            <option value="oneObsession_v16Noobai.safetensors">oneObsession_v16Noobai.safetensors</option>
+            <option value="rouwei_v080Vpred.safetensors">rouwei_v080Vpred.safetensors</option>
+          </select>
+
+          <label for="rp-globalPrompt">Global prompt</label>
+          <textarea id="rp-globalPrompt" placeholder="Describe the overall scene..."></textarea>
+
+          <div id="rp-negZeroRow" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="rp-negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Zero out negative prompt</span>
+          </div>
+
+          <div id="rp-negWrap">
+            <label for="rp-negative">Negative prompt</label>
+            <textarea id="rp-negative" placeholder="Things to avoid..."></textarea>
+          </div>
+
+          <div id="rp-rouweiWrap" style="display:none; margin-top:10px">
+            <label for="rp-rouweiPrefix">Rouwei prefix</label>
+            <textarea id="rp-rouweiPrefix" placeholder="Required artist and quality tags for rouwei..."></textarea>
+            <div class="hint">Required when using rouwei_v080Vpred.safetensors.</div>
+          </div>
+
+          <div>
+            <label for="rp-dims">Dimensions</label>
+            <select id="rp-dims">
+              <option>704x1408</option>
+              <option>768x1344</option>
+              <option>768x1280</option>
+              <option>720x1280</option>
+              <option>896x1152</option>
+              <option>1024x1024</option>
+              <option>1152x896</option>
+              <option>1280x768</option>
+              <option>1344x768</option>
+              <option>1408x704</option>
+              <option value="custom">Custom...</option>
+            </select>
+            <div id="rp-customDimsWrap" class="row" style="display:none; margin-top:10px">
+              <div>
+                <label for="rp-customWidth">Width</label>
+                <input id="rp-customWidth" type="number" min="512" max="2048" step="1" value="1024" />
+              </div>
+              <div>
+                <label for="rp-customHeight">Height</label>
+                <input id="rp-customHeight" type="number" min="512" max="2048" step="1" value="1024" />
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <label for="rp-batchSize">Batch size</label>
+            <input id="rp-batchSize" type="range" min="1" max="4" step="1" value="1" />
+            <div class="hint" id="rp-batchSizeHint">1 image per run</div>
+          </div>
+
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-            <label class="switch"><input id="hiresSeedCustom" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-            <span class="hint">Use custom HiresFix seed</span>
+            <label class="switch"><input id="rp-rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Remove background (BiRefNet)</span>
           </div>
-          <div id="hiresSeedWrap" style="display:none">
-            <label for="hiresSeed">HiresFix seed</label>
-            <input id="hiresSeed" type="number" step="1" value="-1" />
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="rp-apgToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Enable Adaptive Projected Guidance</span>
           </div>
-        </div>
 
-        <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-        <div class="row">
-          <button class="btn primary" id="runBtn">Generate</button>
-          <button class="btn" id="curlBtn" type="button">Copy cURL</button>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn" id="resetBtn" type="button">Reset to defaults</button>
-          <button class="btn danger" id="clearBtn" type="button">Clear gallery</button>
-        </div>
-        <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkr7n873/runsync</span></p>
-      </div>
-    </section>
+          <label for="rp-globalWeight">Global prompt weight</label>
+          <input id="rp-globalWeight" type="number" min="0.01" max="1.00" step="0.01" value="0.35" />
+          <div class="hint">Range 0.01–1.00 (default 0.35)</div>
 
-    <section class="card">
-      <header class="body" style="border-bottom:1px solid var(--border)"><strong>Output (AVIF)</strong></header>
-      <div class="gallery" id="gallery"></div>
-      <div class="body">
-        <details>
-          <summary class="mono">Request payload (debug)</summary>
-          <pre class="mono" id="debugReq"></pre>
-        </details>
-        <details>
-          <summary class="mono">Raw response (debug)</summary>
-          <pre class="mono" id="debugResp"></pre>
-        </details>
-      </div>
-    </section>
+          <div class="region-manager">
+            <div class="region-manager-top">
+              <strong>Regions</strong>
+              <div style="display:flex; gap:8px; align-items:center">
+                <button class="btn" id="rp-addRegion" type="button">Add region</button>
+              </div>
+            </div>
+            <div class="hint" style="margin-top:6px">Drag the colored rectangles to adjust each region. Regions cannot overlap or leave the canvas.</div>
+            <div id="rp-maskEditor" class="mask-editor">
+              <div class="mask-editor-inner"></div>
+            </div>
+            <div id="rp-regionList" class="region-list"></div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+          <div class="row-3">
+            <div>
+              <label for="rp-seed">Seed</label>
+              <input id="rp-seed" type="number" step="1" value="-1" />
+              <div class="hint" id="rp-seedHint">Use -1 for random</div>
+            </div>
+            <div>
+              <label for="rp-steps">Steps</label>
+              <input id="rp-steps" type="number" min="15" max="35" step="1" value="25" />
+            </div>
+            <div>
+              <label for="rp-cfg">CFG</label>
+              <input id="rp-cfg" type="number" step="0.1" value="5.0" />
+              <div class="hint" id="rp-cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="rp-sampler">Sampler</label>
+              <select id="rp-sampler"></select>
+            </div>
+            <div>
+              <label for="rp-scheduler">Scheduler</label>
+              <select id="rp-scheduler"></select>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+          <div style="display:flex; align-items:center; justify-content:space-between; margin:8px 0">
+            <strong>HiresFix</strong>
+            <label class="switch"><input id="rp-hiresToggle" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+          </div>
+          <div id="rp-hiresWrap" style="display:none">
+            <div class="row-4">
+              <div>
+                <label for="rp-hiresScale">Scale by</label>
+                <input id="rp-hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
+              </div>
+              <div>
+                <label for="rp-hiresSteps">Steps</label>
+                <input id="rp-hiresSteps" type="number" min="15" max="25" step="1" value="20" />
+              </div>
+              <div>
+                <label for="rp-hiresCfg">CFG</label>
+                <input id="rp-hiresCfg" type="number" step="0.1" value="5.0" />
+                <div class="hint" id="rp-hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+              </div>
+              <div>
+                <label for="rp-hiresDenoise">Denoise</label>
+                <input id="rp-hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="rp-hiresSampler">Sampler</label>
+                <select id="rp-hiresSampler"></select>
+              </div>
+              <div>
+                <label for="rp-hiresScheduler">Scheduler</label>
+                <select id="rp-hiresScheduler"></select>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+              <label class="switch"><input id="rp-hiresSeedCustom" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Use custom HiresFix seed</span>
+            </div>
+            <div id="rp-hiresSeedWrap" style="display:none">
+              <label for="rp-hiresSeed">HiresFix seed</label>
+              <input id="rp-hiresSeed" type="number" step="1" value="-1" />
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+          <div class="row">
+            <button class="btn primary" id="rp-runBtn">Generate</button>
+            <button class="btn" id="rp-curlBtn" type="button">Copy cURL</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="rp-resetBtn" type="button">Reset to defaults</button>
+            <button class="btn danger" id="rp-clearBtn" type="button">Clear gallery</button>
+          </div>
+          <p class="hint" style="margin-top:10px">Endpoint: <span class="mono">https://api.runpod.ai/v2/vpr9pkr7n873/runsync</span></p>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="body" style="border-bottom:1px solid var(--border)"><strong>Regional Output (AVIF)</strong></header>
+        <div class="gallery" id="rp-gallery"></div>
+        <div class="body">
+          <details>
+            <summary class="mono">Request payload (debug)</summary>
+            <pre class="mono" id="rp-debugReq"></pre>
+          </details>
+          <details>
+            <summary class="mono">Raw response (debug)</summary>
+            <pre class="mono" id="rp-debugResp"></pre>
+          </details>
+        </div>
+      </section>
+    </div>
   </main>
 
 <main id="qwen-main" class="hidden">
@@ -648,6 +888,706 @@
   "20": {"inputs":{"boolean":["5",0],"on_true":["21",0],"on_false":["22",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
   "21": {"inputs":{"value":1},"class_type":"PrimitiveFloat","_meta":{"title":"LSCFG"}},
   "22": {"inputs":{"value":"%cfg%"},"class_type":"PrimitiveFloat","_meta":{"title":"Standard CFG"}}
+}
+</script>
+
+<script id="regional-workflow-template" type="application/json">
+{
+  "8": {
+    "inputs": {
+      "ckpt_name": "%model%"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "9": {
+    "inputs": {
+      "text": "%global_prompt%",
+      "clip": [
+        "8",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Global Prompt"
+    }
+  },
+  "12": {
+    "inputs": {
+      "seed": "%seed%",
+      "steps": "%steps%",
+      "cfg": "%cfg%",
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "denoise": 1,
+      "model": [
+        "29:3",
+        0
+      ],
+      "positive": [
+        "36",
+        0
+      ],
+      "negative": [
+        "33",
+        0
+      ],
+      "latent_image": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "13": {
+    "inputs": {
+      "conditioning": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "14": {
+    "inputs": {
+      "width": [
+        "15",
+        0
+      ],
+      "height": [
+        "16",
+        0
+      ],
+      "batch_size": "%batch_size%"
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "15": {
+    "inputs": {
+      "value": "%width%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Width"
+    }
+  },
+  "16": {
+    "inputs": {
+      "value": "%height%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Height"
+    }
+  },
+  "18": {
+    "inputs": {
+      "x": "%mask_1_x%",
+      "y": "%mask_1_y%",
+      "width": "%mask_1_width%",
+      "height": "%mask_1_height%",
+      "image_width": [
+        "15",
+        0
+      ],
+      "image_height": [
+        "16",
+        0
+      ],
+      "blur_radius": 0
+    },
+    "class_type": "Mask Rect Area (Advanced)",
+    "_meta": {
+      "title": "Region 1 Mask"
+    }
+  },
+  "19": {
+    "inputs": {
+      "x": "%mask_2_x%",
+      "y": "%mask_2_y%",
+      "width": "%mask_2_width%",
+      "height": "%mask_2_height%",
+      "image_width": [
+        "15",
+        0
+      ],
+      "image_height": [
+        "16",
+        0
+      ],
+      "blur_radius": 0
+    },
+    "class_type": "Mask Rect Area (Advanced)",
+    "_meta": {
+      "title": "Region 2 Mask"
+    }
+  },
+  "22": {
+    "inputs": {
+      "samples": [
+        "51",
+        0
+      ],
+      "vae": [
+        "8",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "27": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "filename_keys": "",
+      "foldername_prefix": "",
+      "foldername_keys": "",
+      "delimiter": "-",
+      "save_job_data": "disabled",
+      "job_data_per_image": false,
+      "job_custom_text": "",
+      "save_metadata": false,
+      "counter_digits": 4,
+      "counter_position": "last",
+      "one_counter_per_folder": true,
+      "image_preview": true,
+      "output_ext": ".avif",
+      "quality": 99,
+      "images": [
+        "54",
+        0
+      ]
+    },
+    "class_type": "SaveImageExtended",
+    "_meta": {
+      "title": "💾 Save Image Extended"
+    }
+  },
+  "30": {
+    "inputs": {
+      "text": "%region_1_prompt%",
+      "clip": [
+        "8",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Region 1 Prompt"
+    }
+  },
+  "31": {
+    "inputs": {
+      "text": "%region_2_prompt%",
+      "clip": [
+        "8",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Region 2 Prompt"
+    }
+  },
+  "32": {
+    "inputs": {
+      "text": "%negative_prompt%",
+      "clip": [
+        "8",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "33": {
+    "inputs": {
+      "boolean": "%zero_out_negative%",
+      "on_true": [
+        "13",
+        0
+      ],
+      "on_false": [
+        "32",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Zero Out Negative"
+    }
+  },
+  "35": {
+    "inputs": {
+      "string": "%model%",
+      "substring": "rouwei",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "Contains"
+    }
+  },
+  "36": {
+    "inputs": {
+      "boolean": [
+        "35",
+        0
+      ],
+      "on_true": [
+        "38",
+        0
+      ],
+      "on_false": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Use Rouwei Prefix"
+    }
+  },
+  "38": {
+    "inputs": {
+      "conditioning1": [
+        "39",
+        0
+      ],
+      "conditioning2": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "ImpactConcatConditionings",
+    "_meta": {
+      "title": "Concat Conditionings"
+    }
+  },
+  "39": {
+    "inputs": {
+      "text": "%rouwei_prefix%",
+      "clip": [
+        "8",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Rouwei Prefix"
+    }
+  },
+  "40": {
+    "inputs": {
+      "text": "%region_3_prompt%",
+      "clip": [
+        "8",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Region 3 Prompt"
+    }
+  },
+  "41": {
+    "inputs": {
+      "text": "%region_4_prompt%",
+      "clip": [
+        "8",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Region 4 Prompt"
+    }
+  },
+  "42": {
+    "inputs": {
+      "x": "%mask_3_x%",
+      "y": "%mask_3_y%",
+      "width": "%mask_3_width%",
+      "height": "%mask_3_height%",
+      "image_width": [
+        "15",
+        0
+      ],
+      "image_height": [
+        "16",
+        0
+      ],
+      "blur_radius": 0
+    },
+    "class_type": "Mask Rect Area (Advanced)",
+    "_meta": {
+      "title": "Region 3 Mask"
+    }
+  },
+  "43": {
+    "inputs": {
+      "x": "%mask_4_x%",
+      "y": "%mask_4_y%",
+      "width": "%mask_4_width%",
+      "height": "%mask_4_height%",
+      "image_width": [
+        "15",
+        0
+      ],
+      "image_height": [
+        "16",
+        0
+      ],
+      "blur_radius": 0
+    },
+    "class_type": "Mask Rect Area (Advanced)",
+    "_meta": {
+      "title": "Region 3 Mask"
+    }
+  },
+  "47": {
+    "inputs": {
+      "model": "BiRefNet_dynamic",
+      "mask_blur": 0,
+      "mask_offset": 0,
+      "invert_output": false,
+      "refine_foreground": false,
+      "background": "Alpha",
+      "background_color": "#222222",
+      "image": [
+        "22",
+        0
+      ]
+    },
+    "class_type": "BiRefNetRMBG",
+    "_meta": {
+      "title": "BiRefNet Remove Background (RMBG)"
+    }
+  },
+  "51": {
+    "inputs": {
+      "boolean": "%hiresfix_enable%",
+      "on_true": [
+        "53",
+        0
+      ],
+      "on_false": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Enable HiresFix"
+    }
+  },
+  "52": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": "%hiresfix_scale_by%",
+      "samples": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "LatentUpscaleBy",
+    "_meta": {
+      "title": "Upscale Latent By"
+    }
+  },
+  "53": {
+    "inputs": {
+      "seed": "%hiresfix_seed%",
+      "steps": "%hiresfix_steps%",
+      "cfg": "%hiresfix_cfg%",
+      "sampler_name": "%hiresfix_sampler%",
+      "scheduler": "%hiresfix_scheduler%",
+      "denoise": "%hiresfix_denoise%",
+      "model": [
+        "29:3",
+        0
+      ],
+      "positive": [
+        "36",
+        0
+      ],
+      "negative": [
+        "33",
+        0
+      ],
+      "latent_image": [
+        "52",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "54": {
+    "inputs": {
+      "boolean": "%remove_bg%",
+      "on_true": [
+        "47",
+        0
+      ],
+      "on_false": [
+        "22",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Remove Background"
+    }
+  },
+  "55": {
+    "inputs": {
+      "eta": 1,
+      "norm_threshold": 20,
+      "momentum": 0,
+      "model": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "APG",
+    "_meta": {
+      "title": "Adaptive Projected Guidance"
+    }
+  },
+  "56": {
+    "inputs": {
+      "boolean": "%enable_apg%",
+      "on_true": [
+        "55",
+        0
+      ],
+      "on_false": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Enable APG"
+    }
+  },
+  "29:7": {
+    "inputs": {
+      "a": 1,
+      "b": [
+        "29:6",
+        0
+      ],
+      "operation": "subtract"
+    },
+    "class_type": "easy mathFloat",
+    "_meta": {
+      "title": "Math Float"
+    }
+  },
+  "29:6": {
+    "inputs": {
+      "value": "%global_prompt_weight%"
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Float"
+    }
+  },
+  "29:2": {
+    "inputs": {
+      "region_1": [
+        "29:1",
+        0
+      ],
+      "region_2": [
+        "29:29",
+        0
+      ],
+      "region_3": [
+        "29:28",
+        0
+      ],
+      "region_4": [
+        "29:32",
+        0
+      ]
+    },
+    "class_type": "AttentionCoupleRegions",
+    "_meta": {
+      "title": "Attention Couple Regions"
+    }
+  },
+  "29:3": {
+    "inputs": {
+      "global_prompt_weight": [
+        "29:6",
+        0
+      ],
+      "width": [
+        "15",
+        0
+      ],
+      "height": [
+        "16",
+        0
+      ],
+      "model": [
+        "56",
+        0
+      ],
+      "base_prompt": [
+        "36",
+        0
+      ],
+      "regions": [
+        "29:2",
+        0
+      ]
+    },
+    "class_type": "AttentionCouple",
+    "_meta": {
+      "title": "Attention Couple"
+    }
+  },
+  "29:1": {
+    "inputs": {
+      "weight": [
+        "29:7",
+        0
+      ],
+      "cond": [
+        "30",
+        0
+      ],
+      "mask": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "AttentionCoupleRegion",
+    "_meta": {
+      "title": "Attention Couple Region"
+    }
+  },
+  "29:29": {
+    "inputs": {
+      "switch": "%enable_region_2%",
+      "on_true": [
+        "29:4",
+        0
+      ]
+    },
+    "class_type": "BooleanSwitch",
+    "_meta": {
+      "title": "Enable Region 2"
+    }
+  },
+  "29:28": {
+    "inputs": {
+      "switch": "%enable_region_3%",
+      "on_true": [
+        "29:30",
+        0
+      ]
+    },
+    "class_type": "BooleanSwitch",
+    "_meta": {
+      "title": "Enable Region 3"
+    }
+  },
+  "29:32": {
+    "inputs": {
+      "switch": "%enable_region_4%",
+      "on_true": [
+        "29:31",
+        0
+      ]
+    },
+    "class_type": "BooleanSwitch",
+    "_meta": {
+      "title": "Enable Region 4"
+    }
+  },
+  "29:30": {
+    "inputs": {
+      "weight": [
+        "29:7",
+        0
+      ],
+      "cond": [
+        "40",
+        0
+      ],
+      "mask": [
+        "42",
+        0
+      ]
+    },
+    "class_type": "AttentionCoupleRegion",
+    "_meta": {
+      "title": "Attention Couple Region"
+    }
+  },
+  "29:4": {
+    "inputs": {
+      "weight": [
+        "29:7",
+        0
+      ],
+      "cond": [
+        "31",
+        0
+      ],
+      "mask": [
+        "19",
+        0
+      ]
+    },
+    "class_type": "AttentionCoupleRegion",
+    "_meta": {
+      "title": "Attention Couple Region"
+    }
+  },
+  "29:31": {
+    "inputs": {
+      "weight": [
+        "29:7",
+        0
+      ],
+      "cond": [
+        "41",
+        0
+      ],
+      "mask": [
+        "43",
+        0
+      ]
+    },
+    "class_type": "AttentionCoupleRegion",
+    "_meta": {
+      "title": "Attention Couple Region"
+    }
+  }
 }
 </script>
 
@@ -1466,6 +2406,933 @@
       navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
     });
 
+    // --- Regional Prompter helpers ---
+    const rp = {
+      apiKey: document.getElementById('apiKey'),
+      model: document.getElementById('rp-model'),
+      globalPrompt: document.getElementById('rp-globalPrompt'),
+      negZero: document.getElementById('rp-negZero'),
+      negZeroRow: document.getElementById('rp-negZeroRow'),
+      negWrap: document.getElementById('rp-negWrap'),
+      negative: document.getElementById('rp-negative'),
+      rouweiWrap: document.getElementById('rp-rouweiWrap'),
+      rouweiPrefix: document.getElementById('rp-rouweiPrefix'),
+      dims: document.getElementById('rp-dims'),
+      customDimsWrap: document.getElementById('rp-customDimsWrap'),
+      customWidth: document.getElementById('rp-customWidth'),
+      customHeight: document.getElementById('rp-customHeight'),
+      batchSize: document.getElementById('rp-batchSize'),
+      batchSizeHint: document.getElementById('rp-batchSizeHint'),
+      rmbg: document.getElementById('rp-rmbg'),
+      apgToggle: document.getElementById('rp-apgToggle'),
+      globalWeight: document.getElementById('rp-globalWeight'),
+      maskEditor: document.getElementById('rp-maskEditor'),
+      maskInner: null,
+      regionList: document.getElementById('rp-regionList'),
+      addRegion: document.getElementById('rp-addRegion'),
+      seed: document.getElementById('rp-seed'),
+      seedHint: document.getElementById('rp-seedHint'),
+      steps: document.getElementById('rp-steps'),
+      cfg: document.getElementById('rp-cfg'),
+      cfgHint: document.getElementById('rp-cfgHint'),
+      sampler: document.getElementById('rp-sampler'),
+      scheduler: document.getElementById('rp-scheduler'),
+      hiresToggle: document.getElementById('rp-hiresToggle'),
+      hiresWrap: document.getElementById('rp-hiresWrap'),
+      hiresScale: document.getElementById('rp-hiresScale'),
+      hiresSteps: document.getElementById('rp-hiresSteps'),
+      hiresCfg: document.getElementById('rp-hiresCfg'),
+      hiresCfgHint: document.getElementById('rp-hiresCfgHint'),
+      hiresDenoise: document.getElementById('rp-hiresDenoise'),
+      hiresSampler: document.getElementById('rp-hiresSampler'),
+      hiresScheduler: document.getElementById('rp-hiresScheduler'),
+      hiresSeedCustom: document.getElementById('rp-hiresSeedCustom'),
+      hiresSeedWrap: document.getElementById('rp-hiresSeedWrap'),
+      hiresSeed: document.getElementById('rp-hiresSeed'),
+      runBtn: document.getElementById('rp-runBtn'),
+      curlBtn: document.getElementById('rp-curlBtn'),
+      resetBtn: document.getElementById('rp-resetBtn'),
+      clearBtn: document.getElementById('rp-clearBtn'),
+      status: document.getElementById('rp-status'),
+      timer: document.getElementById('rp-timer'),
+      gallery: document.getElementById('rp-gallery'),
+      debugReq: document.getElementById('rp-debugReq'),
+      debugResp: document.getElementById('rp-debugResp'),
+    };
+    if (rp.maskEditor) rp.maskInner = rp.maskEditor.querySelector('.mask-editor-inner');
+    rp.seedHintDefault = rp.seedHint ? rp.seedHint.textContent : '';
+    const rpTimer = makeTimer(rp.timer);
+
+    const REGION_META = [
+      { id: 1, name: 'Region 1', color: '#ff4d4d', fill: 'rgba(255,77,77,0.28)' },
+      { id: 2, name: 'Region 2', color: '#4d7bff', fill: 'rgba(77,123,255,0.28)' },
+      { id: 3, name: 'Region 3', color: '#4dff7b', fill: 'rgba(77,255,123,0.28)' },
+      { id: 4, name: 'Region 4', color: '#ffd84d', fill: 'rgba(255,216,77,0.32)' },
+    ];
+
+    const rpRegions = REGION_META.map(meta => ({
+      id: meta.id,
+      meta,
+      active: meta.id <= 2,
+      enabled: meta.id <= 2,
+      prompt: '',
+      mask: { x: 0, y: 0, width: 1, height: 1 },
+    }));
+
+    let rpSelectedRegionId = 1;
+    let rpImageWidth = 1024;
+    let rpImageHeight = 1024;
+    let rpLastPresetDims = '1024x1024';
+    let rpCustomDimsDirty = false;
+    let rpEditorRect = { width: 1, height: 1 };
+    let rpPendingPositionUpdate = false;
+    const rpRegionElements = new Map();
+    const rpRegionForms = new Map();
+    let rpDragState = null;
+
+    function rpIsRouweiSelected(){
+      return !!(rp.model && rp.model.value && rp.model.value.includes('rouwei'));
+    }
+
+    function updateRpRouweiState(){
+      const isRouwei = rpIsRouweiSelected();
+      if (rp.rouweiWrap) rp.rouweiWrap.style.display = isRouwei ? '' : 'none';
+      if (rp.negZero){
+        if (isRouwei){
+          rp.negZero.checked = false;
+          rp.negZero.disabled = true;
+        } else {
+          rp.negZero.disabled = false;
+        }
+      }
+      updateRpNegativeVisibility();
+    }
+
+    function updateRpNegativeVisibility(){
+      if (!rp.negWrap) return;
+      const show = !rpIsRouweiSelected() && !(rp.negZero && rp.negZero.checked);
+      rp.negWrap.style.display = show ? '' : 'none';
+    }
+
+    function updateRpBatchSizeDisplay(){
+      if (!rp.batchSize) return 1;
+      let raw = parseInt(rp.batchSize.value || '1', 10);
+      if (!Number.isFinite(raw)) raw = 1;
+      raw = clampNumber(raw, 1, 4);
+      rp.batchSize.value = raw;
+      if (rp.batchSizeHint){
+        rp.batchSizeHint.textContent = `${raw} image${raw === 1 ? '' : 's'} per run`;
+      }
+      return raw;
+    }
+
+    function updateRpCustomDimsVisibility(){
+      if (!rp.customDimsWrap || !rp.dims) return;
+      const isCustom = rp.dims.value === 'custom';
+      rp.customDimsWrap.style.display = isCustom ? '' : 'none';
+    }
+
+    function defaultRegionMask(meta){
+      const halfW = Math.max(1, Math.round(rpImageWidth / 2));
+      const halfH = Math.max(1, Math.round(rpImageHeight / 2));
+      if (meta.id === 1) return { x: 0, y: 0, width: halfW, height: halfH };
+      if (meta.id === 2) return { x: Math.max(rpImageWidth - halfW, 0), y: 0, width: halfW, height: halfH };
+      if (meta.id === 3) return { x: 0, y: Math.max(rpImageHeight - halfH, 0), width: halfW, height: halfH };
+      if (meta.id === 4) return { x: Math.max(rpImageWidth - halfW, 0), y: Math.max(rpImageHeight - halfH, 0), width: halfW, height: halfH };
+      return { x: 0, y: 0, width: halfW, height: halfH };
+    }
+
+    function clampRegionRect(rect){
+      let { x, y, width, height } = rect || {};
+      const maxW = Math.max(rpImageWidth, 1);
+      const maxH = Math.max(rpImageHeight, 1);
+      if (!Number.isFinite(x)) x = 0;
+      if (!Number.isFinite(y)) y = 0;
+      if (!Number.isFinite(width)) width = maxW;
+      if (!Number.isFinite(height)) height = maxH;
+      x = Math.round(x);
+      y = Math.round(y);
+      width = Math.round(width);
+      height = Math.round(height);
+      if (width < 1) width = 1;
+      if (height < 1) height = 1;
+      if (x < 0){
+        width += x;
+        x = 0;
+      }
+      if (y < 0){
+        height += y;
+        y = 0;
+      }
+      if (width < 1) width = 1;
+      if (height < 1) height = 1;
+      if (width > maxW) width = maxW;
+      if (height > maxH) height = maxH;
+      if (x > maxW - 1) x = maxW - 1;
+      if (y > maxH - 1) y = maxH - 1;
+      if (x + width > maxW) x = maxW - width;
+      if (y + height > maxH) y = maxH - height;
+      x = clampNumber(x, 0, Math.max(maxW - 1, 0));
+      y = clampNumber(y, 0, Math.max(maxH - 1, 0));
+      width = clampNumber(width, 1, maxW);
+      height = clampNumber(height, 1, maxH);
+      return { x, y, width, height };
+    }
+
+    function rectanglesOverlap(a, b){
+      return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    function hasRegionOverlap(rect, ignore){
+      for (const region of rpRegions){
+        if (!region.active) continue;
+        if (ignore && region.id === ignore.id) continue;
+        if (rectanglesOverlap(rect, region.mask)) return true;
+      }
+      return false;
+    }
+
+    function ensureRpDimensions(){
+      let width = 1024;
+      let height = 1024;
+      if (rp.dims){
+        if (rp.dims.value === 'custom'){
+          const customW = parseInt(rp.customWidth && rp.customWidth.value || '1024', 10);
+          const customH = parseInt(rp.customHeight && rp.customHeight.value || '1024', 10);
+          if (Number.isFinite(customW)) width = clampNumber(customW, 512, 2048);
+          if (Number.isFinite(customH)) height = clampNumber(customH, 512, 2048);
+        } else if (rp.dims.value){
+          const parts = rp.dims.value.split('x');
+          const parsedW = parseInt(parts[0], 10);
+          const parsedH = parseInt(parts[1], 10);
+          if (!Number.isNaN(parsedW)) width = parsedW;
+          if (!Number.isNaN(parsedH)) height = parsedH;
+        }
+      }
+      width = clampNumber(width, 512, 2048);
+      height = clampNumber(height, 512, 2048);
+      const prevWidth = rpImageWidth;
+      const prevHeight = rpImageHeight;
+      rpImageWidth = width;
+      rpImageHeight = height;
+      if (prevWidth !== width || prevHeight !== height){
+        rescaleRpRegions(prevWidth, prevHeight);
+        updateMaskEditorSize();
+        renderRegionalUi();
+      } else {
+        updateMaskEditorSize();
+      }
+    }
+
+    function rescaleRpRegions(prevWidth, prevHeight){
+      if (!prevWidth || !prevHeight){
+        rpRegions.forEach(region => {
+          region.mask = clampRegionRect(defaultRegionMask(region.meta));
+        });
+        return;
+      }
+      const scaleX = rpImageWidth / prevWidth;
+      const scaleY = rpImageHeight / prevHeight;
+      rpRegions.forEach(region => {
+        if (region.active){
+          region.mask = clampRegionRect({
+            x: Math.round(region.mask.x * scaleX),
+            y: Math.round(region.mask.y * scaleY),
+            width: Math.round(region.mask.width * scaleX),
+            height: Math.round(region.mask.height * scaleY),
+          });
+        } else {
+          region.mask = clampRegionRect(defaultRegionMask(region.meta));
+        }
+      });
+    }
+
+    function resetRpRegions(){
+      rpRegions.forEach(region => {
+        region.active = region.meta.id <= 2;
+        region.enabled = region.meta.id <= 2;
+        region.prompt = '';
+        region.mask = clampRegionRect(defaultRegionMask(region.meta));
+      });
+      rpSelectedRegionId = 1;
+    }
+
+    function findAvailableRect(meta){
+      let candidate = clampRegionRect(defaultRegionMask(meta));
+      if (!hasRegionOverlap(candidate)) return candidate;
+      const step = Math.max(1, Math.round(Math.min(rpImageWidth, rpImageHeight) / 6));
+      for (let size = 1; size >= 0.4; size -= 0.1){
+        const width = clampNumber(Math.round(candidate.width * size), 1, rpImageWidth);
+        const height = clampNumber(Math.round(candidate.height * size), 1, rpImageHeight);
+        for (let y = 0; y <= rpImageHeight - height; y += step){
+          for (let x = 0; x <= rpImageWidth - width; x += step){
+            const testRect = clampRegionRect({ x, y, width, height });
+            if (!hasRegionOverlap(testRect)) return testRect;
+          }
+        }
+      }
+      for (let y = 0; y < rpImageHeight; y++){
+        for (let x = 0; x < rpImageWidth; x++){
+          const testRect = clampRegionRect({ x, y, width: 1, height: 1 });
+          if (!hasRegionOverlap(testRect)) return testRect;
+        }
+      }
+      return null;
+    }
+
+    function updateMaskEditorSize(){
+      if (!rp.maskEditor) return;
+      rp.maskEditor.style.setProperty('--editor-width', String(Math.max(rpImageWidth, 1)));
+      rp.maskEditor.style.setProperty('--editor-height', String(Math.max(rpImageHeight, 1)));
+      queueRegionPositionUpdate();
+    }
+
+    function renderRegionMaskLayer(){
+      if (!rp.maskInner) return;
+      const activeIds = new Set();
+      for (const region of rpRegions){
+        if (!region.active) continue;
+        activeIds.add(region.id);
+        ensureRegionElement(region);
+        updateRegionElementAppearance(region);
+      }
+      for (const [id, el] of rpRegionElements){
+        if (!activeIds.has(id)){
+          el.remove();
+          rpRegionElements.delete(id);
+        }
+      }
+    }
+
+    function ensureRegionElement(region){
+      if (!rp.maskInner) return null;
+      let el = rpRegionElements.get(region.id);
+      if (!el){
+        el = document.createElement('div');
+        el.className = 'mask-region';
+        el.dataset.region = String(region.id);
+        el.style.backgroundColor = region.meta.fill;
+        el.style.borderColor = region.meta.color;
+        el.addEventListener('pointerdown', ev => startRegionDrag(region, 'move', null, ev));
+        ['nw', 'ne', 'sw', 'se'].forEach(handle => {
+          const h = document.createElement('div');
+          h.className = 'mask-handle';
+          h.dataset.handle = handle;
+          h.addEventListener('pointerdown', ev => {
+            ev.stopPropagation();
+            startRegionDrag(region, 'resize', handle, ev);
+          });
+          el.appendChild(h);
+        });
+        rp.maskInner.appendChild(el);
+        rpRegionElements.set(region.id, el);
+      }
+      return el;
+    }
+
+    function startRegionDrag(region, mode, handle, event){
+      if (!rp.maskInner) return;
+      event.preventDefault();
+      selectRegion(region.id);
+      rpDragState = {
+        region,
+        mode,
+        handle,
+        startRect: { ...region.mask },
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        captureTarget: event.currentTarget,
+      };
+      if (event.currentTarget && event.currentTarget.setPointerCapture){
+        try{ event.currentTarget.setPointerCapture(event.pointerId); } catch(err){}
+      }
+      window.addEventListener('pointermove', onRegionPointerMove);
+      window.addEventListener('pointerup', endRegionDrag, { once: true });
+    }
+
+    function onRegionPointerMove(event){
+      if (!rpDragState) return;
+      const scale = getEditorScale();
+      if (!Number.isFinite(scale.x) || !Number.isFinite(scale.y) || scale.x === 0 || scale.y === 0) return;
+      const dx = Math.round((event.clientX - rpDragState.startClientX) / scale.x);
+      const dy = Math.round((event.clientY - rpDragState.startClientY) / scale.y);
+      const region = rpDragState.region;
+      if (!region) return;
+      const next = { ...rpDragState.startRect };
+      if (rpDragState.mode === 'move'){
+        next.x = rpDragState.startRect.x + dx;
+        next.y = rpDragState.startRect.y + dy;
+      } else {
+        switch (rpDragState.handle){
+          case 'nw':
+            next.x = rpDragState.startRect.x + dx;
+            next.y = rpDragState.startRect.y + dy;
+            next.width = rpDragState.startRect.width - dx;
+            next.height = rpDragState.startRect.height - dy;
+            break;
+          case 'ne':
+            next.y = rpDragState.startRect.y + dy;
+            next.width = rpDragState.startRect.width + dx;
+            next.height = rpDragState.startRect.height - dy;
+            break;
+          case 'sw':
+            next.x = rpDragState.startRect.x + dx;
+            next.width = rpDragState.startRect.width - dx;
+            next.height = rpDragState.startRect.height + dy;
+            break;
+          case 'se':
+          default:
+            next.width = rpDragState.startRect.width + dx;
+            next.height = rpDragState.startRect.height + dy;
+            break;
+        }
+      }
+      if (applyRegionRect(region, next)){
+        queueRegionPositionUpdate();
+      }
+    }
+
+    function endRegionDrag(event){
+      window.removeEventListener('pointermove', onRegionPointerMove);
+      if (rpDragState && rpDragState.captureTarget && rpDragState.captureTarget.releasePointerCapture){
+        try{ rpDragState.captureTarget.releasePointerCapture(event.pointerId); } catch(err){}
+      }
+      const region = rpDragState ? rpDragState.region : null;
+      rpDragState = null;
+      if (region){
+        updateRegionInputs(region);
+        queueRegionPositionUpdate();
+      }
+    }
+
+    function getEditorScale(){
+      const width = Math.max(rpImageWidth, 1);
+      const height = Math.max(rpImageHeight, 1);
+      const fallbackW = rp.maskEditor ? rp.maskEditor.clientWidth : 1;
+      const fallbackH = rp.maskEditor ? rp.maskEditor.clientHeight : 1;
+      const w = rpEditorRect.width || fallbackW || 1;
+      const h = rpEditorRect.height || fallbackH || 1;
+      return { x: w / width, y: h / height };
+    }
+
+    function refreshEditorRect(){
+      if (!rp.maskInner) return;
+      const rect = rp.maskInner.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0){
+        rpEditorRect = { width: rect.width, height: rect.height };
+      }
+    }
+
+    function updateRegionElementAppearance(region){
+      const el = rpRegionElements.get(region.id);
+      if (!el) return;
+      const scale = getEditorScale();
+      if (!Number.isFinite(scale.x) || !Number.isFinite(scale.y) || scale.x === 0 || scale.y === 0) return;
+      el.style.left = `${region.mask.x * scale.x}px`;
+      el.style.top = `${region.mask.y * scale.y}px`;
+      el.style.width = `${Math.max(region.mask.width * scale.x, 4)}px`;
+      el.style.height = `${Math.max(region.mask.height * scale.y, 4)}px`;
+      el.classList.toggle('disabled', !region.enabled);
+      el.classList.toggle('selected', region.id === rpSelectedRegionId);
+    }
+
+    function updateAllRegionPositions(){
+      refreshEditorRect();
+      for (const region of rpRegions){
+        if (!region.active) continue;
+        updateRegionElementAppearance(region);
+      }
+    }
+
+    function queueRegionPositionUpdate(){
+      if (rpPendingPositionUpdate) return;
+      rpPendingPositionUpdate = true;
+      requestAnimationFrame(() => {
+        rpPendingPositionUpdate = false;
+        updateAllRegionPositions();
+      });
+    }
+
+    function selectRegion(id){
+      const region = rpRegions.find(r => r.id === id && r.active);
+      if (!region) return;
+      rpSelectedRegionId = id;
+      updateAllRegionPositions();
+      rpRegionForms.forEach((form, regionId) => {
+        if (!form.entry) return;
+        form.entry.classList.toggle('selected', regionId === id);
+      });
+    }
+
+    function updateRegionFormBounds(){
+      rpRegionForms.forEach(form => {
+        if (!form.inputs) return;
+        if (form.inputs.x) form.inputs.x.max = Math.max(rpImageWidth - 1, 0);
+        if (form.inputs.y) form.inputs.y.max = Math.max(rpImageHeight - 1, 0);
+        if (form.inputs.width) form.inputs.width.max = Math.max(rpImageWidth, 1);
+        if (form.inputs.height) form.inputs.height.max = Math.max(rpImageHeight, 1);
+      });
+    }
+
+    function updateRegionInputs(region){
+      const form = rpRegionForms.get(region.id);
+      if (!form || !form.inputs) return;
+      form.inputs.x.value = region.mask.x;
+      form.inputs.y.value = region.mask.y;
+      form.inputs.width.value = region.mask.width;
+      form.inputs.height.value = region.mask.height;
+      updateRegionEntryState(region);
+    }
+
+    function updateRegionEntryState(region){
+      const form = rpRegionForms.get(region.id);
+      if (!form) return;
+      if (form.entry) form.entry.classList.toggle('disabled', !region.enabled);
+      if (form.entry) form.entry.classList.toggle('selected', region.id === rpSelectedRegionId);
+      if (form.toggle) form.toggle.checked = !!region.enabled;
+    }
+
+    function renderRegionList(){
+      if (!rp.regionList) return;
+      rp.regionList.innerHTML = '';
+      rpRegionForms.clear();
+      for (const region of rpRegions){
+        if (!region.active) continue;
+        const entry = document.createElement('div');
+        entry.className = 'region-entry';
+        entry.dataset.region = String(region.id);
+        const top = document.createElement('div');
+        top.className = 'region-entry-top';
+        const chip = document.createElement('div');
+        chip.className = 'region-chip';
+        chip.innerHTML = `<span class="swatch" style="background:${region.meta.color}"></span>${region.meta.name}`;
+        top.appendChild(chip);
+        let toggleInput = null;
+        if (region.id > 1){
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'region-remove';
+          removeBtn.type = 'button';
+          removeBtn.innerHTML = '&times;';
+          removeBtn.addEventListener('click', ev => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            removeRegion(region.id);
+          });
+          top.appendChild(removeBtn);
+        }
+        entry.appendChild(top);
+        if (region.id > 1){
+          const toggleWrap = document.createElement('div');
+          toggleWrap.style.display = 'flex';
+          toggleWrap.style.alignItems = 'center';
+          toggleWrap.style.justifyContent = 'space-between';
+          toggleWrap.style.marginTop = '8px';
+          const toggleLabel = document.createElement('label');
+          toggleLabel.className = 'switch';
+          toggleInput = document.createElement('input');
+          toggleInput.type = 'checkbox';
+          toggleInput.checked = !!region.enabled;
+          toggleLabel.appendChild(toggleInput);
+          const track = document.createElement('span');
+          track.className = 'track';
+          const thumb = document.createElement('span');
+          thumb.className = 'thumb';
+          track.appendChild(thumb);
+          toggleLabel.appendChild(track);
+          toggleWrap.appendChild(toggleLabel);
+          const toggleHint = document.createElement('span');
+          toggleHint.className = 'hint';
+          toggleHint.textContent = 'Enable region';
+          toggleWrap.appendChild(toggleHint);
+          toggleInput.addEventListener('change', () => {
+            region.enabled = !!toggleInput.checked;
+            updateRegionEntryState(region);
+            updateRegionElementAppearance(region);
+          });
+          entry.appendChild(toggleWrap);
+        }
+        const promptLabel = document.createElement('label');
+        promptLabel.textContent = 'Prompt';
+        promptLabel.setAttribute('for', `rp-region${region.id}-prompt`);
+        promptLabel.style.marginTop = '10px';
+        entry.appendChild(promptLabel);
+        const promptInput = document.createElement('textarea');
+        promptInput.id = `rp-region${region.id}-prompt`;
+        promptInput.value = region.prompt;
+        promptInput.placeholder = `Describe ${region.meta.name.toLowerCase()}...`;
+        promptInput.addEventListener('input', () => { region.prompt = promptInput.value; });
+        entry.appendChild(promptInput);
+        const grid = document.createElement('div');
+        grid.className = 'region-grid';
+        const inputs = {};
+        const coords = [
+          { key: 'x', label: 'X', min: 0 },
+          { key: 'y', label: 'Y', min: 0 },
+          { key: 'width', label: 'Width', min: 1 },
+          { key: 'height', label: 'Height', min: 1 },
+        ];
+        coords.forEach(coord => {
+          const wrap = document.createElement('div');
+          const coordLabel = document.createElement('label');
+          coordLabel.textContent = coord.label;
+          wrap.appendChild(coordLabel);
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.step = '1';
+          input.min = String(coord.min);
+          input.value = String(region.mask[coord.key]);
+          wrap.appendChild(input);
+          input.addEventListener('change', () => {
+            const parsed = parseInt(input.value, 10);
+            if (!Number.isFinite(parsed)){
+              input.value = String(region.mask[coord.key]);
+              return;
+            }
+            const next = { ...region.mask, [coord.key]: parsed };
+            if (!applyRegionRect(region, next)){
+              input.value = String(region.mask[coord.key]);
+            }
+          });
+          grid.appendChild(wrap);
+          inputs[coord.key] = input;
+        });
+        entry.appendChild(grid);
+        entry.addEventListener('click', ev => {
+          if (ev.target.closest('button,textarea,input,label')) return;
+          selectRegion(region.id);
+        });
+        rp.regionList.appendChild(entry);
+        rpRegionForms.set(region.id, { entry, inputs, prompt: promptInput, toggle: toggleInput });
+        updateRegionEntryState(region);
+      }
+      updateRegionFormBounds();
+      selectRegion(rpSelectedRegionId);
+    }
+
+    function renderRegionalUi(){
+      renderRegionMaskLayer();
+      renderRegionList();
+      updateAddRegionState();
+      queueRegionPositionUpdate();
+    }
+
+    function updateAddRegionState(){
+      if (!rp.addRegion) return;
+      const canAdd = rpRegions.some(region => !region.active);
+      rp.addRegion.disabled = !canAdd;
+    }
+
+    function applyRegionRect(region, rect){
+      const sanitized = clampRegionRect(rect);
+      if (hasRegionOverlap(sanitized, region)) return false;
+      region.mask = sanitized;
+      updateRegionElementAppearance(region);
+      updateRegionInputs(region);
+      return true;
+    }
+
+    function addRegion(){
+      const region = rpRegions.find(r => !r.active);
+      if (!region) return;
+      region.active = true;
+      region.enabled = true;
+      region.prompt = '';
+      const rect = findAvailableRect(region.meta);
+      if (!rect){
+        region.active = false;
+        region.enabled = false;
+        if (rp.status) rp.status.textContent = 'No available space for another region';
+        updateAddRegionState();
+        return;
+      }
+      region.mask = rect;
+      renderRegionalUi();
+      selectRegion(region.id);
+    }
+
+    function removeRegion(id){
+      const region = rpRegions.find(r => r.id === id);
+      if (!region || region.id === 1) return;
+      region.active = false;
+      region.enabled = false;
+      const el = rpRegionElements.get(region.id);
+      if (el){
+        el.remove();
+        rpRegionElements.delete(region.id);
+      }
+      rpRegionForms.delete(region.id);
+      if (rpSelectedRegionId === region.id){
+        const firstActive = rpRegions.find(r => r.active);
+        rpSelectedRegionId = firstActive ? firstActive.id : 1;
+      }
+      renderRegionalUi();
+    }
+
+    if (rp.maskEditor && typeof ResizeObserver !== 'undefined'){
+      const observer = new ResizeObserver(() => queueRegionPositionUpdate());
+      observer.observe(rp.maskEditor);
+    }
+
+    window.addEventListener('resize', () => queueRegionPositionUpdate());
+
+    function setRpCfgRangeForSampler(sel, input, hint){
+      if (!sel || !input || !hint) return;
+      const isCfgPP = sel.value.includes('cfg_pp');
+      if (isCfgPP){
+        input.min = 0.5; input.max = 3.0; input.step = 0.1;
+        if (+input.value < 0.5 || +input.value > 3.0) input.value = 1.0;
+        hint.textContent = 'Range 0.5–3.0 (cfg_pp)';
+      } else {
+        input.min = 4.0; input.max = 6.0; input.step = 0.1;
+        if (+input.value < 4.0 || +input.value > 6.0) input.value = 5.0;
+        hint.textContent = 'Range 4.0–6.0 (non cfg_pp)';
+      }
+    }
+
+    function getRegionalWorkflowTemplate(){
+      const el = document.getElementById('regional-workflow-template');
+      if (!el) throw new Error('Regional workflow template missing');
+      return JSON.parse(el.textContent.trim());
+    }
+
+    function buildRegionalPlaceholderMap(){
+      ensureRpDimensions();
+      const width = rpImageWidth;
+      const height = rpImageHeight;
+      const batchSizeVal = updateRpBatchSizeDisplay();
+      const rouweiSelected = rpIsRouweiSelected();
+      const zeroToggle = rp.negZero ? !!rp.negZero.checked : false;
+      const zeroOut = rouweiSelected ? false : zeroToggle;
+      const hiresOn = !!(rp.hiresToggle && rp.hiresToggle.checked);
+      let seedVal = parseInt((rp.seed && rp.seed.value) || '-1', 10);
+      if (seedVal === -1){
+        seedVal = genRandomSeed();
+        if (rp.seedHint) rp.seedHint.textContent = `Random seed: ${seedVal}`;
+      } else if (rp.seedHint){
+        rp.seedHint.textContent = rp.seedHintDefault || 'Use -1 for random';
+      }
+      const useHiresSeed = rp.hiresSeedCustom && rp.hiresSeedCustom.checked;
+      const hiresSeed = useHiresSeed && rp.hiresSeed ? parseInt(rp.hiresSeed.value || '-1', 10) : seedVal;
+      const weightRaw = parseFloat((rp.globalWeight && rp.globalWeight.value) || '0.35');
+      const globalWeight = clampNumber(Number.isFinite(weightRaw) ? weightRaw : 0.35, 0.01, 1);
+      if (rp.globalWeight) rp.globalWeight.value = globalWeight.toFixed(2);
+      const map = {
+        model: rp.model ? rp.model.value : '',
+        global_prompt: rp.globalPrompt ? rp.globalPrompt.value || '' : '',
+        negative_prompt: rp.negative ? rp.negative.value || '' : '',
+        zero_out_negative: zeroOut,
+        rouwei_prefix: rp.rouweiPrefix ? rp.rouweiPrefix.value || '' : '',
+        width,
+        height,
+        batch_size: batchSizeVal,
+        seed: seedVal,
+        steps: parseInt((rp.steps && rp.steps.value) || '25', 10),
+        cfg: parseFloat((rp.cfg && rp.cfg.value) || '5.0'),
+        sampler: rp.sampler ? rp.sampler.value : '',
+        scheduler: rp.scheduler ? rp.scheduler.value : '',
+        enable_apg: rp.apgToggle ? !!rp.apgToggle.checked : true,
+        remove_bg: rp.rmbg ? !!rp.rmbg.checked : false,
+        global_prompt_weight: Number(globalWeight.toFixed(2)),
+        hiresfix_enable: hiresOn,
+        hiresfix_scale_by: parseFloat((rp.hiresScale && rp.hiresScale.value) || '1.50'),
+        hiresfix_seed: hiresSeed,
+        hiresfix_steps: parseInt((rp.hiresSteps && rp.hiresSteps.value) || '20', 10),
+        hiresfix_cfg: parseFloat((rp.hiresCfg && rp.hiresCfg.value) || '5.0'),
+        hiresfix_sampler: rp.hiresSampler ? rp.hiresSampler.value : '',
+        hiresfix_scheduler: rp.hiresScheduler ? rp.hiresScheduler.value : '',
+        hiresfix_denoise: parseFloat((rp.hiresDenoise && rp.hiresDenoise.value) || '0.56'),
+      };
+      const getRegion = id => rpRegions.find(r => r.id === id);
+      for (let i = 1; i <= 4; i++){
+        const region = getRegion(i);
+        const mask = region ? clampRegionRect(region.mask) : { x: 0, y: 0, width: 1, height: 1 };
+        map[`mask_${i}_x`] = mask.x;
+        map[`mask_${i}_y`] = mask.y;
+        map[`mask_${i}_width`] = mask.width;
+        map[`mask_${i}_height`] = mask.height;
+        map[`region_${i}_prompt`] = region ? region.prompt || '' : '';
+      }
+      const region2 = getRegion(2);
+      const region3 = getRegion(3);
+      const region4 = getRegion(4);
+      map.enable_region_2 = region2 ? (!!region2.active && !!region2.enabled) : false;
+      map.enable_region_3 = region3 ? (!!region3.active && !!region3.enabled) : false;
+      map.enable_region_4 = region4 ? (!!region4.active && !!region4.enabled) : false;
+      return map;
+    }
+
+    function buildRegionalPayload(){
+      const template = getRegionalWorkflowTemplate();
+      const map = buildRegionalPlaceholderMap();
+      const resolved = deepReplacePlaceholders(template, map);
+      return { input: { workflow: resolved } };
+    }
+
+    function setRegionalBusy(flag){
+      if (rp.runBtn) rp.runBtn.disabled = flag;
+      if (rp.status) rp.status.textContent = flag ? 'Running…' : 'Idle';
+      if (flag) rpTimer.start(); else rpTimer.stop();
+    }
+
+    function addRegionalShot(url, name){
+      if (!rp.gallery) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'shot';
+      const header = document.createElement('div');
+      header.className = 'header';
+      header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+      wrap.appendChild(header);
+      const img = new Image();
+      img.loading = 'lazy';
+      img.src = url;
+      img.addEventListener('click', () => openLightbox(url));
+      wrap.appendChild(img);
+      rp.gallery.prepend(wrap);
+    }
+
+    function makeRegionalCurl(payload){
+      const key = rp.apiKey ? rp.apiKey.value.trim() : '';
+      const actualKey = key || '<api_key>';
+      return [
+        'curl -sX POST',
+        `  -H "Authorization: Bearer ${actualKey}"`,
+        '  -H "Content-Type: application/json"',
+        `  -d '${JSON.stringify(payload)}'`,
+        `  ${ENDPOINT}`
+      ].join(' \n');
+    }
+
+    async function runRegional(){
+      const key = rp.apiKey ? rp.apiKey.value.trim() : '';
+      if (!key){
+        if (rp.status) rp.status.textContent = 'API key required';
+        return;
+      }
+      updateRpRouweiState();
+      if (rpIsRouweiSelected() && (!rp.rouweiPrefix || !rp.rouweiPrefix.value.trim())){
+        if (rp.status) rp.status.innerHTML = '<span class="error">Rouwei prefix required when using rouwei_v080Vpred.safetensors</span>';
+        return;
+      }
+      try{
+        setRegionalBusy(true);
+        const payload = buildRegionalPayload();
+        if (rp.debugReq) rp.debugReq.textContent = JSON.stringify(payload, null, 2);
+        const resp = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        let data = await resp.json();
+        if (rp.debugResp) rp.debugResp.textContent = JSON.stringify(data, null, 2);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if (data.status !== 'COMPLETED'){
+          if (data.id){
+            if (rp.status) rp.status.textContent = 'Waiting for job...';
+            data = await pollStatus(key, data.id, rp.debugResp);
+          } else {
+            throw new Error(`Job status: ${data.status}`);
+          }
+        }
+        const images = data.output && Array.isArray(data.output.images) ? data.output.images : [];
+        if (!images.length) throw new Error('No images in response');
+        for (const item of images){
+          if (item.type === 'base64' && item.data){
+            addRegionalShot(`data:image/avif;base64,${item.data}`, item.filename || 'image.avif');
+          } else if (item.type === 's3_url' && item.data){
+            addRegionalShot(item.data, item.filename || 'image.avif');
+          }
+        }
+        if (rp.status) rp.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+      } catch(err){
+        console.error(err);
+        if (rp.status) rp.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      } finally {
+        setRegionalBusy(false);
+      }
+    }
+
+    function resetRegionalDefaults(){
+      if (rp.globalPrompt) rp.globalPrompt.value = '';
+      if (rp.negZero) rp.negZero.checked = false;
+      if (rp.negative) rp.negative.value = '';
+      if (rp.rouweiPrefix) rp.rouweiPrefix.value = '';
+      if (rp.dims) rp.dims.value = '1024x1024';
+      rpLastPresetDims = '1024x1024';
+      rpCustomDimsDirty = false;
+      if (rp.customWidth) rp.customWidth.value = 1024;
+      if (rp.customHeight) rp.customHeight.value = 1024;
+      ensureRpDimensions();
+      updateRpCustomDimsVisibility();
+      if (rp.batchSize){ rp.batchSize.value = 1; updateRpBatchSizeDisplay(); }
+      if (rp.rmbg) rp.rmbg.checked = false;
+      if (rp.apgToggle) rp.apgToggle.checked = true;
+      if (rp.globalWeight) rp.globalWeight.value = '0.35';
+      resetRpRegions();
+      renderRegionalUi();
+      if (rp.seed) rp.seed.value = -1;
+      if (rp.seedHint) rp.seedHint.textContent = rp.seedHintDefault || 'Use -1 for random';
+      if (rp.steps) rp.steps.value = 25;
+      if (rp.cfg) rp.cfg.value = 5.0;
+      if (rp.sampler){ rp.sampler.value = 'euler'; setRpCfgRangeForSampler(rp.sampler, rp.cfg, rp.cfgHint); }
+      if (rp.scheduler) rp.scheduler.value = 'normal';
+      if (rp.hiresToggle){ rp.hiresToggle.checked = false; if (rp.hiresWrap) rp.hiresWrap.style.display = 'none'; }
+      if (rp.hiresScale) rp.hiresScale.value = 1.50;
+      if (rp.hiresSteps) rp.hiresSteps.value = 20;
+      if (rp.hiresCfg){ rp.hiresCfg.value = 5.0; if (rp.hiresSampler) setRpCfgRangeForSampler(rp.hiresSampler, rp.hiresCfg, rp.hiresCfgHint); }
+      if (rp.hiresDenoise) rp.hiresDenoise.value = 0.56;
+      if (rp.hiresSampler) rp.hiresSampler.value = 'euler';
+      if (rp.hiresScheduler) rp.hiresScheduler.value = 'normal';
+      if (rp.hiresSeedCustom){ rp.hiresSeedCustom.checked = false; if (rp.hiresSeedWrap) rp.hiresSeedWrap.style.display = 'none'; }
+      if (rp.hiresSeed) rp.hiresSeed.value = -1;
+      updateRpRouweiState();
+      if (rp.status) rp.status.textContent = 'Reset to defaults';
+      queueRegionPositionUpdate();
+    }
+
+    if (rp.model) rp.model.addEventListener('change', updateRpRouweiState);
+    if (rp.negZero) rp.negZero.addEventListener('change', updateRpNegativeVisibility);
+    if (rp.dims) rp.dims.addEventListener('change', () => {
+      if (rp.dims.value === 'custom'){
+        if (!rpCustomDimsDirty && rpLastPresetDims){
+          const [presetW, presetH] = rpLastPresetDims.split('x').map(n => parseInt(n, 10));
+          if (rp.customWidth && Number.isFinite(presetW)) rp.customWidth.value = clampNumber(presetW, 512, 2048);
+          if (rp.customHeight && Number.isFinite(presetH)) rp.customHeight.value = clampNumber(presetH, 512, 2048);
+        }
+      } else {
+        rpLastPresetDims = rp.dims.value;
+      }
+      updateRpCustomDimsVisibility();
+      ensureRpDimensions();
+    });
+    if (rp.customWidth) rp.customWidth.addEventListener('input', () => { rpCustomDimsDirty = true; ensureRpDimensions(); });
+    if (rp.customHeight) rp.customHeight.addEventListener('input', () => { rpCustomDimsDirty = true; ensureRpDimensions(); });
+    if (rp.batchSize) rp.batchSize.addEventListener('input', updateRpBatchSizeDisplay);
+    if (rp.addRegion) rp.addRegion.addEventListener('click', () => addRegion());
+    if (rp.hiresToggle) rp.hiresToggle.addEventListener('change', () => { if (rp.hiresWrap) rp.hiresWrap.style.display = rp.hiresToggle.checked ? '' : 'none'; });
+    if (rp.hiresSeedCustom) rp.hiresSeedCustom.addEventListener('change', () => { if (rp.hiresSeedWrap) rp.hiresSeedWrap.style.display = rp.hiresSeedCustom.checked ? '' : 'none'; });
+    if (rp.resetBtn) rp.resetBtn.addEventListener('click', () => resetRegionalDefaults());
+    if (rp.clearBtn) rp.clearBtn.addEventListener('click', () => {
+      if (rp.gallery) rp.gallery.innerHTML = '';
+      if (rp.status) rp.status.textContent = 'Gallery cleared';
+    });
+    if (rp.runBtn) rp.runBtn.addEventListener('click', ev => { ev.preventDefault(); runRegional(); });
+    if (rp.curlBtn) rp.curlBtn.addEventListener('click', () => {
+      const payload = buildRegionalPayload();
+      const text = makeRegionalCurl(payload);
+      navigator.clipboard.writeText(text).then(() => { if (rp.status) rp.status.textContent = 'cURL copied'; });
+    });
+
+    populateSelect(rp.sampler, SAMPLERS, 'euler');
+    populateSelect(rp.scheduler, SCHEDULERS, 'normal');
+    populateSelect(rp.hiresSampler, SAMPLERS, 'euler');
+    populateSelect(rp.hiresScheduler, SCHEDULERS, 'normal');
+    if (rp.sampler) rp.sampler.addEventListener('change', () => setRpCfgRangeForSampler(rp.sampler, rp.cfg, rp.cfgHint));
+    if (rp.hiresSampler) rp.hiresSampler.addEventListener('change', () => setRpCfgRangeForSampler(rp.hiresSampler, rp.hiresCfg, rp.hiresCfgHint));
+
+    updateRpCustomDimsVisibility();
+    updateRpBatchSizeDisplay();
+    resetRegionalDefaults();
+
     // --- ACE-Step helpers ---
     const ace = id => document.getElementById(id);
     const acel = {
@@ -2152,6 +4019,29 @@
     if(qwenMain) sections.qwen = qwenMain;
     if(aceMain) sections.ace = aceMain;
     if(wanMain) sections.wan = wanMain;
+    const subtabbar = document.getElementById('sdxl-subtabbar');
+    const subtabButtons = subtabbar ? Array.from(subtabbar.querySelectorAll('.tab')) : [];
+    const sdxlSubtabs = Array.from(sdxlMain.querySelectorAll('.sdxl-subtab'));
+    function activateSdxlSubtab(name){
+      sdxlSubtabs.forEach(sub => {
+        if(sub.dataset.subtab === name) sub.classList.remove('hidden');
+        else sub.classList.add('hidden');
+      });
+      subtabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.subtab === name));
+      if(name === 'regional' && typeof queueRegionPositionUpdate === 'function'){
+        queueRegionPositionUpdate();
+      }
+    }
+    if(subtabbar){
+      subtabbar.addEventListener('click', (event)=>{
+        const btn = event.target.closest('.tab');
+        if(!btn) return;
+        const name = btn.dataset.subtab;
+        if(!name) return;
+        activateSdxlSubtab(name);
+      });
+      activateSdxlSubtab('standard');
+    }
     tabbar.addEventListener('click', (e)=>{
       const btn = e.target.closest('.tab'); if(!btn) return;
       const tab = btn.dataset.tab;
@@ -2161,6 +4051,9 @@
       for (const key of Object.keys(sections)){
         if(key === tab) sections[key].classList.remove('hidden');
         else sections[key].classList.add('hidden');
+      }
+      if(tab === 'sdxl' && typeof queueRegionPositionUpdate === 'function'){
+        queueRegionPositionUpdate();
       }
     });
   })();
