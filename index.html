@@ -766,76 +766,203 @@
       <input id="wan-img-url" type="text" placeholder="https://..." autocomplete="off" spellcheck="false" />
       <div class="hint">Direct link to the starting image.</div>
 
-      <label for="wan-prompt">Prompt</label>
-      <textarea id="wan-prompt" placeholder="Describe the motion..."></textarea>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label for="wan-megapixels">Megapixels</label>
+          <input id="wan-megapixels" type="number" min="0.25" max="1.00" step="0.01" value="0.50" />
+          <div class="hint">0.25–1.00 (two decimals).</div>
+        </div>
+        <div>
+          <label for="wan-model-shift">Model shift</label>
+          <input id="wan-model-shift" type="number" min="3.00" max="10.00" step="0.01" value="5.00" />
+          <div class="hint">Controls CFG shift (3.00–10.00).</div>
+        </div>
+      </div>
 
       <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
         <label class="switch"><input id="wan-nsfw" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-        <span class="hint">NSFW prompt (adds safety prefix)</span>
+        <span class="hint">Enable NSFW LoRAs.</span>
       </div>
 
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-        <label class="switch"><input id="wan-lowstep" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-        <span class="hint">Low-step mode (steps 4–8, CFG forced to 1.0; hides negative)</span>
-      </div>
+      <label for="wan-main-prompt" style="margin-top:12px">Main prompt</label>
+      <textarea id="wan-main-prompt" placeholder="Describe the motion..."></textarea>
 
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-        <label class="switch"><input id="wan-zero-negative" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-        <span class="hint">Zero out negative prompt</span>
-      </div>
-
-      <div id="wan-negative-wrap">
-        <label for="wan-negative">Negative prompt</label>
-        <textarea id="wan-negative" placeholder="Things to avoid..."></textarea>
-      </div>
-
-      <label for="wan-seed">Seed</label>
-      <input id="wan-seed" type="number" step="1" value="-1" />
-      <div class="hint" id="wan-seedHint">Use -1 for random (client-side).</div>
+      <p class="hint" style="margin:18px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Initial generation</p>
 
       <div class="row">
+        <div>
+          <label for="wan-initial-length">Frames</label>
+          <select id="wan-initial-length">
+            <option value="33">33</option>
+            <option value="37">37</option>
+            <option value="41">41</option>
+            <option value="45" selected>45</option>
+            <option value="49">49</option>
+            <option value="53">53</option>
+            <option value="57">57</option>
+            <option value="61">61</option>
+            <option value="65">65</option>
+            <option value="69">69</option>
+            <option value="73">73</option>
+            <option value="77">77</option>
+            <option value="81">81</option>
+          </select>
+          <div class="hint">First pass frame count.</div>
+        </div>
         <div>
           <label for="wan-steps">Steps</label>
-          <input id="wan-steps" type="number" min="10" max="25" step="2" value="16" />
-          <div class="hint" id="wan-steps-hint">Even values from 10–24.</div>
-        </div>
-        <div id="wan-cfg-wrap">
-          <label for="wan-cfg">CFG</label>
-          <input id="wan-cfg" type="number" min="1.0" max="6.0" step="0.1" value="3.5" />
-          <div class="hint" id="wan-cfg-hint">Range 1.0–6.0 (ignored in low-step).</div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label for="wan-sampler">Sampler</label>
-          <select id="wan-sampler"></select>
-        </div>
-        <div>
-          <label for="wan-scheduler">Scheduler</label>
-          <select id="wan-scheduler"></select>
+          <select id="wan-steps">
+            <option value="4" selected>4</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+          </select>
+          <div class="hint">Allowed values: 4, 6, 8.</div>
         </div>
       </div>
 
+      <label for="wan-seed" style="margin-top:12px">Seed</label>
+      <input id="wan-seed" type="number" step="1" value="-1" />
+      <div class="hint" id="wan-seed-hint">Use -1 for random (client-side).</div>
+
+      <p class="hint" style="margin:18px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Sampler settings</p>
+
       <div class="row">
         <div>
-          <label for="wan-length">Video length</label>
-          <input id="wan-length" type="number" min="33" max="81" step="1" value="48" />
-          <div class="hint">Range 33–81 frames.</div>
+          <label for="wan-sampler-1">High-noise sampler</label>
+          <select id="wan-sampler-1"></select>
         </div>
         <div>
-          <label for="wan-mp">Megapixels</label>
-          <input id="wan-mp" type="number" min="0.50" max="1.00" step="0.01" value="1.00" />
-          <div class="hint">Range 0.50–1.00 (two decimals).</div>
+          <label for="wan-scheduler-1">High-noise scheduler</label>
+          <select id="wan-scheduler-1"></select>
         </div>
       </div>
 
       <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-        <label class="switch"><input id="wan-interpolate" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
-        <span class="hint">Interpolate frames with RIFE after generation</span>
+        <label class="switch"><input id="wan-same-sampler-2" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Use same sampler for low-noise pass</span>
+      </div>
+      <div id="wan-sampler-2-wrap">
+        <label for="wan-sampler-2">Low-noise sampler</label>
+        <select id="wan-sampler-2"></select>
       </div>
 
-      <div class="row" style="margin-top:10px">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-same-scheduler-2" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Use same scheduler for low-noise pass</span>
+      </div>
+      <div id="wan-scheduler-2-wrap">
+        <label for="wan-scheduler-2">Low-noise scheduler</label>
+        <select id="wan-scheduler-2"></select>
+      </div>
+
+      <p class="hint" style="margin:18px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Extend video</p>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <label class="switch"><input id="wan-extend" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Run a second pass starting from the final frame.</span>
+      </div>
+
+      <div id="wan-extend-wrap" style="display:none; margin-top:12px">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <label class="switch"><input id="wan-alt-prompt" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Use different prompt for second pass</span>
+        </div>
+        <div id="wan-second-prompt-wrap" style="display:none; margin-top:10px">
+          <label for="wan-second-prompt">Second prompt</label>
+          <textarea id="wan-second-prompt" placeholder="Describe the continuation..."></textarea>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label for="wan-ext-length">Frames</label>
+            <select id="wan-ext-length">
+              <option value="33">33</option>
+              <option value="37">37</option>
+              <option value="41">41</option>
+              <option value="45" selected>45</option>
+              <option value="49">49</option>
+              <option value="53">53</option>
+              <option value="57">57</option>
+              <option value="61">61</option>
+              <option value="65">65</option>
+              <option value="69">69</option>
+              <option value="73">73</option>
+              <option value="77">77</option>
+              <option value="81">81</option>
+            </select>
+            <div class="hint">Extended sequence frame count.</div>
+          </div>
+          <div>
+            <label for="wan-ext-steps">Steps</label>
+            <select id="wan-ext-steps">
+              <option value="4" selected>4</option>
+              <option value="6">6</option>
+              <option value="8">8</option>
+            </select>
+            <div class="hint">Allowed values: 4, 6, 8.</div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="wan-ext-seed-same" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Reuse initial seed</span>
+        </div>
+        <div class="hint" id="wan-ext-seed-hint" style="margin-top:4px">Matches initial seed when enabled.</div>
+
+        <p class="hint" style="margin:18px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Extended sampler settings</p>
+
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <label class="switch"><input id="wan-ext-same-sampler-1" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Use initial high-noise sampler</span>
+        </div>
+        <div id="wan-ext-sampler-1-wrap">
+          <label for="wan-ext-sampler-1">Extended high-noise sampler</label>
+          <select id="wan-ext-sampler-1"></select>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="wan-ext-same-scheduler-1" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Use initial high-noise scheduler</span>
+        </div>
+        <div id="wan-ext-scheduler-1-wrap">
+          <label for="wan-ext-scheduler-1">Extended high-noise scheduler</label>
+          <select id="wan-ext-scheduler-1"></select>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="wan-ext-same-sampler-2" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Use extended high-noise sampler for low-noise pass</span>
+        </div>
+        <div id="wan-ext-sampler-2-wrap">
+          <label for="wan-ext-sampler-2">Extended low-noise sampler</label>
+          <select id="wan-ext-sampler-2"></select>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+          <label class="switch"><input id="wan-ext-same-scheduler-2" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+          <span class="hint">Use extended high-noise scheduler for low-noise pass</span>
+        </div>
+        <div id="wan-ext-scheduler-2-wrap">
+          <label for="wan-ext-scheduler-2">Extended low-noise scheduler</label>
+          <select id="wan-ext-scheduler-2"></select>
+        </div>
+      </div>
+
+      <p class="hint" style="margin:18px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Output</p>
+
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <label class="switch"><input id="wan-interpolate" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Interpolate frames with RIFE (24 FPS).</span>
+      </div>
+      <div id="wan-fast-wrap" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-fast-interpolation" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Use fast mode for RIFE.</span>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+        <label class="switch"><input id="wan-pingpong" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        <span class="hint">Ping-pong the final video.</span>
+      </div>
+
+      <div class="row" style="margin-top:12px">
         <button class="btn primary" id="wan-run">Generate</button>
         <button class="btn" id="wan-curl" type="button">Copy cURL</button>
       </div>
@@ -1593,54 +1720,1029 @@
 
 <script id="wan-template" type="application/json">
 {
-  "1":{"inputs":{"unet_name":"wan2.2_i2v_high_noise_14B_fp16.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load High Noise"}},
-  "2":{"inputs":{"unet_name":"wan2.2_i2v_low_noise_14B_fp16.safetensors","weight_dtype":"default"},"class_type":"UNETLoader","_meta":{"title":"Load Low Noise"}},
-  "3":{"inputs":{"lora_name":"wan2.2_lightx2v_high.safetensors","strength_model":1,"model":["10",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly HN"}},
-  "4":{"inputs":{"lora_name":"wan2.2_lightx2v_low.safetensors","strength_model":1,"model":["13",0]},"class_type":"LoraLoaderModelOnly","_meta":{"title":"LoraLoaderModelOnly LN"}},
-  "5":{"inputs":{"lora_name":"NSFW-22-H-e8.safetensors","strength_model":1,"strength_clip":1,"model":["1",0],"clip":["8",0]},"class_type":"LoraLoader","_meta":{"title":"NSFW H"}},
-  "6":{"inputs":{"value":"%prompt%"},"class_type":"PrimitiveStringMultiline","_meta":{"title":"Positive Prompt"}},
-  "7":{"inputs":{"lora_name":"NSFW-22-L-e8.safetensors","strength_model":1,"strength_clip":1,"model":["2",0],"clip":["8",0]},"class_type":"LoraLoader","_meta":{"title":"NSFW L"}},
-  "8":{"inputs":{"clip_name":"umt5_xxl_fp16.safetensors","type":"wan","device":"default"},"class_type":"CLIPLoader","_meta":{"title":"Load CLIP"}},
-  "9":{"inputs":{"vae_name":"wan_2.1_vae.safetensors"},"class_type":"VAELoader","_meta":{"title":"Load VAE"}},
-  "10":{"inputs":{"boolean":["11",0],"on_true":["5",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"Is NSFW High"}},
-  "11":{"inputs":{"value":"%is_nsfw%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Is NSFW"}},
-  "12":{"inputs":{"value":"%low_step%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Low Step"}},
-  "13":{"inputs":{"boolean":["11",0],"on_true":["7",0],"on_false":["2",0]},"class_type":"easy ifElse","_meta":{"title":"Is NSFW Low"}},
-  "14":{"inputs":{"boolean":["12",0],"on_true":["3",0],"on_false":["10",0]},"class_type":"easy ifElse","_meta":{"title":"Low Step High"}},
-  "15":{"inputs":{"boolean":["12",0],"on_true":["4",0],"on_false":["13",0]},"class_type":"easy ifElse","_meta":{"title":"Low Step Low"}},
-  "16":{"inputs":{"text":["71",0],"clip":["70",0]},"class_type":"CLIPTextEncode","_meta":{"title":"Main Prompt"}},
-  "18":{"inputs":{"string_a":"nsfwsks","string_b":["6",0],"delimiter":", "},"class_type":"StringConcatenate","_meta":{"title":"Concatenate"}},
-  "19":{"inputs":{"text":["18",0],"clip":["7",1]},"class_type":"CLIPTextEncode","_meta":{"title":"NSFW PL"}},
-  "20":{"inputs":{"value":"%zero_out_negative%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Zero Out Negative"}},
-  "21":{"inputs":{"text":"%negative_prompt%","clip":["8",0]},"class_type":"CLIPTextEncode","_meta":{"title":"Negative Prompt"}},
-  "23":{"inputs":{"boolean_a":["12",0],"boolean_b":["20",0]},"class_type":"Logic Comparison OR","_meta":{"title":"Logic Comparison OR"}},
-  "28":{"inputs":{"shift":8,"model":["14",0]},"class_type":"ModelSamplingSD3","_meta":{"title":"ModelSamplingSD3"}},
-  "29":{"inputs":{"shift":8,"model":["15",0]},"class_type":"ModelSamplingSD3","_meta":{"title":"ModelSamplingSD3"}},
-  "30":{"inputs":{"add_noise":"enable","noise_seed":"%seed%","steps":["32",0],"cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","start_at_step":0,"end_at_step":["33",0],"return_with_leftover_noise":"disable","model":["28",0],"positive":["34",0],"negative":["34",1],"latent_image":["34",2]},"class_type":"KSamplerAdvanced","_meta":{"title":"KSampler High"}},
-  "31":{"inputs":{"add_noise":"disable","noise_seed":0,"steps":["32",0],"cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","start_at_step":["33",0],"end_at_step":["32",0],"return_with_leftover_noise":"disable","model":["29",0],"positive":["44",0],"negative":["34",1],"latent_image":["30",0]},"class_type":"KSamplerAdvanced","_meta":{"title":"KSampler Low"}},
-  "32":{"inputs":{"value":"%steps%"},"class_type":"PrimitiveInt","_meta":{"title":"Steps"}},
-  "33":{"inputs":{"a":["32",0],"b":2,"operation":"divide"},"class_type":"easy mathInt","_meta":{"title":"Math Int"}},
-  "34":{"inputs":{"width":["66",1],"height":["66",2],"length":["43",0],"batch_size":1,"positive":["16",0],"negative":["73",0],"vae":["9",0],"start_image":["66",0]},"class_type":"WanImageToVideo","_meta":{"title":"WanImageToVideo High"}},
-  "41":{"inputs":{"width":["66",1],"height":["66",2],"length":["43",0],"batch_size":1,"positive":["19",0],"negative":["73",0],"vae":["9",0],"start_image":["66",0]},"class_type":"WanImageToVideo","_meta":{"title":"WanImageToVideo Low"}},
-  "43":{"inputs":{"value":"%length%"},"class_type":"PrimitiveInt","_meta":{"title":"Length"}},
-  "44":{"inputs":{"boolean":["11",0],"on_true":["41",0],"on_false":["34",0]},"class_type":"easy ifElse","_meta":{"title":"Prompt Switch"}},
-  "45":{"inputs":{"samples":["31",0],"vae":["9",0]},"class_type":"VAEDecode","_meta":{"title":"VAE Decode"}},
-  "46":{"inputs":{"ckpt_name":"rife49.pth","clear_cache_after_n_frames":10,"multiplier":2,"fast_mode":true,"ensemble":true,"scale_factor":1,"frames":["45",0]},"class_type":"RIFE VFI","_meta":{"title":"RIFE VFI (recommend rife47 and rife49)"}},
-  "49":{"inputs":{"boolean":["53",0],"on_true":["46",0],"on_false":["45",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
-  "50":{"inputs":{"boolean":["53",0],"on_true":["52",0],"on_false":["51",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
-  "51":{"inputs":{"value":16},"class_type":"PrimitiveInt","_meta":{"title":"Int"}},
-  "52":{"inputs":{"value":24},"class_type":"PrimitiveInt","_meta":{"title":"Int"}},
-  "53":{"inputs":{"value":"%interpolate%"},"class_type":"PrimitiveBoolean","_meta":{"title":"Interpolate with RIFE"}},
-  "65":{"inputs":{"upscale_method":"lanczos","megapixels":"%mp%","image":["69",0]},"class_type":"ImageScaleToTotalPixels","_meta":{"title":"Scale Image to Total Pixels"}},
-  "66":{"inputs":{"width":["67",4],"height":["67",5],"upscale_method":"nearest-exact","keep_proportion":"stretch","pad_color":"0, 0, 0","crop_position":"center","divisible_by":16,"device":"gpu","image":["69",0]},"class_type":"ImageResizeKJv2","_meta":{"title":"Resize Image v2"}},
-  "67":{"inputs":{"image":["65",0]},"class_type":"Image Size to Number","_meta":{"title":"Image Size to Number"}},
-  "69":{"inputs":{"url":"%img_url%","cache":true},"class_type":"LoadImageByUrl //Browser","_meta":{"title":"Load Image By URL"}},
-  "70":{"inputs":{"boolean":["11",0],"on_true":["5",1],"on_false":["8",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
-  "71":{"inputs":{"boolean":["11",0],"on_true":["18",0],"on_false":["6",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
-  "72":{"inputs":{"conditioning":["16",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},
-  "73":{"inputs":{"boolean":["23",0],"on_true":["72",0],"on_false":["21",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},
-  "74":{"inputs":{"images":["49",0],"fps":["50",0]},"class_type":"CreateVideo","_meta":{"title":"Create Video"}},
-  "75":{"inputs":{"filename_prefix":"video/ComfyUI","format":"mp4","codec":"h264","video":["74",0]},"class_type":"SaveVideo","_meta":{"title":"Save Video"}}
+  "1": {
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "2": {
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "3": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "4": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "6": {
+    "inputs": {
+      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors",
+      "strength_model": 1.0,
+      "model": [
+        "62",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "lightx2v High"
+    }
+  },
+  "7": {
+    "inputs": {
+      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
+      "strength_model": 1.0,
+      "model": [
+        "63",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "lightx2v Low"
+    }
+  },
+  "38": {
+    "inputs": {
+      "lora_name": "NSFW-22-H-e8.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "3",
+        0
+      ],
+      "clip": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "NSFW H"
+    }
+  },
+  "39": {
+    "inputs": {
+      "value": "%is_nsfw%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Is NSFW"
+    }
+  },
+  "42": {
+    "inputs": {
+      "lora_name": "NSFW-22-L-e8.safetensors",
+      "strength_model": 1,
+      "model": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "NSFW L"
+    }
+  },
+  "48": {
+    "inputs": {
+      "ckpt_name": "rife49.pth",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 2,
+      "fast_mode": "%fast_interpolation%",
+      "ensemble": true,
+      "scale_factor": 1,
+      "frames": [
+        "76",
+        0
+      ]
+    },
+    "class_type": "RIFE VFI",
+    "_meta": {
+      "title": "RIFE VFI"
+    }
+  },
+  "54": {
+    "inputs": {
+      "fps": [
+        "52:51",
+        0
+      ],
+      "images": [
+        "80:77",
+        0
+      ]
+    },
+    "class_type": "CreateVideo",
+    "_meta": {
+      "title": "Create Video"
+    }
+  },
+  "55": {
+    "inputs": {
+      "filename_prefix": "video/ComfyUI",
+      "format": "mp4",
+      "codec": "h264",
+      "video": [
+        "54",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "Save Video"
+    }
+  },
+  "60": {
+    "inputs": {
+      "url": "%img_url%",
+      "cache": true
+    },
+    "class_type": "LoadImageByUrl //Browser",
+    "_meta": {
+      "title": "Load Image By URL"
+    }
+  },
+  "61": {
+    "inputs": {
+      "boolean": [
+        "39",
+        0
+      ],
+      "on_true": [
+        "38",
+        1
+      ],
+      "on_false": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "NSFW Switch"
+    }
+  },
+  "62": {
+    "inputs": {
+      "boolean": [
+        "39",
+        0
+      ],
+      "on_true": [
+        "38",
+        0
+      ],
+      "on_false": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Switch"
+    }
+  },
+  "63": {
+    "inputs": {
+      "boolean": [
+        "39",
+        0
+      ],
+      "on_true": [
+        "42",
+        0
+      ],
+      "on_false": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Switch"
+    }
+  },
+  "69": {
+    "inputs": {
+      "value": "%model_shift%"
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Model Shift"
+    }
+  },
+  "76": {
+    "inputs": {
+      "boolean": "%extend_video%",
+      "on_true": [
+        "65:30",
+        0
+      ],
+      "on_false": [
+        "24:16",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Extend Video"
+    }
+  },
+  "83": {
+    "inputs": {
+      "value": "%alt_prompt_2nd_pass%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Use Different Prompt for Second Pass"
+    }
+  },
+  "84": {
+    "inputs": {
+      "boolean": [
+        "83",
+        0
+      ],
+      "on_true": [
+        "82:12",
+        0
+      ],
+      "on_false": [
+        "59:12",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Prompt sw"
+    }
+  },
+  "85": {
+    "inputs": {
+      "boolean": [
+        "83",
+        0
+      ],
+      "on_true": [
+        "82:13",
+        0
+      ],
+      "on_false": [
+        "59:13",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Prompt sw"
+    }
+  },
+  "37:18": {
+    "inputs": {
+      "image": [
+        "37:20",
+        0
+      ]
+    },
+    "class_type": "GetImageSizeAndCount",
+    "_meta": {
+      "title": "Get Image Size & Count"
+    }
+  },
+  "37:20": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "megapixels": "%megapixels%",
+      "image": [
+        "60",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "ImageScaleToTotalPixels"
+    }
+  },
+  "37:19": {
+    "inputs": {
+      "width": [
+        "37:18",
+        1
+      ],
+      "height": [
+        "37:18",
+        2
+      ],
+      "upscale_method": "nearest-exact",
+      "keep_proportion": "resize",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 16,
+      "device": "gpu",
+      "image": [
+        "60",
+        0
+      ]
+    },
+    "class_type": "ImageResizeKJv2",
+    "_meta": {
+      "title": "Resize Image v2"
+    }
+  },
+  "59:57": {
+    "inputs": {
+      "string_a": "nsfwsks",
+      "string_b": [
+        "59:58",
+        0
+      ],
+      "delimiter": ", "
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenate"
+    }
+  },
+  "59:12": {
+    "inputs": {
+      "text": [
+        "59:59",
+        0
+      ],
+      "clip": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Text Encode"
+    }
+  },
+  "59:59": {
+    "inputs": {
+      "boolean": [
+        "39",
+        0
+      ],
+      "on_true": [
+        "59:57",
+        0
+      ],
+      "on_false": [
+        "59:58",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "59:13": {
+    "inputs": {
+      "conditioning": [
+        "59:12",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Zero"
+    }
+  },
+  "59:58": {
+    "inputs": {
+      "value": "%main_prompt%"
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Main Prompt"
+    }
+  },
+  "82:57": {
+    "inputs": {
+      "string_a": "nsfwsks",
+      "string_b": [
+        "82:58",
+        0
+      ],
+      "delimiter": ", "
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenate"
+    }
+  },
+  "82:12": {
+    "inputs": {
+      "text": [
+        "82:59",
+        0
+      ],
+      "clip": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Text Encode"
+    }
+  },
+  "82:59": {
+    "inputs": {
+      "boolean": [
+        "39",
+        0
+      ],
+      "on_true": [
+        "82:57",
+        0
+      ],
+      "on_false": [
+        "82:58",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "82:13": {
+    "inputs": {
+      "conditioning": [
+        "82:12",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Zero"
+    }
+  },
+  "82:58": {
+    "inputs": {
+      "value": "%second_prompt%"
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Main Prompt"
+    }
+  },
+  "24:16": {
+    "inputs": {
+      "samples": [
+        "24:9",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "24:5": {
+    "inputs": {
+      "shift": [
+        "69",
+        0
+      ],
+      "model": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "24:22": {
+    "inputs": {
+      "op": "Div",
+      "a": [
+        "24:21",
+        0
+      ],
+      "b": 2
+    },
+    "class_type": "CM_IntBinaryOperation",
+    "_meta": {
+      "title": "IntBinaryOperation"
+    }
+  },
+  "24:21": {
+    "inputs": {
+      "value": "%steps%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Steps"
+    }
+  },
+  "24:14": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": "%seed%",
+      "steps": [
+        "24:21",
+        0
+      ],
+      "cfg": 1,
+      "sampler_name": "%sampler_1%",
+      "scheduler": "%scheduler_1%",
+      "start_at_step": 0,
+      "end_at_step": [
+        "24:22",
+        0
+      ],
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "24:8",
+        0
+      ],
+      "positive": [
+        "24:11",
+        0
+      ],
+      "negative": [
+        "24:11",
+        1
+      ],
+      "latent_image": [
+        "24:11",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (High Noise)"
+    }
+  },
+  "24:9": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": [
+        "24:21",
+        0
+      ],
+      "cfg": 1,
+      "sampler_name": "%sampler_2%",
+      "scheduler": "%scheduler_2%",
+      "start_at_step": [
+        "24:22",
+        0
+      ],
+      "end_at_step": [
+        "24:21",
+        0
+      ],
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "24:5",
+        0
+      ],
+      "positive": [
+        "24:11",
+        0
+      ],
+      "negative": [
+        "24:11",
+        1
+      ],
+      "latent_image": [
+        "24:14",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Low Noise)"
+    }
+  },
+  "24:11": {
+    "inputs": {
+      "width": [
+        "37:19",
+        1
+      ],
+      "height": [
+        "37:19",
+        2
+      ],
+      "length": "%initial_length%",
+      "batch_size": 1,
+      "positive": [
+        "59:12",
+        0
+      ],
+      "negative": [
+        "59:13",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ],
+      "start_image": [
+        "37:19",
+        0
+      ]
+    },
+    "class_type": "WanImageToVideo",
+    "_meta": {
+      "title": "WanImageToVideo"
+    }
+  },
+  "24:8": {
+    "inputs": {
+      "shift": [
+        "69",
+        0
+      ],
+      "model": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "65:5": {
+    "inputs": {
+      "shift": [
+        "69",
+        0
+      ],
+      "model": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "65:22": {
+    "inputs": {
+      "op": "Div",
+      "a": [
+        "65:21",
+        0
+      ],
+      "b": 2
+    },
+    "class_type": "CM_IntBinaryOperation",
+    "_meta": {
+      "title": "IntBinaryOperation"
+    }
+  },
+  "65:21": {
+    "inputs": {
+      "value": "%ext_steps%"
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Steps"
+    }
+  },
+  "65:29": {
+    "inputs": {
+      "images": [
+        "24:16",
+        0
+      ]
+    },
+    "class_type": "FinalFrameSelector",
+    "_meta": {
+      "title": "Final Frame Selector"
+    }
+  },
+  "65:16": {
+    "inputs": {
+      "samples": [
+        "65:9",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "65:30": {
+    "inputs": {
+      "Video_A": [
+        "24:16",
+        0
+      ],
+      "Video_B": [
+        "65:16",
+        0
+      ]
+    },
+    "class_type": "VideoMerge",
+    "_meta": {
+      "title": "Video Merge"
+    }
+  },
+  "65:8": {
+    "inputs": {
+      "shift": [
+        "69",
+        0
+      ],
+      "model": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "65:11": {
+    "inputs": {
+      "width": [
+        "37:19",
+        1
+      ],
+      "height": [
+        "37:19",
+        2
+      ],
+      "length": "%ext_length%",
+      "batch_size": 1,
+      "positive": [
+        "84",
+        0
+      ],
+      "negative": [
+        "85",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ],
+      "start_image": [
+        "65:29",
+        0
+      ]
+    },
+    "class_type": "WanImageToVideo",
+    "_meta": {
+      "title": "WanImageToVideo"
+    }
+  },
+  "65:14": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": "%ext_seed%",
+      "steps": [
+        "65:21",
+        0
+      ],
+      "cfg": 1,
+      "sampler_name": "%ext_sampler_1%",
+      "scheduler": "%ext_scheduler_1%",
+      "start_at_step": 0,
+      "end_at_step": [
+        "65:22",
+        0
+      ],
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "65:8",
+        0
+      ],
+      "positive": [
+        "65:11",
+        0
+      ],
+      "negative": [
+        "65:11",
+        1
+      ],
+      "latent_image": [
+        "65:11",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (High Noise)"
+    }
+  },
+  "65:9": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": [
+        "65:21",
+        0
+      ],
+      "cfg": 1,
+      "sampler_name": "%ext_sampler_2%",
+      "scheduler": "%ext_scheduler_2%",
+      "start_at_step": [
+        "65:22",
+        0
+      ],
+      "end_at_step": [
+        "65:21",
+        0
+      ],
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "65:5",
+        0
+      ],
+      "positive": [
+        "65:11",
+        0
+      ],
+      "negative": [
+        "65:11",
+        1
+      ],
+      "latent_image": [
+        "65:14",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Low Noise)"
+    }
+  },
+  "52:50": {
+    "inputs": {
+      "boolean": [
+        "52:47",
+        0
+      ],
+      "on_true": [
+        "48",
+        0
+      ],
+      "on_false": [
+        "24:16",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "52:45": {
+    "inputs": {
+      "value": 24
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "24"
+    }
+  },
+  "52:46": {
+    "inputs": {
+      "value": 16
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "16"
+    }
+  },
+  "52:51": {
+    "inputs": {
+      "boolean": [
+        "52:47",
+        0
+      ],
+      "on_true": [
+        "52:45",
+        0
+      ],
+      "on_false": [
+        "52:46",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "52:47": {
+    "inputs": {
+      "value": "%interpolate%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Interpolate Output"
+    }
+  },
+  "80:77": {
+    "inputs": {
+      "boolean": "%ping-pong%",
+      "on_true": [
+        "80:79",
+        0
+      ],
+      "on_false": [
+        "52:50",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Ping-Pong Output"
+    }
+  },
+  "80:79": {
+    "inputs": {
+      "Video_A": [
+        "52:50",
+        0
+      ],
+      "Video_B": [
+        "80:80",
+        0
+      ]
+    },
+    "class_type": "VideoMerge",
+    "_meta": {
+      "title": "Video Merge"
+    }
+  },
+  "80:80": {
+    "inputs": {
+      "selected_indexes": "2:0",
+      "images": [
+        "80:78",
+        0
+      ]
+    },
+    "class_type": "ImageSelector",
+    "_meta": {
+      "title": "ImageSelector"
+    }
+  },
+  "80:78": {
+    "inputs": {
+      "Images": [
+        "52:50",
+        0
+      ]
+    },
+    "class_type": "ReverseFrameSequence",
+    "_meta": {
+      "title": "Reverse Frame Sequence"
+    }
+  }
 }
 </script>
 
@@ -4062,114 +5164,119 @@
   const w = id => document.getElementById(id);
   const wanel = {
     apiKey: document.getElementById('apiKey'),
-    prompt: w('wan-prompt'),
-    negative: w('wan-negative'), negWrap: w('wan-negative-wrap'),
-    seed: w('wan-seed'), seedHint: w('wan-seedHint'),
-    nsfw: w('wan-nsfw'), lowStep: w('wan-lowstep'), zeroNegative: w('wan-zero-negative'),
-    steps: w('wan-steps'), stepsHint: w('wan-steps-hint'),
-    cfg: w('wan-cfg'), cfgHint: w('wan-cfg-hint'), cfgWrap: w('wan-cfg-wrap'),
-    sampler: w('wan-sampler'), scheduler: w('wan-scheduler'),
-    length: w('wan-length'), mp: w('wan-mp'),
-    imgUrl: w('wan-img-url'), interpolate: w('wan-interpolate'),
+    imgUrl: w('wan-img-url'),
+    megapixels: w('wan-megapixels'),
+    modelShift: w('wan-model-shift'),
+    nsfw: w('wan-nsfw'),
+    mainPrompt: w('wan-main-prompt'),
+    initialLength: w('wan-initial-length'),
+    steps: w('wan-steps'),
+    seed: w('wan-seed'), seedHint: w('wan-seed-hint'),
+    sampler1: w('wan-sampler-1'), scheduler1: w('wan-scheduler-1'),
+    sameSampler2: w('wan-same-sampler-2'), sampler2Wrap: w('wan-sampler-2-wrap'), sampler2: w('wan-sampler-2'),
+    sameScheduler2: w('wan-same-scheduler-2'), scheduler2Wrap: w('wan-scheduler-2-wrap'), scheduler2: w('wan-scheduler-2'),
+    extendToggle: w('wan-extend'), extendWrap: w('wan-extend-wrap'),
+    altPromptToggle: w('wan-alt-prompt'), secondPromptWrap: w('wan-second-prompt-wrap'), secondPrompt: w('wan-second-prompt'),
+    extSteps: w('wan-ext-steps'), extLength: w('wan-ext-length'),
+    extSeedSame: w('wan-ext-seed-same'), extSeedHint: w('wan-ext-seed-hint'),
+    extSampler1Link: w('wan-ext-same-sampler-1'), extSampler1Wrap: w('wan-ext-sampler-1-wrap'), extSampler1: w('wan-ext-sampler-1'),
+    extScheduler1Link: w('wan-ext-same-scheduler-1'), extScheduler1Wrap: w('wan-ext-scheduler-1-wrap'), extScheduler1: w('wan-ext-scheduler-1'),
+    extSampler2Link: w('wan-ext-same-sampler-2'), extSampler2Wrap: w('wan-ext-sampler-2-wrap'), extSampler2: w('wan-ext-sampler-2'),
+    extScheduler2Link: w('wan-ext-same-scheduler-2'), extScheduler2Wrap: w('wan-ext-scheduler-2-wrap'), extScheduler2: w('wan-ext-scheduler-2'),
+    interpolate: w('wan-interpolate'), fastWrap: w('wan-fast-wrap'), fastInterpolation: w('wan-fast-interpolation'),
+    pingPong: w('wan-pingpong'),
     status: w('wan-status'), timer: w('wan-timer'), gallery: w('wan-gallery'),
     runBtn: w('wan-run'), curlBtn: w('wan-curl'), resetBtn: w('wan-reset'), clearBtn: w('wan-clear'),
     debugReq: w('wan-debugReq'), debugResp: w('wan-debugResp'),
   };
 
   wanel.seedHintDefault = wanel.seedHint ? wanel.seedHint.textContent : '';
+  wanel.extSeedHintDefault = wanel.extSeedHint ? wanel.extSeedHint.textContent : '';
 
   const wantimer = makeTimer(wanel.timer);
   const wanBlobCleanups = [];
 
-  populateSelect(wanel.sampler, SAMPLERS, 'euler');
-  populateSelect(wanel.scheduler, SCHEDULERS, 'simple');
+  populateSelect(wanel.sampler1, SAMPLERS, 'euler');
+  populateSelect(wanel.scheduler1, SCHEDULERS, 'simple');
+  populateSelect(wanel.sampler2, SAMPLERS, 'euler');
+  populateSelect(wanel.scheduler2, SCHEDULERS, 'simple');
+  populateSelect(wanel.extSampler1, SAMPLERS, 'euler');
+  populateSelect(wanel.extScheduler1, SCHEDULERS, 'simple');
+  populateSelect(wanel.extSampler2, SAMPLERS, 'euler');
+  populateSelect(wanel.extScheduler2, SCHEDULERS, 'simple');
 
-  function updateWanNegativeVisibility(){
-    if(!wanel.negWrap) return;
-    const show = !(wanel.lowStep && wanel.lowStep.checked) && !(wanel.zeroNegative && wanel.zeroNegative.checked);
-    wanel.negWrap.style.display = show ? '' : 'none';
-  }
-
-  function clampWanSteps(){
-    const low = !!(wanel.lowStep && wanel.lowStep.checked);
-    if(!wanel.steps) return low ? 6 : 16;
-    let raw = parseInt(wanel.steps.value || (low ? '6' : '16'), 10);
-    if(!Number.isFinite(raw)) raw = low ? 6 : 16;
-    const min = low ? 4 : 10;
-    const max = low ? 8 : 25;
-    raw = Math.max(min, Math.min(max, raw));
-    if(raw % 2 !== 0){
-      raw += 1;
-      if(raw > max) raw -= 2;
-    }
-    if(raw % 2 !== 0){
-      raw = min % 2 === 0 ? min : min + 1;
-    }
-    wanel.steps.value = raw;
-    return raw;
-  }
-
-  function clampWanLength(){
-    if(!wanel.length) return 48;
-    let raw = parseInt(wanel.length.value || '48', 10);
-    if(!Number.isFinite(raw)) raw = 48;
-    raw = Math.max(33, Math.min(81, raw));
-    wanel.length.value = raw;
-    return raw;
-  }
-
-  function clampWanMp(){
-    if(!wanel.mp) return 1.0;
-    let raw = parseFloat(wanel.mp.value || '1');
-    if(!Number.isFinite(raw)) raw = 1.0;
-    raw = Math.max(0.5, Math.min(1.0, raw));
+  function clampWanMegapixels(){
+    if(!wanel.megapixels) return 0.5;
+    let raw = parseFloat(wanel.megapixels.value || '0.5');
+    if(!Number.isFinite(raw)) raw = 0.5;
+    raw = Math.max(0.25, Math.min(1.0, raw));
     raw = Math.round(raw * 100) / 100;
-    wanel.mp.value = raw.toFixed(2);
+    wanel.megapixels.value = raw.toFixed(2);
     return raw;
   }
 
-  function clampWanCfg(){
-    if(!wanel.cfg) return 3.5;
-    if(wanel.cfg.disabled) return 1.0;
-    let raw = parseFloat(wanel.cfg.value || '3.5');
-    if(!Number.isFinite(raw)) raw = 3.5;
-    raw = Math.max(1.0, Math.min(6.0, raw));
-    wanel.cfg.value = raw.toFixed(1);
+  function clampWanModelShift(){
+    if(!wanel.modelShift) return 5.0;
+    let raw = parseFloat(wanel.modelShift.value || '5');
+    if(!Number.isFinite(raw)) raw = 5.0;
+    raw = Math.max(3.0, Math.min(10.0, raw));
+    raw = Math.round(raw * 100) / 100;
+    wanel.modelShift.value = raw.toFixed(2);
     return raw;
   }
 
-  function updateWanLowStepState(){
-    const low = !!(wanel.lowStep && wanel.lowStep.checked);
-    if(wanel.steps){
-      wanel.steps.min = low ? 4 : 10;
-      wanel.steps.max = low ? 8 : 25;
-      wanel.steps.step = 2;
-    }
-    if(wanel.stepsHint) wanel.stepsHint.textContent = low ? 'Even values from 4–8 (low-step mode).' : 'Even values from 10–24.';
-    if(wanel.cfgHint) wanel.cfgHint.textContent = low ? 'CFG forced to 1.0 in low-step mode.' : 'Range 1.0–6.0 (ignored in low-step).';
-    if(wanel.cfg){
-      if(low){
-        if(!wanel.cfg.dataset.prevValue) wanel.cfg.dataset.prevValue = wanel.cfg.value || '3.5';
-        wanel.cfg.value = '1.0';
-        wanel.cfg.disabled = true;
-      } else {
-        wanel.cfg.disabled = false;
-        const prev = wanel.cfg.dataset.prevValue;
-        let restored = prev;
-        if(restored !== undefined){
-          const prevNum = parseFloat(restored);
-          restored = Number.isFinite(prevNum) ? Math.max(1.0, Math.min(6.0, prevNum)).toFixed(1) : '3.5';
-        } else {
-          const current = parseFloat(wanel.cfg.value || '3.5');
-          restored = Number.isFinite(current) ? Math.max(1.0, Math.min(6.0, current)).toFixed(1) : '3.5';
-        }
-        wanel.cfg.value = restored;
-        delete wanel.cfg.dataset.prevValue;
-      }
-    }
-    clampWanSteps();
-    if(!low) clampWanCfg();
-    updateWanNegativeVisibility();
+  function updateWanSampler2Visibility(){
+    const linked = !!(wanel.sameSampler2 && wanel.sameSampler2.checked);
+    if(wanel.sampler2) wanel.sampler2.disabled = linked;
+    if(wanel.sampler2Wrap) wanel.sampler2Wrap.style.display = linked ? 'none' : '';
+  }
+
+  function updateWanScheduler2Visibility(){
+    const linked = !!(wanel.sameScheduler2 && wanel.sameScheduler2.checked);
+    if(wanel.scheduler2) wanel.scheduler2.disabled = linked;
+    if(wanel.scheduler2Wrap) wanel.scheduler2Wrap.style.display = linked ? 'none' : '';
+  }
+
+  function updateWanExtendVisibility(){
+    const on = !!(wanel.extendToggle && wanel.extendToggle.checked);
+    if(wanel.extendWrap) wanel.extendWrap.style.display = on ? '' : 'none';
+    if(!on && wanel.extSeedHint) wanel.extSeedHint.textContent = wanel.extSeedHintDefault || '';
+  }
+
+  function updateWanAltPromptVisibility(){
+    if(!wanel.secondPromptWrap) return;
+    const show = !!(wanel.extendToggle && wanel.extendToggle.checked && wanel.altPromptToggle && wanel.altPromptToggle.checked);
+    wanel.secondPromptWrap.style.display = show ? '' : 'none';
+  }
+
+  function updateWanExtSampler1Visibility(){
+    const linked = !!(wanel.extSampler1Link && wanel.extSampler1Link.checked);
+    if(wanel.extSampler1) wanel.extSampler1.disabled = linked;
+    if(wanel.extSampler1Wrap) wanel.extSampler1Wrap.style.display = linked ? 'none' : '';
+  }
+
+  function updateWanExtScheduler1Visibility(){
+    const linked = !!(wanel.extScheduler1Link && wanel.extScheduler1Link.checked);
+    if(wanel.extScheduler1) wanel.extScheduler1.disabled = linked;
+    if(wanel.extScheduler1Wrap) wanel.extScheduler1Wrap.style.display = linked ? 'none' : '';
+  }
+
+  function updateWanExtSampler2Visibility(){
+    const linked = !!(wanel.extSampler2Link && wanel.extSampler2Link.checked);
+    if(wanel.extSampler2) wanel.extSampler2.disabled = linked;
+    if(wanel.extSampler2Wrap) wanel.extSampler2Wrap.style.display = linked ? 'none' : '';
+  }
+
+  function updateWanExtScheduler2Visibility(){
+    const linked = !!(wanel.extScheduler2Link && wanel.extScheduler2Link.checked);
+    if(wanel.extScheduler2) wanel.extScheduler2.disabled = linked;
+    if(wanel.extScheduler2Wrap) wanel.extScheduler2Wrap.style.display = linked ? 'none' : '';
+  }
+
+  function updateWanInterpolationVisibility(){
+    const on = !!(wanel.interpolate && wanel.interpolate.checked);
+    if(wanel.fastInterpolation) wanel.fastInterpolation.disabled = !on;
+    if(wanel.fastWrap) wanel.fastWrap.style.display = on ? 'flex' : 'none';
   }
 
   function guessWanFilenameFromUrl(url){
@@ -4180,20 +5287,31 @@
       if(name) return name;
     }catch(err){
       if(typeof url === 'string'){
-        const tail = url.split('/').filter(Boolean).pop();
-        if(tail) return tail;
+        const m = url.match(/\/([^\/\?]+)(?:\?|$)/);
+        if(m && m[1]) return m[1];
       }
     }
     return 'video.mp4';
   }
 
   function guessWanFilenameFromDataUri(uri){
-    const match = /^data:video\/([^;,]+)/i.exec(uri || '');
-    if(match && match[1]){
-      const ext = match[1].split('/').pop();
-      if(ext) return `video.${ext}`;
-    }
-    return 'video.mp4';
+    if(typeof uri !== 'string') return 'video.mp4';
+    const mimeMatch = uri.match(/^data:([^;,]+)/i);
+    const mime = mimeMatch ? mimeMatch[1].toLowerCase() : 'video/mp4';
+    const ext = mime.includes('webm') ? 'webm' : mime.includes('gif') ? 'gif' : 'mp4';
+    return `video.${ext}`;
+  }
+
+  async function fetchWanFile(url){
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    return {
+      url: objectUrl,
+      filename: guessWanFilenameFromUrl(url),
+      cleanup(){ URL.revokeObjectURL(objectUrl); }
+    };
   }
 
   function extractWanVideos(data){
@@ -4317,6 +5435,7 @@
   }
 
   function buildWanPlaceholderMap(){
+    const imgUrl = (wanel.imgUrl && wanel.imgUrl.value || '').trim();
     let seedVal = parseInt(wanel.seed && (wanel.seed.value || '-1'), 10);
     if(!Number.isFinite(seedVal)) seedVal = -1;
     if(seedVal === -1){
@@ -4325,29 +5444,87 @@
     } else if(wanel.seedHint){
       wanel.seedHint.textContent = wanel.seedHintDefault || '';
     }
-    const lowStep = !!(wanel.lowStep && wanel.lowStep.checked);
-    const zeroNeg = !!(wanel.zeroNegative && wanel.zeroNegative.checked);
-    const cfgVal = clampWanCfg();
-    const stepsVal = clampWanSteps();
-    const mpVal = clampWanMp();
-    const lengthVal = clampWanLength();
-    updateWanNegativeVisibility();
-    const imgUrl = (wanel.imgUrl && wanel.imgUrl.value || '').trim();
+
+    const mpVal = clampWanMegapixels();
+    const shiftVal = clampWanModelShift();
+    const stepsVal = parseInt(wanel.steps && wanel.steps.value, 10) || 4;
+    const initialLengthVal = parseInt(wanel.initialLength && wanel.initialLength.value, 10) || 45;
+    const sampler1Val = wanel.sampler1 ? wanel.sampler1.value : 'euler';
+    const scheduler1Val = wanel.scheduler1 ? wanel.scheduler1.value : 'simple';
+    const sampler2Val = (wanel.sameSampler2 && wanel.sameSampler2.checked) ? sampler1Val : (wanel.sampler2 ? wanel.sampler2.value : sampler1Val);
+    const scheduler2Val = (wanel.sameScheduler2 && wanel.sameScheduler2.checked) ? scheduler1Val : (wanel.scheduler2 ? wanel.scheduler2.value : scheduler1Val);
+
+    const extendOn = !!(wanel.extendToggle && wanel.extendToggle.checked);
+    const altPrompt = extendOn && wanel.altPromptToggle && wanel.altPromptToggle.checked;
+    const secondPromptVal = altPrompt && wanel.secondPrompt ? (wanel.secondPrompt.value || '') : '';
+
+    const extStepsVal = parseInt(wanel.extSteps && wanel.extSteps.value, 10) || stepsVal;
+    const extLengthVal = parseInt(wanel.extLength && wanel.extLength.value, 10) || initialLengthVal;
+
+    let extSampler1Val = sampler1Val;
+    if(wanel.extSampler1){
+      const link = !!(wanel.extSampler1Link && wanel.extSampler1Link.checked);
+      extSampler1Val = link ? sampler1Val : wanel.extSampler1.value;
+    }
+
+    let extScheduler1Val = scheduler1Val;
+    if(wanel.extScheduler1){
+      const link = !!(wanel.extScheduler1Link && wanel.extScheduler1Link.checked);
+      extScheduler1Val = link ? scheduler1Val : wanel.extScheduler1.value;
+    }
+
+    let extSampler2Val = extSampler1Val;
+    if(wanel.extSampler2){
+      const link = !!(wanel.extSampler2Link && wanel.extSampler2Link.checked);
+      extSampler2Val = link ? extSampler1Val : wanel.extSampler2.value;
+    }
+
+    let extScheduler2Val = extScheduler1Val;
+    if(wanel.extScheduler2){
+      const link = !!(wanel.extScheduler2Link && wanel.extScheduler2Link.checked);
+      extScheduler2Val = link ? extScheduler1Val : wanel.extScheduler2.value;
+    }
+
+    let extSeedVal = seedVal;
+    if(extendOn){
+      const sameSeed = !!(wanel.extSeedSame && wanel.extSeedSame.checked);
+      if(sameSeed){
+        extSeedVal = seedVal;
+        if(wanel.extSeedHint) wanel.extSeedHint.textContent = wanel.extSeedHintDefault || 'Matches initial seed when enabled.';
+      } else {
+        extSeedVal = genRandomSeed();
+        if(wanel.extSeedHint) wanel.extSeedHint.textContent = `Random seed: ${extSeedVal}`;
+      }
+    } else if(wanel.extSeedHint){
+      wanel.extSeedHint.textContent = wanel.extSeedHintDefault || '';
+    }
+
     return {
-      prompt: wanel.prompt ? wanel.prompt.value || '' : '',
-      negative_prompt: (!lowStep && !zeroNeg && wanel.negative) ? (wanel.negative.value || '') : '',
-      is_nsfw: !!(wanel.nsfw && wanel.nsfw.checked),
-      low_step: lowStep,
-      zero_out_negative: zeroNeg,
-      cfg: lowStep ? 1.0 : parseFloat(cfgVal.toFixed(1)),
-      sampler: wanel.sampler ? wanel.sampler.value : 'euler',
-      scheduler: wanel.scheduler ? wanel.scheduler.value : 'simple',
-      seed: seedVal,
-      steps: stepsVal,
       img_url: imgUrl,
-      mp: parseFloat(mpVal.toFixed(2)),
-      length: lengthVal,
-      interpolate: !!(wanel.interpolate && wanel.interpolate.checked)
+      megapixels: parseFloat(mpVal.toFixed(2)),
+      model_shift: parseFloat(shiftVal.toFixed(2)),
+      is_nsfw: !!(wanel.nsfw && wanel.nsfw.checked),
+      main_prompt: wanel.mainPrompt ? wanel.mainPrompt.value || '' : '',
+      initial_length: initialLengthVal,
+      steps: stepsVal,
+      seed: seedVal,
+      sampler_1: sampler1Val,
+      scheduler_1: scheduler1Val,
+      sampler_2: sampler2Val,
+      scheduler_2: scheduler2Val,
+      extend_video: extendOn,
+      alt_prompt_2nd_pass: altPrompt,
+      second_prompt: secondPromptVal,
+      ext_steps: extStepsVal,
+      ext_length: extLengthVal,
+      ext_seed: extSeedVal,
+      ext_sampler_1: extSampler1Val,
+      ext_scheduler_1: extScheduler1Val,
+      ext_sampler_2: extSampler2Val,
+      ext_scheduler_2: extScheduler2Val,
+      interpolate: !!(wanel.interpolate && wanel.interpolate.checked),
+      fast_interpolation: !!(wanel.fastInterpolation && wanel.fastInterpolation.checked),
+      'ping-pong': !!(wanel.pingPong && wanel.pingPong.checked),
     };
   }
 
@@ -4429,50 +5606,74 @@
   }
 
   function resetWanDefaults(){
-    if(wanel.prompt) wanel.prompt.value = '';
-    if(wanel.negative) wanel.negative.value = '';
+    if(wanel.imgUrl) wanel.imgUrl.value = '';
+    if(wanel.megapixels) wanel.megapixels.value = '0.50';
+    if(wanel.modelShift) wanel.modelShift.value = '5.00';
     if(wanel.nsfw) wanel.nsfw.checked = false;
-    if(wanel.lowStep) wanel.lowStep.checked = false;
-    if(wanel.zeroNegative) wanel.zeroNegative.checked = false;
+    if(wanel.mainPrompt) wanel.mainPrompt.value = '';
+    if(wanel.initialLength) wanel.initialLength.value = '45';
+    if(wanel.steps) wanel.steps.value = '4';
     if(wanel.seed) wanel.seed.value = -1;
     if(wanel.seedHint) wanel.seedHint.textContent = wanel.seedHintDefault || '';
-    if(wanel.steps) wanel.steps.value = 16;
-    if(wanel.cfg){
-      wanel.cfg.disabled = false;
-      delete wanel.cfg.dataset.prevValue;
-      wanel.cfg.value = '3.5';
-    }
-    if(wanel.sampler) wanel.sampler.value = 'euler';
-    if(wanel.scheduler) wanel.scheduler.value = 'simple';
-    if(wanel.length) wanel.length.value = 48;
-    if(wanel.mp) wanel.mp.value = '1.00';
-    if(wanel.imgUrl) wanel.imgUrl.value = '';
+    if(wanel.sampler1) wanel.sampler1.value = 'euler';
+    if(wanel.scheduler1) wanel.scheduler1.value = 'simple';
+    if(wanel.sampler2) wanel.sampler2.value = 'euler';
+    if(wanel.scheduler2) wanel.scheduler2.value = 'simple';
+    if(wanel.sameSampler2) wanel.sameSampler2.checked = true;
+    if(wanel.sameScheduler2) wanel.sameScheduler2.checked = true;
+    if(wanel.extendToggle) wanel.extendToggle.checked = false;
+    if(wanel.altPromptToggle) wanel.altPromptToggle.checked = false;
+    if(wanel.secondPrompt) wanel.secondPrompt.value = '';
+    if(wanel.extSteps) wanel.extSteps.value = '4';
+    if(wanel.extLength) wanel.extLength.value = '45';
+    if(wanel.extSeedSame) wanel.extSeedSame.checked = true;
+    if(wanel.extSeedHint) wanel.extSeedHint.textContent = wanel.extSeedHintDefault || '';
+    if(wanel.extSampler1) wanel.extSampler1.value = 'euler';
+    if(wanel.extScheduler1) wanel.extScheduler1.value = 'simple';
+    if(wanel.extSampler2) wanel.extSampler2.value = 'euler';
+    if(wanel.extScheduler2) wanel.extScheduler2.value = 'simple';
+    if(wanel.extSampler1Link) wanel.extSampler1Link.checked = true;
+    if(wanel.extScheduler1Link) wanel.extScheduler1Link.checked = true;
+    if(wanel.extSampler2Link) wanel.extSampler2Link.checked = true;
+    if(wanel.extScheduler2Link) wanel.extScheduler2Link.checked = true;
     if(wanel.interpolate) wanel.interpolate.checked = true;
-    updateWanLowStepState();
-    clampWanCfg();
-    clampWanMp();
-    clampWanLength();
-    updateWanNegativeVisibility();
+    if(wanel.fastInterpolation) wanel.fastInterpolation.checked = true;
+    if(wanel.pingPong) wanel.pingPong.checked = false;
+    clampWanMegapixels();
+    clampWanModelShift();
+    updateWanSampler2Visibility();
+    updateWanScheduler2Visibility();
+    updateWanExtendVisibility();
+    updateWanAltPromptVisibility();
+    updateWanExtSampler1Visibility();
+    updateWanExtScheduler1Visibility();
+    updateWanExtSampler2Visibility();
+    updateWanExtScheduler2Visibility();
+    updateWanInterpolationVisibility();
   }
 
-  if(wanel.lowStep) wanel.lowStep.addEventListener('change', updateWanLowStepState);
-  if(wanel.zeroNegative) wanel.zeroNegative.addEventListener('change', updateWanNegativeVisibility);
-  if(wanel.steps){
-    wanel.steps.addEventListener('change', clampWanSteps);
-    wanel.steps.addEventListener('blur', clampWanSteps);
+  if(wanel.megapixels){
+    wanel.megapixels.addEventListener('change', clampWanMegapixels);
+    wanel.megapixels.addEventListener('blur', clampWanMegapixels);
   }
-  if(wanel.cfg){
-    wanel.cfg.addEventListener('change', clampWanCfg);
-    wanel.cfg.addEventListener('blur', clampWanCfg);
+  if(wanel.modelShift){
+    wanel.modelShift.addEventListener('change', clampWanModelShift);
+    wanel.modelShift.addEventListener('blur', clampWanModelShift);
   }
-  if(wanel.mp){
-    wanel.mp.addEventListener('change', clampWanMp);
-    wanel.mp.addEventListener('blur', clampWanMp);
-  }
-  if(wanel.length){
-    wanel.length.addEventListener('change', clampWanLength);
-    wanel.length.addEventListener('blur', clampWanLength);
-  }
+  if(wanel.sameSampler2) wanel.sameSampler2.addEventListener('change', updateWanSampler2Visibility);
+  if(wanel.sameScheduler2) wanel.sameScheduler2.addEventListener('change', updateWanScheduler2Visibility);
+  if(wanel.extendToggle) wanel.extendToggle.addEventListener('change', () => { updateWanExtendVisibility(); updateWanAltPromptVisibility(); });
+  if(wanel.altPromptToggle) wanel.altPromptToggle.addEventListener('change', updateWanAltPromptVisibility);
+  if(wanel.extSampler1Link) wanel.extSampler1Link.addEventListener('change', updateWanExtSampler1Visibility);
+  if(wanel.extScheduler1Link) wanel.extScheduler1Link.addEventListener('change', updateWanExtScheduler1Visibility);
+  if(wanel.extSampler2Link) wanel.extSampler2Link.addEventListener('change', updateWanExtSampler2Visibility);
+  if(wanel.extScheduler2Link) wanel.extScheduler2Link.addEventListener('change', updateWanExtScheduler2Visibility);
+  if(wanel.interpolate) wanel.interpolate.addEventListener('change', updateWanInterpolationVisibility);
+  if(wanel.extSeedSame) wanel.extSeedSame.addEventListener('change', () => {
+    if(!wanel.extSeedHint) return;
+    if(wanel.extSeedSame.checked) wanel.extSeedHint.textContent = wanel.extSeedHintDefault || '';
+    else wanel.extSeedHint.textContent = 'Random seed will be generated on run.';
+  });
 
   if(wanel.runBtn) wanel.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); runWan(); });
   if(wanel.curlBtn) wanel.curlBtn.addEventListener('click', ()=>{
