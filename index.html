@@ -3291,7 +3291,7 @@
       if (obj === null || obj === undefined) return obj;
       if (typeof obj === 'string'){
         // Replace only if the entire string is a placeholder like %name%
-        const m = obj.match(/^%([a-zA-Z0-9_]+)%$/);
+        const m = obj.match(/^%([a-zA-Z0-9_-]+)%$/);
         if (m){
           const key = m[1];
           if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
@@ -5806,7 +5806,7 @@
   function deepReplacePlaceholdersQ(obj, map){
     if (obj === null || obj === undefined) return obj;
     if (typeof obj === 'string'){
-      const m = obj.match(/^%([a-zA-Z0-9_]+)%$/);
+      const m = obj.match(/^%([a-zA-Z0-9_-]+)%$/);
       if (m){
         const key = m[1];
         if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
