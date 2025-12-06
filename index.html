@@ -145,15 +145,16 @@
     <div class="sdxl-subtab" data-subtab="standard">
       <section class="card" id="controls">
         <header class="body" style="border-bottom:1px solid var(--border)">
-          <strong>Controls</strong>
+          <strong>Mana AI - SDXL</strong>
           <div style="display:flex; gap:8px; align-items:center">
             <div class="status" id="timer">00:00.00</div>
             <div class="status" id="status">Idle</div>
           </div>
         </header>
         <div class="body">
-          <label for="model">Model</label>
-          <select id="model">
+          <p class="hint" style="margin:0 0 8px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Main</p>
+          <label for="checkpoint">Checkpoint</label>
+          <select id="checkpoint">
             <option value="noobaiXLNAIXL_vPred10Version.safetensors">noobaiXLNAIXL_vPred10Version.safetensors</option>
             <option value="ΣIH-1.5.safetensors">ΣIH-1.5.safetensors</option>
             <option value="midnightNAIXLVpredv1.safetensors">midnightNAIXLVpredv1.safetensors</option>
@@ -167,47 +168,26 @@
           <label for="prompt">Prompt</label>
           <textarea id="prompt" placeholder="Describe the image..."></textarea>
 
-          <div id="negZeroRow" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-            <label class="switch"><input id="negZero" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-            <span class="hint">Zero out negative prompt</span>
-          </div>
-
-          <div id="negWrap">
-            <label for="negative">Negative prompt</label>
-            <textarea id="negative" placeholder="Things to avoid..."></textarea>
-          </div>
-
           <div id="rouweiWrap" style="display:none; margin-top:10px">
             <label for="rouweiPrefix">Rouwei prefix</label>
             <textarea id="rouweiPrefix" placeholder="Required artist and quality tags for rouwei..."></textarea>
             <div class="hint">Required when using rouwei_v080Vpred.safetensors.</div>
           </div>
 
-          <div>
-            <label for="dims">Dimensions</label>
-            <select id="dims">
-              <option>704x1408</option>
-              <option>768x1344</option>
-              <option>768x1280</option>
-              <option>720x1280</option>
-              <option>896x1152</option>
-              <option>1024x1024</option>
-              <option>1152x896</option>
-              <option>1280x768</option>
-              <option>1344x768</option>
-              <option>1408x704</option>
-              <option value="custom">Custom...</option>
-            </select>
-            <div id="customDimsWrap" class="row" style="display:none; margin-top:10px">
-              <div>
-                <label for="customWidth">Width</label>
-                <input id="customWidth" type="number" min="512" max="2048" step="1" value="1024" />
-              </div>
-              <div>
-                <label for="customHeight">Height</label>
-                <input id="customHeight" type="number" min="512" max="2048" step="1" value="1024" />
-              </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label for="width">Width</label>
+              <input id="width" type="number" min="512" max="2048" step="1" value="1024" />
             </div>
+            <div>
+              <label for="height">Height</label>
+              <input id="height" type="number" min="512" max="2048" step="1" value="1024" />
+            </div>
+          </div>
+          <div id="seeleScaleWrap" style="display:none; margin-top:8px">
+            <label for="seeleScale">Seele latent scale (1.0–1.5x)</label>
+            <input id="seeleScale" type="range" min="1.0" max="1.5" step="0.05" value="1.0" />
+            <div class="hint" id="seeleScaleHint">1.0x (HiresFix stays available)</div>
           </div>
 
           <div style="margin-top:10px">
@@ -217,30 +197,78 @@
           </div>
 
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-            <label class="switch"><input id="rmbg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
-            <span class="hint">Remove background (BiRefNet)</span>
+            <label class="switch"><input id="useBakedVae" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Use baked VAE (forced for RF Noob)</span>
+          </div>
+          <div id="vaeWrap" style="margin-top:8px">
+            <label for="vaeName">External VAE</label>
+            <select id="vaeName">
+              <option value="sdxl-vae-anime-alpha-67500.safetensors">sdxl-vae-anime-alpha-67500.safetensors</option>
+            </select>
           </div>
 
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">LoRA</p>
+          <div class="lora-entry">
+            <div class="lora-entry-top">
+              <div class="lora-toggle"><label class="switch"><input id="lora1Enable" type="checkbox"><span class="track"><span class="thumb"></span></span></label><span class="hint">Enable LoRA 1</span></div>
+            </div>
+            <label for="lora1Name">LoRA 1</label>
+            <select id="lora1Name"></select>
+            <label for="lora1Strength">Strength</label>
+            <input id="lora1Strength" type="number" min="0.00" max="1.00" step="0.01" value="0.60" />
+          </div>
+          <div class="lora-entry">
+            <div class="lora-entry-top">
+              <div class="lora-toggle"><label class="switch"><input id="lora2Enable" type="checkbox"><span class="track"><span class="thumb"></span></span></label><span class="hint">Enable LoRA 2</span></div>
+            </div>
+            <label for="lora2Name">LoRA 2</label>
+            <select id="lora2Name"></select>
+            <label for="lora2Strength">Strength</label>
+            <input id="lora2Strength" type="number" min="0.00" max="1.00" step="0.01" value="0.60" />
+          </div>
+          <div class="lora-entry">
+            <div class="lora-entry-top">
+              <div class="lora-toggle"><label class="switch"><input id="lora3Enable" type="checkbox"><span class="track"><span class="thumb"></span></span></label><span class="hint">Enable LoRA 3</span></div>
+            </div>
+            <label for="lora3Name">LoRA 3</label>
+            <select id="lora3Name"></select>
+            <label for="lora3Strength">Strength</label>
+            <input id="lora3Strength" type="number" min="0.00" max="1.00" step="0.01" value="0.60" />
+          </div>
+
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Model patches</p>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-            <label class="switch"><input id="mahiroToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+            <label class="switch"><input id="enableMahiro" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
             <span class="hint">Enable Mahiro</span>
           </div>
-
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
-            <label class="switch"><input id="apgToggle" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
-            <span class="hint">Enable Adaptive Projected Guidance</span>
-          </div>
-
-          <div class="lora-section">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
-              <strong>LoRA</strong>
-              <button class="btn" id="addLoraBtn" type="button">Add LoRA</button>
+          <div id="epsilonWrap" style="display:none; margin-top:8px">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label class="switch"><input id="enableEps" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Enable epsilon scaling</span>
             </div>
-            <div id="loraList"></div>
+            <label for="epsilonFactor">Epsilon scaling factor</label>
+            <input id="epsilonFactor" type="number" min="1.000" max="1.050" step="0.001" value="1.005" />
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="enableApg" type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Enable APG</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="enablePag" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Enable PAG</span>
           </div>
 
-          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
-          <strong></strong>
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Negative conds</p>
+          <div id="negZeroRow" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="zeroNegative" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Zero out negative prompt</span>
+          </div>
+          <div id="negWrap">
+            <label for="negativePrompt">Negative prompt</label>
+            <textarea id="negativePrompt" placeholder="Things to avoid..."></textarea>
+          </div>
+
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Sampler settings</p>
           <div class="row-3">
             <div>
               <label for="seed">Seed</label>
@@ -254,7 +282,7 @@
             <div>
               <label for="cfg">CFG</label>
               <input id="cfg" type="number" step="0.1" value="5.0" />
-              <div class="hint" id="cfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+              <div class="hint" id="cfgHint">Range depends on sampler</div>
             </div>
           </div>
           <div class="row">
@@ -267,33 +295,52 @@
               <select id="scheduler"></select>
             </div>
           </div>
+          <label for="denoise" style="margin-top:10px">Denoise</label>
+          <input id="denoise" type="number" min="0.00" max="1.00" step="0.01" value="1.00" />
+          <div id="fsamplerWrap" style="display:none; margin-top:10px">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label class="switch"><input id="enableFsampler" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Enable FSampler</span>
+            </div>
+            <label for="skipMode">Skip mode</label>
+            <select id="skipMode">
+              <option value="h2/s4">h2/s4</option>
+              <option value="h2/s8">h2/s8</option>
+              <option value="h4/s4">h4/s4</option>
+              <option value="h4/s8">h4/s8</option>
+            </select>
+          </div>
 
-          <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">HiresFix</p>
           <div style="display:flex; align-items:center; justify-content:space-between; margin:8px 0">
-            <strong>HiresFix</strong>
-            <label class="switch"><input id="hiresToggle" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <label class="switch"><input id="hiresEnable" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint" id="hiresHint">Enable HiresFix</span>
           </div>
           <div id="hiresWrap" style="display:none">
-            <div class="row-4">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px">
+              <label class="switch"><input id="hiresType" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Pixel HiresFix (decode, upscale, encode)</span>
+            </div>
+            <div class="row-4" style="margin-top:8px">
               <div>
                 <label for="hiresScale">Scale by</label>
                 <input id="hiresScale" type="number" min="1.00" max="2.00" step="0.01" value="1.50" />
               </div>
               <div>
                 <label for="hiresSteps">Steps</label>
-                <input id="hiresSteps" type="number" min="15" max="25" step="1" value="20" />
+                <input id="hiresSteps" type="number" min="10" max="20" step="1" value="15" />
               </div>
               <div>
                 <label for="hiresCfg">CFG</label>
                 <input id="hiresCfg" type="number" step="0.1" value="5.0" />
-                <div class="hint" id="hiresCfgHint">Range 4.0–6.0 (non cfg_pp)</div>
+                <div class="hint" id="hiresCfgHint">Range depends on sampler</div>
               </div>
               <div>
                 <label for="hiresDenoise">Denoise</label>
                 <input id="hiresDenoise" type="number" min="0.00" max="1.00" step="0.01" value="0.56" />
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="margin-top:8px">
               <div>
                 <label for="hiresSampler">Sampler</label>
                 <select id="hiresSampler"></select>
@@ -312,6 +359,146 @@
               <input id="hiresSeed" type="number" step="1" value="-1" />
             </div>
           </div>
+
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Detailers</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="usePersonDetailer" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Use person detailer</span>
+          </div>
+          <div id="detailer1Wrap" style="display:none">
+            <div class="row-4" style="margin-top:8px">
+              <div>
+                <label for="detailer1Seed">Seed</label>
+                <input id="detailer1Seed" type="number" value="-1" />
+              </div>
+              <div>
+                <label for="detailer1Steps">Steps</label>
+                <input id="detailer1Steps" type="number" min="10" max="30" step="1" value="20" />
+              </div>
+              <div>
+                <label for="detailer1Cfg">CFG</label>
+                <input id="detailer1Cfg" type="number" step="0.1" value="5.0" />
+                <div class="hint" id="detailer1CfgHint">Range depends on sampler</div>
+              </div>
+              <div>
+                <label for="detailer1Denoise">Denoise</label>
+                <input id="detailer1Denoise" type="number" min="0.00" max="1.00" step="0.01" value="0.50" />
+              </div>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <div>
+                <label for="detailer1Sampler">Sampler</label>
+                <select id="detailer1Sampler"></select>
+              </div>
+              <div>
+                <label for="detailer1Scheduler">Scheduler</label>
+                <select id="detailer1Scheduler"></select>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="useFaceDetailer" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Use face detailer</span>
+          </div>
+          <div id="detailer2Wrap" style="display:none">
+            <div class="row-4" style="margin-top:8px">
+              <div>
+                <label for="detailer2Seed">Seed</label>
+                <input id="detailer2Seed" type="number" value="-1" />
+              </div>
+              <div>
+                <label for="detailer2Steps">Steps</label>
+                <input id="detailer2Steps" type="number" min="10" max="30" step="1" value="20" />
+              </div>
+              <div>
+                <label for="detailer2Cfg">CFG</label>
+                <input id="detailer2Cfg" type="number" step="0.1" value="5.0" />
+                <div class="hint" id="detailer2CfgHint">Range depends on sampler</div>
+              </div>
+              <div>
+                <label for="detailer2Denoise">Denoise</label>
+                <input id="detailer2Denoise" type="number" min="0.00" max="1.00" step="0.01" value="0.50" />
+              </div>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <div>
+                <label for="detailer2Sampler">Sampler</label>
+                <select id="detailer2Sampler"></select>
+              </div>
+              <div>
+                <label for="detailer2Scheduler">Scheduler</label>
+                <select id="detailer2Scheduler"></select>
+              </div>
+            </div>
+            <label for="facePrompt" style="margin-top:8px">Face prompt</label>
+            <textarea id="facePrompt" placeholder="Leave empty to reuse main prompt"></textarea>
+          </div>
+
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">HSV</p>
+          <div class="row-3">
+            <div>
+              <label for="hue">Hue</label>
+              <input id="hue" type="number" min="-180" max="180" step="1" value="0" />
+            </div>
+            <div>
+              <label for="saturation">Saturation</label>
+              <input id="saturation" type="number" min="-100" max="100" step="1" value="0" />
+            </div>
+            <div>
+              <label for="light">Light</label>
+              <input id="light" type="number" min="-100" max="100" step="1" value="0" />
+            </div>
+          </div>
+
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Qwen-Image</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="useQwen" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Use Qwen-Image img2img</span>
+          </div>
+          <div id="qwenWrap" style="display:none">
+            <label for="qwenPrompt">Qwen prompt</label>
+            <textarea id="qwenPrompt" placeholder="Prompt for Qwen-Image"></textarea>
+            <div class="row" style="margin-top:8px">
+              <div>
+                <label for="qwenWidth">Qwen width</label>
+                <input id="qwenWidth" type="number" min="64" max="1920" step="16" value="1024" />
+              </div>
+              <div>
+                <label for="qwenHeight">Qwen height</label>
+                <input id="qwenHeight" type="number" min="64" max="1920" step="16" value="1024" />
+              </div>
+            </div>
+            <div class="row-3" style="margin-top:8px">
+              <div>
+                <label for="qwenSeed">Seed</label>
+                <input id="qwenSeed" type="number" value="-1" />
+              </div>
+              <div>
+                <label for="qwenSampler">Sampler</label>
+                <select id="qwenSampler"></select>
+              </div>
+              <div>
+                <label for="qwenScheduler">Scheduler</label>
+                <select id="qwenScheduler"></select>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+              <label class="switch"><input id="qwen8Steps" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+              <span class="hint">Use 8 steps (off for 4)</span>
+            </div>
+          </div>
+
+          <p class="hint" style="margin:16px 0 6px; font-weight:600; text-transform:uppercase; letter-spacing:.05em">Etc.</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px">
+            <label class="switch"><input id="removeBg" type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+            <span class="hint">Remove background (BiRefNet)</span>
+          </div>
+          <label for="birefnetModel" style="margin-top:8px">BiRefNet model</label>
+          <select id="birefnetModel">
+            <option value="BiRefNet_dynamic">BiRefNet_dynamic</option>
+            <option value="BiRefNet_toonout">BiRefNet_toonout</option>
+          </select>
 
           <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
           <div class="row">
@@ -996,7 +1183,1347 @@
 
 
   <!-- Workflow template embedded as JSON for robust placeholder replacement -->
-  <script id="workflow-template" type="application/json">{"1":{"inputs":{"ckpt_name":"%model%"},"class_type":"CheckpointLoaderSimple","_meta":{"title":"Load Checkpoint"}},"2":{"inputs":{"text":"%prompt%","clip":["15",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Main)"}},"3":{"inputs":{"text":"%rouwei_prefix%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Positive Prompt (Rouwei)"}},"4":{"inputs":{"conditioning1":["3",0],"conditioning2":["2",0]},"class_type":"ImpactConcatConditionings","_meta":{"title":"Concat Conditionings"}},"5":{"inputs":{"boolean":["6",0],"on_true":["4",0],"on_false":["2",0]},"class_type":"easy ifElse","_meta":{"title":"If else"}},"6":{"inputs":{"string":"%model%","substring":"rouwei","case_sensitive":true},"class_type":"StringContains","_meta":{"title":"Contains"}},"7":{"inputs":{"conditioning":["5",0]},"class_type":"ConditioningZeroOut","_meta":{"title":"ConditioningZeroOut"}},"8":{"inputs":{"boolean":"%neg_zero_out%","on_true":["7",0],"on_false":["9",0]},"class_type":"easy ifElse","_meta":{"title":"Zero Out Negative"}},"9":{"inputs":{"text":"%negative_prompt%","clip":["1",1]},"class_type":"CLIPTextEncode","_meta":{"title":"Negative Prompt"}},"10":{"inputs":{"seed":"%seed%","steps":"%steps%","cfg":"%cfg%","sampler_name":"%sampler%","scheduler":"%scheduler%","denoise":1,"model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["16",0]},"class_type":"KSampler","_meta":{"title":"KSampler (initial)"}},"11":{"inputs":{"model":["15",0]},"class_type":"Mahiro","_meta":{"title":"Mahiro"}},"12":{"inputs":{"boolean":"%enable_mahiro%","on_true":["11",0],"on_false":["1",0]},"class_type":"easy ifElse","_meta":{"title":"Enable Mahiro"}},"13":{"inputs":{"eta":1,"norm_threshold":20,"momentum":0,"model":["12",0]},"class_type":"APG","_meta":{"title":"Adaptive Projected Guidance"}},"14":{"inputs":{"boolean":"%enable_apg%","on_true":["13",0],"on_false":["12",0]},"class_type":"easy ifElse","_meta":{"title":"Enable APG"}},"15":{"inputs":{"PowerLoraLoaderHeaderWidget":{"type":"PowerLoraLoaderHeaderWidget"},"lora_1":{"on":"%lora1_toggle%","lora":"%lora1_name%","strength":"%lora1_strength%"},"lora_2":{"on":"%lora2_toggle%","lora":"%lora2_name%","strength":"%lora2_strength%"},"lora_3":{"on":"%lora3_toggle%","lora":"%lora3_name%","strength":"%lora3_strength%"},"\u2795 Add Lora":"","model":["1",0],"clip":["1",1]},"class_type":"Power Lora Loader (rgthree)","_meta":{"title":"Power Lora Loader (rgthree)"}},"16":{"inputs":{"width":"%width%","height":"%height%","batch_size":"%batch_size%"},"class_type":"EmptyLatentImage","_meta":{"title":"Empty Latent Image"}},"17":{"inputs":{"upscale_method":"nearest-exact","scale_by":"%hiresfix_scale_by%","samples":["10",0]},"class_type":"LatentUpscaleBy","_meta":{"title":"Upscale Latent By"}},"18":{"inputs":{"seed":"%hiresfix_seed%","steps":"%hiresfix_steps%","cfg":"%hiresfix_cfg%","sampler_name":"%hiresfix_sampler%","scheduler":"%hiresfix_scheduler%","denoise":"%hiresfix_denoise%","model":["14",0],"positive":["5",0],"negative":["8",0],"latent_image":["17",0]},"class_type":"KSampler","_meta":{"title":"KSampler (hiresfix)"}},"19":{"inputs":{"samples":["23",0],"vae":["1",2]},"class_type":"VAEDecode","_meta":{"title":"VAE Decode"}},"20":{"inputs":{"filename_prefix":"ComfyUI","filename_keys":"","foldername_prefix":"","foldername_keys":"","delimiter":"-","save_job_data":"disabled","job_data_per_image":false,"job_custom_text":"","save_metadata":false,"counter_digits":4,"counter_position":"last","one_counter_per_folder":true,"image_preview":true,"output_ext":".avif","quality":99,"images":["22",0]},"class_type":"SaveImageExtended","_meta":{"title":"\ud83d\udcbe Save Image Extended"}},"21":{"inputs":{"model":"BiRefNet_dynamic","mask_blur":0,"mask_offset":0,"invert_output":false,"refine_foreground":false,"background":"Alpha","background_color":"#000000","image":["19",0]},"class_type":"BiRefNetRMBG","_meta":{"title":"BiRefNet Remove Background (RMBG)"}},"22":{"inputs":{"boolean":"%remove_bg%","on_true":["21",0],"on_false":["19",0]},"class_type":"easy ifElse","_meta":{"title":"Remove Background"}},"23":{"inputs":{"boolean":"%use_hiresfix%","on_true":["18",0],"on_false":["10",0]},"class_type":"easy ifElse","_meta":{"title":"HiresFix Enable"}}}</script>
+  <script id="workflow-template" type="application/json">{
+  "2": {
+    "inputs": {
+      "ckpt_name": "%checkpoint_name%"
+    },
+    "class_type": "Checkpoint Loader with Name (Image Saver)",
+    "_meta": {
+      "title": "Checkpoint Loader with Name (Image Saver)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "%prompt%",
+      "clip": [
+        "28",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive (main)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "width": "%width%",
+      "height": "%height%",
+      "batch_size": "%batch_size%"
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "5": {
+    "inputs": {
+      "text": "%rouwei_prefix%",
+      "clip": [
+        "28",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive (rouwei prefix)"
+    }
+  },
+  "6": {
+    "inputs": {
+      "conditioning1": [
+        "5",
+        0
+      ],
+      "conditioning2": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "ImpactConcatConditionings",
+    "_meta": {
+      "title": "Concat Conditionings"
+    }
+  },
+  "7": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "rouwei",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "Contains"
+    }
+  },
+  "8": {
+    "inputs": {
+      "boolean": [
+        "7",
+        0
+      ],
+      "on_true": [
+        "6",
+        0
+      ],
+      "on_false": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "rouwei sw"
+    }
+  },
+  "28": {
+    "inputs": {
+      "PowerLoraLoaderHeaderWidget": {
+        "type": "PowerLoraLoaderHeaderWidget"
+      },
+      "lora_1": {
+        "on": "%lora_1_enable%",
+        "lora": "%lora_1_name%",
+        "strength": "%lora_1_strength%"
+      },
+      "lora_2": {
+        "on": "%lora_2_enable%",
+        "lora": "%lora_2_name%",
+        "strength": "%lora_2_strength%"
+      },
+      "lora_3": {
+        "on": "%lora_3_enable%",
+        "lora": "%lora_3_name%",
+        "strength": "%lora_3_strength%"
+      },
+      "➕ Add Lora": "",
+      "model": [
+        "2",
+        0
+      ],
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "Power Lora Loader (rgthree)",
+    "_meta": {
+      "title": "Power Lora Loader (rgthree)"
+    }
+  },
+  "31": {
+    "inputs": {
+      "text": "%negative_prompt%",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Cond"
+    }
+  },
+  "34": {
+    "inputs": {
+      "conditioning": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "35": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "rouwei",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "is_rouwei"
+    }
+  },
+  "36": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "RectifiedFlow",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "is_nai_rf"
+    }
+  },
+  "37": {
+    "inputs": {
+      "boolean_a": [
+        "35",
+        0
+      ],
+      "boolean_b": [
+        "36",
+        0
+      ]
+    },
+    "class_type": "Logic Comparison OR",
+    "_meta": {
+      "title": "OR"
+    }
+  },
+  "39": {
+    "inputs": {
+      "boolean": [
+        "37",
+        0
+      ],
+      "on_true": [
+        "40",
+        0
+      ],
+      "on_false": [
+        "34",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "40": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "blank cond"
+    }
+  },
+  "41": {
+    "inputs": {
+      "boolean": "%zero_out_negative%",
+      "on_true": [
+        "39",
+        0
+      ],
+      "on_false": [
+        "31",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Zero Out Neg Cond"
+    }
+  },
+  "43": {
+    "inputs": {
+      "seed": "%seed%",
+      "steps": "%steps%",
+      "cfg": "%cfg%",
+      "sampler_name": "%sampler%",
+      "scheduler": "%scheduler%",
+      "denoise": "%denoise%",
+      "model": [
+        "26:25",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "41",
+        0
+      ],
+      "latent_image": [
+        "77",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "44": {
+    "inputs": {
+      "seed": "%seed%",
+      "steps": "%steps%",
+      "cfg": "%cfg%",
+      "scheduler": "%scheduler%",
+      "sampler": "%fsampler_sampler%",
+      "skip_mode": "%skip_mode%",
+      "verbose": false,
+      "model": [
+        "26:25",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "41",
+        0
+      ],
+      "latent_image": [
+        "77",
+        0
+      ]
+    },
+    "class_type": "FSampler",
+    "_meta": {
+      "title": "FSampler"
+    }
+  },
+  "49": {
+    "inputs": {
+      "seed": "%hiresfix_seed%",
+      "steps": "%hiresfix_steps%",
+      "cfg": "%hiresfix_cfg%",
+      "sampler_name": "%hiresfix_sampler%",
+      "scheduler": "%hiresfix_scheduler%",
+      "denoise": "%hiresfix_denoise%",
+      "model": [
+        "26:25",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "41",
+        0
+      ],
+      "latent_image": [
+        "52",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler (HiresFix)"
+    }
+  },
+  "50": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": "%hiresfix_upscale_by%",
+      "samples": [
+        "48:45",
+        0
+      ]
+    },
+    "class_type": "LatentUpscaleBy",
+    "_meta": {
+      "title": "Upscale Latent By"
+    }
+  },
+  "52": {
+    "inputs": {
+      "boolean": "%hiresfix_type%",
+      "on_true": [
+        "51:3",
+        0
+      ],
+      "on_false": [
+        "50",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "HiresFix Type"
+    }
+  },
+  "53": {
+    "inputs": {
+      "samples": [
+        "54",
+        0
+      ],
+      "vae": [
+        "82",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "54": {
+    "inputs": {
+      "boolean": "%hiresfix_enable%",
+      "on_true": [
+        "49",
+        0
+      ],
+      "on_false": [
+        "48:45",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Enable HiresFix"
+    }
+  },
+  "55": {
+    "inputs": {
+      "guide_size": 512,
+      "guide_size_for": true,
+      "max_size": 1024,
+      "seed": "%detailer_1_seed%",
+      "steps": "%detailer_1_steps%",
+      "cfg": "%detailer_1_cfg%",
+      "sampler_name": "%detailer_1_sampler%",
+      "scheduler": "%detailer_1_scheduler%",
+      "denoise": "%detailer_1_denoise%",
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": true,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 10,
+      "bbox_crop_factor": 3,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": false,
+      "noise_mask_feather": 20,
+      "tiled_encode": false,
+      "tiled_decode": false,
+      "image": [
+        "53",
+        0
+      ],
+      "model": [
+        "26:25",
+        0
+      ],
+      "clip": [
+        "28",
+        1
+      ],
+      "vae": [
+        "82",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "41",
+        0
+      ],
+      "bbox_detector": [
+        "56",
+        0
+      ],
+      "segm_detector_opt": [
+        "56",
+        1
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "Detailer 1 (person yolo8)"
+    }
+  },
+  "56": {
+    "inputs": {
+      "model_name": "segm/person_yolov8m-seg.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "58": {
+    "inputs": {
+      "boolean": "%use_person_detailer%",
+      "on_true": [
+        "55",
+        0
+      ],
+      "on_false": [
+        "53",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Use Detailer 1"
+    }
+  },
+  "60": {
+    "inputs": {
+      "model": "%birefnet_model%",
+      "mask_blur": 0,
+      "mask_offset": 0,
+      "invert_output": false,
+      "refine_foreground": true,
+      "background": "Alpha",
+      "background_color": "#222222",
+      "image": [
+        "65",
+        0
+      ]
+    },
+    "class_type": "BiRefNetRMBG",
+    "_meta": {
+      "title": "BiRefNet Remove Background (RMBG)"
+    }
+  },
+  "61": {
+    "inputs": {
+      "boolean": "%remove_bg%",
+      "on_true": [
+        "60",
+        0
+      ],
+      "on_false": [
+        "58",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Remove Background"
+    }
+  },
+  "62": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "filename_keys": "",
+      "foldername_prefix": "",
+      "foldername_keys": "",
+      "delimiter": "-",
+      "save_job_data": "disabled",
+      "job_data_per_image": false,
+      "job_custom_text": "",
+      "save_metadata": false,
+      "counter_digits": 4,
+      "counter_position": "last",
+      "one_counter_per_folder": true,
+      "image_preview": true,
+      "output_ext": ".avif",
+      "quality": 99,
+      "images": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "SaveImageExtended",
+    "_meta": {
+      "title": "Save Image Extended"
+    }
+  },
+  "65": {
+    "inputs": {
+      "hue": "%hue%",
+      "saturation": "%saturation%",
+      "light": "%light%",
+      "light_type": "value",
+      "image": [
+        "80",
+        0
+      ]
+    },
+    "class_type": "HueSaturationLightLevels",
+    "_meta": {
+      "title": "Hue Saturation Light Levels"
+    }
+  },
+  "67": {
+    "inputs": {
+      "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "68": {
+    "inputs": {
+      "unet_name": "qwen_image_fp8_e4m3fn.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "69": {
+    "inputs": {
+      "samples": [
+        "71",
+        0
+      ],
+      "vae": [
+        "76",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "71": {
+    "inputs": {
+      "seed": "%qwen_seed%",
+      "steps": [
+        "70:79",
+        0
+      ],
+      "cfg": 1,
+      "sampler_name": "%qwen_sampler%",
+      "scheduler": "%qwen_scheduler%",
+      "denoise": 1,
+      "model": [
+        "70:76",
+        0
+      ],
+      "positive": [
+        "74",
+        0
+      ],
+      "negative": [
+        "75",
+        0
+      ],
+      "latent_image": [
+        "73",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "72": {
+    "inputs": {
+      "shift": 3.1,
+      "model": [
+        "68",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingAuraFlow",
+    "_meta": {
+      "title": "ModelSamplingAuraFlow"
+    }
+  },
+  "73": {
+    "inputs": {
+      "width": "%qwen_width%",
+      "height": "%qwen_height%",
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {
+      "title": "EmptySD3LatentImage"
+    }
+  },
+  "74": {
+    "inputs": {
+      "text": "%qwen_prompt%",
+      "clip": [
+        "67",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Qwen Prompt"
+    }
+  },
+  "75": {
+    "inputs": {
+      "conditioning": [
+        "74",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "ConditioningZeroOut"
+    }
+  },
+  "76": {
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "77": {
+    "inputs": {
+      "boolean": "%use_qwen_img2img%",
+      "on_true": [
+        "88",
+        0
+      ],
+      "on_false": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Use Qwen img2img"
+    }
+  },
+  "78": {
+    "inputs": {
+      "guide_size": 512,
+      "guide_size_for": true,
+      "max_size": 1024,
+      "seed": "%detailer_2_seed%",
+      "steps": "%detailer_2_steps%",
+      "cfg": "%detailer_2_cfg%",
+      "sampler_name": "%detailer_2_sampler%",
+      "scheduler": "%detailer_2_scheduler%",
+      "denoise": "%detailer_2_denoise%",
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": true,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 10,
+      "bbox_crop_factor": 3,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": false,
+      "noise_mask_feather": 20,
+      "tiled_encode": false,
+      "tiled_decode": false,
+      "image": [
+        "58",
+        0
+      ],
+      "model": [
+        "26:25",
+        0
+      ],
+      "clip": [
+        "28",
+        1
+      ],
+      "vae": [
+        "82",
+        0
+      ],
+      "positive": [
+        "91",
+        0
+      ],
+      "negative": [
+        "41",
+        0
+      ],
+      "bbox_detector": [
+        "79",
+        0
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "Detailer 2 (face yolo8)"
+    }
+  },
+  "79": {
+    "inputs": {
+      "model_name": "bbox/face_yolov8m.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "80": {
+    "inputs": {
+      "boolean": "%use_face_detailer%",
+      "on_true": [
+        "78",
+        0
+      ],
+      "on_false": [
+        "58",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Use Detailer 2"
+    }
+  },
+  "81": {
+    "inputs": {
+      "vae_name": "%vae_name%"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "82": {
+    "inputs": {
+      "boolean": [
+        "87:85",
+        0
+      ],
+      "on_true": [
+        "2",
+        2
+      ],
+      "on_false": [
+        "81",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "VAE Switch"
+    }
+  },
+  "88": {
+    "inputs": {
+      "pixels": [
+        "69",
+        0
+      ],
+      "vae": [
+        "82",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "89": {
+    "inputs": {
+      "text": "%face_prompt%",
+      "clip": [
+        "28",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Face Detailer Prompt"
+    }
+  },
+  "90": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "rouwei",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "Contains"
+    }
+  },
+  "91": {
+    "inputs": {
+      "boolean": [
+        "90",
+        0
+      ],
+      "on_true": [
+        "92",
+        0
+      ],
+      "on_false": [
+        "89",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "rouwei sw"
+    }
+  },
+  "92": {
+    "inputs": {
+      "conditioning1": [
+        "5",
+        0
+      ],
+      "conditioning2": [
+        "89",
+        0
+      ]
+    },
+    "class_type": "ImpactConcatConditionings",
+    "_meta": {
+      "title": "Concat Conditionings"
+    }
+  },
+  "87:83": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "RectifiedFlow",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "Contains"
+    }
+  },
+  "87:85": {
+    "inputs": {
+      "boolean_a": "%use_baked_vae%",
+      "boolean_b": [
+        "87:83",
+        0
+      ]
+    },
+    "class_type": "Logic Comparison OR",
+    "_meta": {
+      "title": "Logic Comparison OR"
+    }
+  },
+  "70:78": {
+    "inputs": {
+      "lora_name": "Qwen-Image-Lightning-8steps-V2.0-bf16.safetensors",
+      "strength_model": 1,
+      "model": [
+        "72",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "8SLoRA"
+    }
+  },
+  "70:77": {
+    "inputs": {
+      "lora_name": "Qwen-Image-Lightning-4steps-V2.0-bf16.safetensors",
+      "strength_model": 1,
+      "model": [
+        "72",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "4SLoRA"
+    }
+  },
+  "70:81": {
+    "inputs": {
+      "value": 8
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "8"
+    }
+  },
+  "70:80": {
+    "inputs": {
+      "value": 4
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "4"
+    }
+  },
+  "70:74": {
+    "inputs": {
+      "value": "%qwen_use_8_steps%"
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "(True is 8 Steps)"
+    }
+  },
+  "70:76": {
+    "inputs": {
+      "boolean": [
+        "70:74",
+        0
+      ],
+      "on_true": [
+        "70:78",
+        0
+      ],
+      "on_false": [
+        "70:77",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Switch"
+    }
+  },
+  "70:79": {
+    "inputs": {
+      "boolean": [
+        "70:74",
+        0
+      ],
+      "on_true": [
+        "70:81",
+        0
+      ],
+      "on_false": [
+        "70:80",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "15:49": {
+    "inputs": {
+      "shift": 2.5,
+      "model": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "15:73": {
+    "inputs": {
+      "boolean": [
+        "15:72",
+        0
+      ],
+      "on_true": [
+        "15:49",
+        0
+      ],
+      "on_false": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "If else"
+    }
+  },
+  "15:72": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "RectifiedFlow",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "Contains"
+    }
+  },
+  "26:16": {
+    "inputs": {
+      "model": [
+        "15:73",
+        0
+      ]
+    },
+    "class_type": "Mahiro",
+    "_meta": {
+      "title": "Mahiro"
+    }
+  },
+  "26:19": {
+    "inputs": {
+      "scaling_factor": "%epsilon_scaling_factor%",
+      "model": [
+        "26:20",
+        0
+      ]
+    },
+    "class_type": "Epsilon Scaling",
+    "_meta": {
+      "title": "Epsilon Scaling"
+    }
+  },
+  "26:17": {
+    "inputs": {
+      "eta": 1,
+      "norm_threshold": 20,
+      "momentum": 0,
+      "model": [
+        "26:21",
+        0
+      ]
+    },
+    "class_type": "APG",
+    "_meta": {
+      "title": "Adaptive Projected Guidance"
+    }
+  },
+  "26:18": {
+    "inputs": {
+      "scale": 2,
+      "model": [
+        "26:24",
+        0
+      ]
+    },
+    "class_type": "PerturbedAttentionGuidance",
+    "_meta": {
+      "title": "PerturbedAttentionGuidance"
+    }
+  },
+  "26:24": {
+    "inputs": {
+      "boolean": "%enable_apg%",
+      "on_true": [
+        "26:17",
+        0
+      ],
+      "on_false": [
+        "26:21",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Enable APG"
+    }
+  },
+  "26:21": {
+    "inputs": {
+      "boolean": [
+        "26:23",
+        0
+      ],
+      "on_true": [
+        "26:19",
+        0
+      ],
+      "on_false": [
+        "26:20",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Enable Epsilon Scaling"
+    }
+  },
+  "26:22": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "oneObsession",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "Contains"
+    }
+  },
+  "26:25": {
+    "inputs": {
+      "boolean": "%enable_pag%",
+      "on_true": [
+        "26:18",
+        0
+      ],
+      "on_false": [
+        "26:24",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Enable PAG"
+    }
+  },
+  "26:20": {
+    "inputs": {
+      "boolean": "%enable_mahiro%",
+      "on_true": [
+        "26:16",
+        0
+      ],
+      "on_false": [
+        "15:73",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "Enable Mahiro"
+    }
+  },
+  "26:23": {
+    "inputs": {
+      "boolean_a": "%enable_epsilon_scaling%",
+      "boolean_b": [
+        "26:22",
+        0
+      ]
+    },
+    "class_type": "Logic Comparison AND",
+    "_meta": {
+      "title": "Logic Comparison AND"
+    }
+  },
+  "48:47": {
+    "inputs": {
+      "string": [
+        "2",
+        3
+      ],
+      "substring": "oneObsession",
+      "case_sensitive": true
+    },
+    "class_type": "StringContains",
+    "_meta": {
+      "title": "Contains"
+    }
+  },
+  "48:46": {
+    "inputs": {
+      "boolean_a": "%enable_fsampler%",
+      "boolean_b": [
+        "48:47",
+        0
+      ]
+    },
+    "class_type": "Logic Comparison AND",
+    "_meta": {
+      "title": "AND FSampler"
+    }
+  },
+  "48:45": {
+    "inputs": {
+      "boolean": [
+        "48:46",
+        0
+      ],
+      "on_true": [
+        "44",
+        0
+      ],
+      "on_false": [
+        "43",
+        0
+      ]
+    },
+    "class_type": "easy ifElse",
+    "_meta": {
+      "title": "IFF FSampler"
+    }
+  },
+  "51:1": {
+    "inputs": {
+      "samples": [
+        "48:45",
+        0
+      ],
+      "vae": [
+        "82",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "51:2": {
+    "inputs": {
+      "upscale_model": "2x-AnimeSharpV4_RCAN.safetensors",
+      "mode": "rescale",
+      "rescale_factor": "%hiresfix_upscale_by%",
+      "resize_width": 1024,
+      "resampling_method": "lanczos",
+      "supersample": "true",
+      "rounding_modulus": 8,
+      "image": [
+        "51:1",
+        0
+      ]
+    },
+    "class_type": "CR Upscale Image",
+    "_meta": {
+      "title": "🔍 CR Upscale Image"
+    }
+  },
+  "51:3": {
+    "inputs": {
+      "pixels": [
+        "51:2",
+        0
+      ],
+      "vae": [
+        "82",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  }
+}</script>
 
 <script id="qwen-template" type="application/json">
 {
@@ -2976,545 +4503,552 @@
       };
     }
 
-    const qs = id => document.getElementById(id);
-    const el = {
-      apiKey: qs('apiKey'), model: qs('model'), prompt: qs('prompt'),
-      negZero: qs('negZero'), negZeroRow: qs('negZeroRow'), negative: qs('negative'), negWrap: qs('negWrap'),
-      rouweiWrap: qs('rouweiWrap'), rouweiPrefix: qs('rouweiPrefix'),
-      dims: qs('dims'), customDimsWrap: qs('customDimsWrap'), customWidth: qs('customWidth'), customHeight: qs('customHeight'),
-      batchSize: qs('batchSize'), batchSizeHint: qs('batchSizeHint'),
-      rmbg: qs('rmbg'),
-      mahiroToggle: qs('mahiroToggle'), apgToggle: qs('apgToggle'),
-      addLoraBtn: qs('addLoraBtn'), loraList: qs('loraList'),
-      seed: qs('seed'), seedHint: qs('seedHint'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'),
-      sampler: qs('sampler'), scheduler: qs('scheduler'),
-      hiresToggle: qs('hiresToggle'), hiresWrap: qs('hiresWrap'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresDenoise: qs('hiresDenoise'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
-      runBtn: qs('runBtn'), curlBtn: qs('curlBtn'), resetBtn: qs('resetBtn'), clearBtn: qs('clearBtn'),
-      status: qs('status'), timer: qs('timer'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
-    };
+    
+      const qs = id => document.getElementById(id);
+      const QWEN_SAMPLERS = ['euler', 'heunpp2', 'dpmpp_2m', 'dpmpp_sde', 'lcm'];
+      const el = {
+        apiKey: qs('apiKey'), checkpoint: qs('checkpoint'), prompt: qs('prompt'),
+        rouweiWrap: qs('rouweiWrap'), rouweiPrefix: qs('rouweiPrefix'),
+        width: qs('width'), height: qs('height'), seeleScaleWrap: qs('seeleScaleWrap'), seeleScale: qs('seeleScale'), seeleScaleHint: qs('seeleScaleHint'),
+        batchSize: qs('batchSize'), batchSizeHint: qs('batchSizeHint'),
+        useBakedVae: qs('useBakedVae'), vaeWrap: qs('vaeWrap'), vaeName: qs('vaeName'),
+        lora1Enable: qs('lora1Enable'), lora1Name: qs('lora1Name'), lora1Strength: qs('lora1Strength'),
+        lora2Enable: qs('lora2Enable'), lora2Name: qs('lora2Name'), lora2Strength: qs('lora2Strength'),
+        lora3Enable: qs('lora3Enable'), lora3Name: qs('lora3Name'), lora3Strength: qs('lora3Strength'),
+        enableMahiro: qs('enableMahiro'), enableEps: qs('enableEps'), epsilonFactor: qs('epsilonFactor'), epsilonWrap: qs('epsilonWrap'), enableApg: qs('enableApg'), enablePag: qs('enablePag'),
+        zeroNegative: qs('zeroNegative'), negZeroRow: qs('negZeroRow'), negativePrompt: qs('negativePrompt'), negWrap: qs('negWrap'),
+        seed: qs('seed'), seedHint: qs('seedHint'), steps: qs('steps'), cfg: qs('cfg'), cfgHint: qs('cfgHint'), sampler: qs('sampler'), scheduler: qs('scheduler'), denoise: qs('denoise'),
+        enableFsampler: qs('enableFsampler'), fsamplerWrap: qs('fsamplerWrap'), skipMode: qs('skipMode'),
+        hiresEnable: qs('hiresEnable'), hiresHint: qs('hiresHint'), hiresWrap: qs('hiresWrap'), hiresType: qs('hiresType'), hiresScale: qs('hiresScale'), hiresSteps: qs('hiresSteps'), hiresCfg: qs('hiresCfg'), hiresCfgHint: qs('hiresCfgHint'), hiresSampler: qs('hiresSampler'), hiresScheduler: qs('hiresScheduler'), hiresDenoise: qs('hiresDenoise'), hiresSeedCustom: qs('hiresSeedCustom'), hiresSeedWrap: qs('hiresSeedWrap'), hiresSeed: qs('hiresSeed'),
+        usePersonDetailer: qs('usePersonDetailer'), detailer1Wrap: qs('detailer1Wrap'), detailer1Seed: qs('detailer1Seed'), detailer1Steps: qs('detailer1Steps'), detailer1Cfg: qs('detailer1Cfg'), detailer1CfgHint: qs('detailer1CfgHint'), detailer1Sampler: qs('detailer1Sampler'), detailer1Scheduler: qs('detailer1Scheduler'), detailer1Denoise: qs('detailer1Denoise'),
+        useFaceDetailer: qs('useFaceDetailer'), detailer2Wrap: qs('detailer2Wrap'), detailer2Seed: qs('detailer2Seed'), detailer2Steps: qs('detailer2Steps'), detailer2Cfg: qs('detailer2Cfg'), detailer2CfgHint: qs('detailer2CfgHint'), detailer2Sampler: qs('detailer2Sampler'), detailer2Scheduler: qs('detailer2Scheduler'), detailer2Denoise: qs('detailer2Denoise'), facePrompt: qs('facePrompt'),
+        hue: qs('hue'), saturation: qs('saturation'), light: qs('light'),
+        useQwen: qs('useQwen'), qwenWrap: qs('qwenWrap'), qwenPrompt: qs('qwenPrompt'), qwenWidth: qs('qwenWidth'), qwenHeight: qs('qwenHeight'), qwenSeed: qs('qwenSeed'), qwenSampler: qs('qwenSampler'), qwenScheduler: qs('qwenScheduler'), qwen8Steps: qs('qwen8Steps'),
+        removeBg: qs('removeBg'), birefnetModel: qs('birefnetModel'),
+        runBtn: qs('runBtn'), curlBtn: qs('curlBtn'), resetBtn: qs('resetBtn'), clearBtn: qs('clearBtn'),
+        status: qs('status'), timer: qs('timer'), gallery: qs('gallery'), debugReq: qs('debugReq'), debugResp: qs('debugResp'),
+      };
 
-    const timer = makeTimer(el.timer);
-    const loraEntries = [];
+      const timer = makeTimer(el.timer);
+      const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
+      el.seedHintDefault = el.seedHint ? el.seedHint.textContent : '';
 
-    const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
-    let lastPresetDims = el.dims && el.dims.value && el.dims.value !== 'custom' ? el.dims.value : '1024x1024';
-    let customDimsDirty = false;
-
-    el.seedHintDefault = el.seedHint ? el.seedHint.textContent : '';
-
-    function isRouweiSelected(){
-      return !!(el.model && typeof el.model.value === 'string' && el.model.value.includes('rouwei'));
-    }
-
-    function updateNegativeVisibility(){
-      const rouwei = isRouweiSelected();
-      if(el.negWrap){
-        el.negWrap.style.display = (el.negZero && el.negZero.checked && !rouwei) ? 'none' : '';
+      function isRouweiSelected(){
+        return !!(el.checkpoint && typeof el.checkpoint.value === 'string' && el.checkpoint.value.includes('rouwei'));
       }
-    }
 
-    function updateRouweiState(){
-      const rouwei = isRouweiSelected();
-      if(el.rouweiWrap){
-        el.rouweiWrap.style.display = rouwei ? '' : 'none';
+      function isSeeleSelected(){
+        return !!(el.checkpoint && el.checkpoint.value.toLowerCase().includes('seele'));
       }
-      if(rouwei){
-        if(el.negZero) el.negZero.checked = false;
-        if(el.negZeroRow) el.negZeroRow.style.display = 'none';
-      } else if(el.negZeroRow){
-        el.negZeroRow.style.display = '';
+
+      function isRfNoobSelected(){
+        return !!(el.checkpoint && el.checkpoint.value.toLowerCase().includes('rectifiedflow'));
       }
-      updateNegativeVisibility();
-    }
 
-    function clampLoraStrength(value){
-      let v = parseFloat(value);
-      if(!Number.isFinite(v)) v = 0.6;
-      if(v < 0.01) v = 0.01;
-      if(v > 1) v = 1;
-      return Math.round(v * 100) / 100;
-    }
-
-    function formatLoraStrength(value){
-      const clamped = clampLoraStrength(value);
-      let str = clamped.toFixed(2);
-      str = str.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
-      return str;
-    }
-
-    function updateLoraStrengthInput(input){
-      if(!input) return;
-      input.value = formatLoraStrength(input.value || '0.6');
-    }
-
-    function updateAddLoraState(){
-      if(!el.addLoraBtn) return;
-      el.addLoraBtn.disabled = loraEntries.length >= MAX_LORAS;
-    }
-
-    function removeLoraEntry(entry){
-      const idx = loraEntries.indexOf(entry);
-      if(idx !== -1) loraEntries.splice(idx, 1);
-      if(entry && entry.wrap && entry.wrap.parentNode){
-        entry.wrap.parentNode.removeChild(entry.wrap);
+      function isOneObsession(){
+        return !!(el.checkpoint && el.checkpoint.value.toLowerCase().includes('oneobsession'));
       }
-      updateAddLoraState();
-    }
 
-    function createLoraEntry(initial = {}){
-      if(!el.loraList || loraEntries.length >= MAX_LORAS) return null;
-      const wrap = document.createElement('div');
-      wrap.className = 'lora-entry';
-
-      const entry = { wrap, toggle: null, select: null, strength: null };
-
-      const top = document.createElement('div');
-      top.className = 'lora-entry-top';
-      const toggleRow = document.createElement('div');
-      toggleRow.className = 'lora-toggle';
-      const switchLabel = document.createElement('label');
-      switchLabel.className = 'switch';
-      const toggleInput = document.createElement('input');
-      toggleInput.type = 'checkbox';
-      toggleInput.checked = initial.toggle !== undefined ? !!initial.toggle : true;
-      const track = document.createElement('span');
-      track.className = 'track';
-      const thumb = document.createElement('span');
-      thumb.className = 'thumb';
-      track.appendChild(thumb);
-      switchLabel.appendChild(toggleInput);
-      switchLabel.appendChild(track);
-      const toggleHint = document.createElement('span');
-      toggleHint.className = 'hint';
-      toggleHint.textContent = 'Enabled';
-      toggleRow.appendChild(switchLabel);
-      toggleRow.appendChild(toggleHint);
-      top.appendChild(toggleRow);
-
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'lora-remove';
-      removeBtn.setAttribute('aria-label', 'Remove LoRA');
-      removeBtn.innerHTML = '&times;';
-      top.appendChild(removeBtn);
-      wrap.appendChild(top);
-
-      const unique = Math.random().toString(36).slice(2, 9);
-      const selectId = `lora-name-${unique}`;
-      const strengthId = `lora-strength-${unique}`;
-
-      const nameLabel = document.createElement('label');
-      nameLabel.setAttribute('for', selectId);
-      nameLabel.textContent = 'LoRA';
-      wrap.appendChild(nameLabel);
-
-      const select = document.createElement('select');
-      select.id = selectId;
-      for(const opt of LORA_OPTIONS){
-        const optionEl = document.createElement('option');
-        optionEl.value = opt;
-        optionEl.textContent = opt;
-        select.appendChild(optionEl);
+      function populateLoraSelect(sel){
+        if(!sel) return;
+        sel.innerHTML = LORA_OPTIONS.map(o => `<option>${o}</option>`).join('');
       }
-      if(initial.name && LORA_OPTIONS.includes(initial.name)){
-        select.value = initial.name;
+
+      populateSelect(el.sampler, SAMPLERS, 'euler');
+      populateSelect(el.scheduler, SCHEDULERS, 'normal');
+      populateSelect(el.hiresSampler, SAMPLERS, 'euler');
+      populateSelect(el.hiresScheduler, SCHEDULERS, 'normal');
+      populateSelect(el.detailer1Sampler, SAMPLERS, 'euler');
+      populateSelect(el.detailer1Scheduler, SCHEDULERS, 'normal');
+      populateSelect(el.detailer2Sampler, SAMPLERS, 'euler');
+      populateSelect(el.detailer2Scheduler, SCHEDULERS, 'normal');
+      populateSelect(el.qwenSampler, QWEN_SAMPLERS, 'euler');
+      populateSelect(el.qwenScheduler, SCHEDULERS, 'normal');
+      [el.lora1Name, el.lora2Name, el.lora3Name].forEach(populateLoraSelect);
+
+      function updateSeeleScaleVisibility(){
+        const isSeele = isSeeleSelected();
+        if(el.seeleScaleWrap) el.seeleScaleWrap.style.display = isSeele ? '' : 'none';
       }
-      wrap.appendChild(select);
 
-      const strengthLabel = document.createElement('label');
-      strengthLabel.setAttribute('for', strengthId);
-      strengthLabel.textContent = 'Strength';
-      wrap.appendChild(strengthLabel);
-
-      const strengthInput = document.createElement('input');
-      strengthInput.type = 'number';
-      strengthInput.id = strengthId;
-      strengthInput.min = '0.01';
-      strengthInput.max = '1.00';
-      strengthInput.step = '0.01';
-      strengthInput.value = initial.strength !== undefined ? String(initial.strength) : '0.6';
-      updateLoraStrengthInput(strengthInput);
-      strengthInput.addEventListener('change', () => updateLoraStrengthInput(strengthInput));
-      wrap.appendChild(strengthInput);
-
-      entry.toggle = toggleInput;
-      entry.select = select;
-      entry.strength = strengthInput;
-
-      removeBtn.addEventListener('click', () => removeLoraEntry(entry));
-
-      loraEntries.push(entry);
-      el.loraList.appendChild(wrap);
-      updateAddLoraState();
-      return entry;
-    }
-
-    function clearLoras(){
-      while(loraEntries.length){
-        removeLoraEntry(loraEntries[0]);
+      function updateRouweiState(){
+        const rouwei = isRouweiSelected();
+        if(el.rouweiWrap) el.rouweiWrap.style.display = rouwei ? '' : 'none';
+        updateNegativeVisibility();
       }
-      if(el.loraList) el.loraList.innerHTML = '';
-      updateAddLoraState();
-    }
 
-    function updateCustomDimsVisibility(){
-      if(!el.customDimsWrap || !el.dims) return;
-      const isCustom = el.dims.value === 'custom';
-      el.customDimsWrap.style.display = isCustom ? '' : 'none';
-    }
-
-    function updateBatchSizeDisplay(){
-      if(!el.batchSize) return 1;
-      let raw = parseInt(el.batchSize.value || '1', 10);
-      if(!Number.isFinite(raw)) raw = 1;
-      raw = clampNumber(raw, 1, 4);
-      el.batchSize.value = raw;
-      if(el.batchSizeHint){
-        el.batchSizeHint.textContent = `${raw} image${raw === 1 ? '' : 's'} per run`;
+      function updateNegativeVisibility(){
+        const hideNeg = !!(el.zeroNegative && el.zeroNegative.checked);
+        if(el.negWrap) el.negWrap.style.display = hideNeg ? 'none' : '';
       }
-      return raw;
-    }
 
-    if(el.customWidth) el.customWidth.addEventListener('input', () => { customDimsDirty = true; });
-    if(el.customHeight) el.customHeight.addEventListener('input', () => { customDimsDirty = true; });
-
-    if(el.batchSize) el.batchSize.addEventListener('input', updateBatchSizeDisplay);
-
-    if(el.dims) el.dims.addEventListener('change', () => {
-      if(el.dims.value === 'custom'){
-        if(!customDimsDirty && lastPresetDims){
-          const [presetW, presetH] = lastPresetDims.split('x').map(n => parseInt(n, 10));
-          if(el.customWidth && !Number.isNaN(presetW)) el.customWidth.value = clampNumber(presetW, 512, 2048);
-          if(el.customHeight && !Number.isNaN(presetH)) el.customHeight.value = clampNumber(presetH, 512, 2048);
+      function updateVaeState(){
+        const rf = isRfNoobSelected();
+        if(el.useBakedVae){
+          if(rf){
+            el.useBakedVae.checked = true;
+            el.useBakedVae.disabled = true;
+          } else {
+            el.useBakedVae.disabled = false;
+          }
         }
-      } else {
-        lastPresetDims = el.dims.value;
+        if(el.vaeWrap) el.vaeWrap.style.display = el.useBakedVae && el.useBakedVae.checked ? 'none' : '';
       }
-      updateCustomDimsVisibility();
-    });
 
-    updateCustomDimsVisibility();
-    updateBatchSizeDisplay();
-
-    populateSelect(el.sampler, SAMPLERS, 'euler');
-    populateSelect(el.scheduler, SCHEDULERS, 'normal');
-    populateSelect(el.hiresSampler, SAMPLERS, 'euler');
-    populateSelect(el.hiresScheduler, SCHEDULERS, 'normal');
-  
-    function setCfgRangeForSampler(samplerSel, cfgInput, hintEl){
-      const isCfgPP = samplerSel.value.includes('cfg_pp');
-      if(isCfgPP){
-        cfgInput.min = 0.5; cfgInput.max = 3.0; cfgInput.step = 0.1;
-        if(+cfgInput.value < 0.5 || +cfgInput.value > 3.0) cfgInput.value = 1.0;
-        hintEl.textContent = 'Range 0.5–3.0 (cfg_pp)';
-      } else {
-        cfgInput.min = 4.0; cfgInput.max = 6.0; cfgInput.step = 0.1;
-        if(+cfgInput.value < 4.0 || +cfgInput.value > 6.0) cfgInput.value = 5.0;
-        hintEl.textContent = 'Range 4.0–6.0 (non cfg_pp)';
+      function updateEpsilonVisibility(){
+        if(!el.epsilonWrap) return;
+        const show = isOneObsession();
+        el.epsilonWrap.style.display = show ? '' : 'none';
+        if(!show && el.enableEps) el.enableEps.checked = false;
       }
-    }
 
-    setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
-    setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
-
-    el.sampler.addEventListener('change', () => setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint));
-    el.hiresSampler.addEventListener('change', () => setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint));
-
-    if(el.negZero) el.negZero.addEventListener('change', updateNegativeVisibility);
-
-    if(el.model) el.model.addEventListener('change', updateRouweiState);
-
-    if(el.addLoraBtn) el.addLoraBtn.addEventListener('click', () => { createLoraEntry(); });
-
-    updateAddLoraState();
-    updateRouweiState();
-
-    el.hiresToggle.addEventListener('change', () => {
-      el.hiresWrap.style.display = el.hiresToggle.checked ? '' : 'none';
-    });
-
-    el.hiresSeedCustom.addEventListener('change', () => {
-      el.hiresSeedWrap.style.display = el.hiresSeedCustom.checked ? '' : 'none';
-    });
-
-    if(el.resetBtn) el.resetBtn.addEventListener('click', () => {
-      // Minimal reset to spec defaults
-      if(el.prompt) el.prompt.value = '';
-      if(el.negative) el.negative.value = '';
-      if(el.negZero) el.negZero.checked = false;
-      if(el.negWrap) el.negWrap.style.display = '';
-      if(el.rouweiPrefix) el.rouweiPrefix.value = '';
-      if(el.dims) el.dims.value = '1024x1024';
-      lastPresetDims = '1024x1024';
-      customDimsDirty = false;
-      if(el.customWidth) el.customWidth.value = 1024;
-      if(el.customHeight) el.customHeight.value = 1024;
-      updateCustomDimsVisibility();
-      if(el.batchSize){ el.batchSize.value = 1; updateBatchSizeDisplay(); }
-      if(el.rmbg) el.rmbg.checked = false;
-      if(el.mahiroToggle) el.mahiroToggle.checked = true;
-      if(el.apgToggle) el.apgToggle.checked = true;
-      clearLoras();
-      if(el.seed) el.seed.value = -1;
-      if(el.steps) el.steps.value = 25;
-      if(el.cfg) el.cfg.value = 5.0;
-      if(el.sampler && el.cfg){
-        el.sampler.value = 'euler';
-        setCfgRangeForSampler(el.sampler, el.cfg, el.cfgHint);
+      function updateFsamplerVisibility(){
+        if(!el.fsamplerWrap) return;
+        const show = isOneObsession() && !(el.useQwen && el.useQwen.checked);
+        el.fsamplerWrap.style.display = show ? '' : 'none';
+        if(!show && el.enableFsampler) el.enableFsampler.checked = false;
       }
-      if(el.scheduler) el.scheduler.value = 'normal';
-      if(el.hiresToggle){ el.hiresToggle.checked = false; if(el.hiresWrap) el.hiresWrap.style.display = 'none'; }
-      if(el.hiresScale) el.hiresScale.value = 1.50;
-      if(el.hiresSteps) el.hiresSteps.value = 20;
-      if(el.hiresCfg){
-        el.hiresCfg.value = 5.0;
-        if(el.hiresSampler) setCfgRangeForSampler(el.hiresSampler, el.hiresCfg, el.hiresCfgHint);
+
+      function updateQwenVisibility(){
+        if(!el.useQwen || !el.qwenWrap) return;
+        el.qwenWrap.style.display = el.useQwen.checked ? '' : 'none';
+        updateFsamplerVisibility();
       }
-      if(el.hiresDenoise) el.hiresDenoise.value = 0.56;
-      if(el.hiresSampler) el.hiresSampler.value='euler';
-      if(el.hiresScheduler) el.hiresScheduler.value='normal';
-      if(el.hiresSeedCustom){ el.hiresSeedCustom.checked = false; if(el.hiresSeedWrap) el.hiresSeedWrap.style.display = 'none'; }
-      if(el.hiresSeed) el.hiresSeed.value=-1;
-      if(el.seedHint) el.seedHint.textContent = el.seedHintDefault;
+
+      function updateDetailerVisibility(){
+        if(el.detailer1Wrap) el.detailer1Wrap.style.display = el.usePersonDetailer && el.usePersonDetailer.checked ? '' : 'none';
+        if(el.detailer2Wrap) el.detailer2Wrap.style.display = el.useFaceDetailer && el.useFaceDetailer.checked ? '' : 'none';
+      }
+
+      function updateHiresVisibility(){
+        const isSeele = isSeeleSelected();
+        const scale = el.seeleScale ? parseFloat(el.seeleScale.value || '1') : 1;
+        const w = clampNumber(parseInt(el.width?.value || '1024', 10) || 1024, 512, 2048);
+        const h = clampNumber(parseInt(el.height?.value || '1024', 10) || 1024, 512, 2048);
+        const scaledW = Math.round(w * (isSeele ? scale : 1));
+        const scaledH = Math.round(h * (isSeele ? scale : 1));
+        const overMegapixel = scaledW * scaledH > 1_000_000;
+        const disable = (isSeele && scale > 1.0) || overMegapixel;
+        if(el.hiresEnable){
+          el.hiresEnable.disabled = disable;
+          if(disable) el.hiresEnable.checked = false;
+        }
+        if(el.hiresWrap) el.hiresWrap.style.display = el.hiresEnable && el.hiresEnable.checked && !disable ? '' : 'none';
+        if(el.hiresHint){
+          el.hiresHint.textContent = disable ? 'HiresFix disabled for Seele scale or >1MP latents' : 'Enable HiresFix';
+        }
+        if(isSeele && el.seeleScaleHint){
+          el.seeleScaleHint.textContent = `${scale.toFixed(2)}x (${scaledW}x${scaledH})`;
+        }
+      }
+
+      function applyCfgRange(input, hint, sampler){
+        if(!input) return;
+        const samplerName = sampler || '';
+        const rfBoost = isRfNoobSelected() ? 2.0 : 0;
+        let min = 4.0, max = 8.0 + rfBoost, label = 'standard';
+        if(samplerName.includes('cfg_pp')){
+          min = 0.7; max = 2.0 + rfBoost; label = 'cfg_pp';
+        } else if(samplerName.includes('dpm')){
+          min = 1.3; max = 3.5 + rfBoost; label = 'DPM';
+        }
+        input.min = min; input.max = max; input.step = 0.1;
+        let val = parseFloat(input.value || String((min+max)/2));
+        if(!Number.isFinite(val)) val = (min+max)/2;
+        val = clampNumber(val, min, max);
+        input.value = val.toFixed(1);
+        if(hint) hint.textContent = `Range ${min.toFixed(1)}–${max.toFixed(1)} (${label})`;
+      }
+
+      function updateCfgRanges(){
+        applyCfgRange(el.cfg, el.cfgHint, el.sampler?.value);
+        applyCfgRange(el.hiresCfg, el.hiresCfgHint, el.hiresSampler?.value);
+        applyCfgRange(el.detailer1Cfg, el.detailer1CfgHint, el.detailer1Sampler?.value);
+        applyCfgRange(el.detailer2Cfg, el.detailer2CfgHint, el.detailer2Sampler?.value);
+      }
+
+      function updateBatchSizeDisplay(){
+        if(!el.batchSize) return 1;
+        let raw = parseInt(el.batchSize.value || '1', 10);
+        if(!Number.isFinite(raw)) raw = 1;
+        raw = clampNumber(raw, 1, 4);
+        el.batchSize.value = raw;
+        if(el.batchSizeHint){
+          el.batchSizeHint.textContent = `${raw} image${raw>1?'s':''} per run`;
+        }
+        return raw;
+      }
+
+      function clampStrength(v){
+        let val = parseFloat(v);
+        if(!Number.isFinite(val)) val = 0.6;
+        return Math.min(1, Math.max(0, Math.round(val*100)/100));
+      }
+
+      function snapTo16(v){
+        const val = Math.max(16, Math.floor(v));
+        return val - (val % 16);
+      }
+
+      function resolveSeed(input, hint){
+        let seed = parseInt((input && input.value) || '-1', 10);
+        if(seed === -1){
+          seed = genRandomSeed();
+          if(hint) hint.textContent = `Random seed: ${seed}`;
+        } else if(hint){
+          hint.textContent = hint === el.seedHint ? el.seedHintDefault : hint.textContent;
+        }
+        return seed;
+      }
+
+      if(el.useQwen) el.useQwen.addEventListener('change', updateQwenVisibility);
+      if(el.zeroNegative) el.zeroNegative.addEventListener('change', updateNegativeVisibility);
+      if(el.checkpoint) el.checkpoint.addEventListener('change', () => { updateRouweiState(); updateSeeleScaleVisibility(); updateVaeState(); updateEpsilonVisibility(); updateFsamplerVisibility(); updateCfgRanges(); updateHiresVisibility(); });
+      if(el.seeleScale) el.seeleScale.addEventListener('input', updateHiresVisibility);
+      if(el.width) el.width.addEventListener('input', updateHiresVisibility);
+      if(el.height) el.height.addEventListener('input', updateHiresVisibility);
+      if(el.batchSize) el.batchSize.addEventListener('input', updateBatchSizeDisplay);
+      if(el.useBakedVae) el.useBakedVae.addEventListener('change', updateVaeState);
+      if(el.enableFsampler) el.enableFsampler.addEventListener('change', updateFsamplerVisibility);
+      if(el.usePersonDetailer) el.usePersonDetailer.addEventListener('change', updateDetailerVisibility);
+      if(el.useFaceDetailer) el.useFaceDetailer.addEventListener('change', updateDetailerVisibility);
+      if(el.hiresEnable) el.hiresEnable.addEventListener('change', updateHiresVisibility);
+      if(el.hiresSeedCustom) el.hiresSeedCustom.addEventListener('change', () => { if(el.hiresSeedWrap) el.hiresSeedWrap.style.display = el.hiresSeedCustom.checked ? '' : 'none'; });
+      if(el.sampler) el.sampler.addEventListener('change', updateCfgRanges);
+      if(el.hiresSampler) el.hiresSampler.addEventListener('change', updateCfgRanges);
+      if(el.detailer1Sampler) el.detailer1Sampler.addEventListener('change', updateCfgRanges);
+      if(el.detailer2Sampler) el.detailer2Sampler.addEventListener('change', updateCfgRanges);
+
+      updateBatchSizeDisplay();
       updateRouweiState();
-      el.status.textContent = 'Reset to defaults';
-    });
+      updateSeeleScaleVisibility();
+      updateNegativeVisibility();
+      updateVaeState();
+      updateEpsilonVisibility();
+      updateFsamplerVisibility();
+      updateQwenVisibility();
+      updateDetailerVisibility();
+      updateCfgRanges();
+      updateHiresVisibility();
 
-    el.clearBtn.addEventListener('click', () => { el.gallery.innerHTML = ''; el.status.textContent = 'Gallery cleared'; });
+      function getWorkflowTemplate(){
+        const raw = document.getElementById('workflow-template').textContent.trim();
+        return JSON.parse(raw);
+      }
 
-    function getWorkflowTemplate(){
-      const raw = document.getElementById('workflow-template').textContent.trim();
-      return JSON.parse(raw);
-    }
-
-    function getAceTemplate(){
-      const el = document.getElementById('ace-template');
-      if(!el) throw new Error('ACE template missing');
-      return JSON.parse(el.textContent.trim());
-    }
-
-    function deepReplacePlaceholders(obj, map){
-      if (obj === null || obj === undefined) return obj;
-      if (typeof obj === 'string'){
-        // Replace only if the entire string is a placeholder like %name%
-        const m = obj.match(/^%([a-zA-Z0-9_-]+)%$/);
-        if (m){
-          const key = m[1];
-          if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
-          return map[key];
+      function deepReplacePlaceholders(obj, map){
+        if (obj === null || obj === undefined) return obj;
+        if (typeof obj === 'string'){
+          const m = obj.match(/^%([a-zA-Z0-9_-]+)%$/);
+          if (m){
+            const key = m[1];
+            if (!(key in map)) throw new Error(`Missing placeholder: ${key}`);
+            return map[key];
+          }
+          return obj;
+        } else if (Array.isArray(obj)){
+          return obj.map(v => deepReplacePlaceholders(v, map));
+        } else if (typeof obj === 'object'){
+          const out = Array.isArray(obj) ? [] : {};
+          for (const k of Object.keys(obj)) out[k] = deepReplacePlaceholders(obj[k], map);
+          return out;
         }
         return obj;
-      } else if (Array.isArray(obj)){
-        return obj.map(v => deepReplacePlaceholders(v, map));
-      } else if (typeof obj === 'object'){
-        const out = Array.isArray(obj) ? [] : {};
-        for (const k of Object.keys(obj)) out[k] = deepReplacePlaceholders(obj[k], map);
-        return out;
       }
-      return obj;
-    }
 
-    function buildPlaceholderMap(){
-      let width = 1024;
-      let height = 1024;
-      if(el.dims){
-        if(el.dims.value === 'custom'){
-          if(el.customWidth){
-            const customWidth = parseInt(el.customWidth.value || '1024', 10);
-            if(!Number.isNaN(customWidth)) width = clampNumber(customWidth, 512, 2048);
-          }
-          if(el.customHeight){
-            const customHeight = parseInt(el.customHeight.value || '1024', 10);
-            if(!Number.isNaN(customHeight)) height = clampNumber(customHeight, 512, 2048);
-          }
-        } else if(el.dims.value){
-          const [parsedW, parsedH] = el.dims.value.split('x').map(n => parseInt(n, 10));
-          if(!Number.isNaN(parsedW)) width = parsedW;
-          if(!Number.isNaN(parsedH)) height = parsedH;
+      function buildPlaceholderMap(){
+        const isSeele = isSeeleSelected();
+        const rfNoob = isRfNoobSelected();
+        const scale = parseFloat(el.seeleScale?.value || '1');
+        const baseW = clampNumber(parseInt(el.width?.value || '1024', 10) || 1024, 512, 2048);
+        const baseH = clampNumber(parseInt(el.height?.value || '1024', 10) || 1024, 512, 2048);
+        const finalW = Math.round(baseW * (isSeele ? scale : 1));
+        const finalH = Math.round(baseH * (isSeele ? scale : 1));
+        const seedVal = resolveSeed(el.seed, el.seedHint);
+        const stepsVal = clampNumber(parseInt(el.steps?.value || '25', 10) || 25, 15, 35);
+        const cfgVal = parseFloat(el.cfg?.value || '5.0');
+        const hiresAllowed = !(isSeele && scale > 1.0) && finalW * finalH <= 1_000_000;
+        const hiresEnabled = hiresAllowed && el.hiresEnable && el.hiresEnable.checked;
+        const hiresSeed = (el.hiresSeedCustom && el.hiresSeedCustom.checked) ? resolveSeed(el.hiresSeed) : seedVal;
+        const detailer1Seed = el.usePersonDetailer && el.usePersonDetailer.checked ? resolveSeed(el.detailer1Seed) : seedVal;
+        const detailer2Seed = el.useFaceDetailer && el.useFaceDetailer.checked ? resolveSeed(el.detailer2Seed) : seedVal;
+        const fsamplerActive = el.fsamplerWrap && el.fsamplerWrap.style.display !== 'none' ? !!(el.enableFsampler && el.enableFsampler.checked) : false;
+        const loras = [
+          { enable: !!(el.lora1Enable && el.lora1Enable.checked), name: el.lora1Name?.value || '', strength: clampStrength(el.lora1Strength?.value) },
+          { enable: !!(el.lora2Enable && el.lora2Enable.checked), name: el.lora2Name?.value || '', strength: clampStrength(el.lora2Strength?.value) },
+          { enable: !!(el.lora3Enable && el.lora3Enable.checked), name: el.lora3Name?.value || '', strength: clampStrength(el.lora3Strength?.value) },
+        ];
+        const useQwen = !!(el.useQwen && el.useQwen.checked);
+        return {
+          checkpoint_name: el.checkpoint?.value || '',
+          prompt: el.prompt?.value || '',
+          width: finalW,
+          height: finalH,
+          batch_size: updateBatchSizeDisplay(),
+          rouwei_prefix: el.rouweiPrefix?.value || '',
+          use_baked_vae: rfNoob ? true : !!(el.useBakedVae && el.useBakedVae.checked),
+          vae_name: el.vaeName?.value || '',
+          lora_1_enable: loras[0].enable,
+          lora_1_name: loras[0].name,
+          lora_1_strength: loras[0].strength,
+          lora_2_enable: loras[1].enable,
+          lora_2_name: loras[1].name,
+          lora_2_strength: loras[1].strength,
+          lora_3_enable: loras[2].enable,
+          lora_3_name: loras[2].name,
+          lora_3_strength: loras[2].strength,
+          enable_mahiro: !!(el.enableMahiro && el.enableMahiro.checked),
+          enable_epsilon_scaling: isOneObsession() ? !!(el.enableEps && el.enableEps.checked) : false,
+          epsilon_scaling_factor: parseFloat(el.epsilonFactor?.value || '1.005'),
+          enable_apg: !!(el.enableApg && el.enableApg.checked),
+          enable_pag: !!(el.enablePag && el.enablePag.checked),
+          zero_out_negative: !!(el.zeroNegative && el.zeroNegative.checked),
+          negative_prompt: (!!(el.zeroNegative && el.zeroNegative.checked)) ? '' : (el.negativePrompt?.value || ''),
+          seed: seedVal,
+          steps: stepsVal,
+          cfg: parseFloat(cfgVal.toFixed(1)),
+          sampler: el.sampler?.value || '',
+          fsampler_sampler: fsamplerActive ? (el.sampler?.value || 'euler') : 'euler',
+          scheduler: el.scheduler?.value || '',
+          denoise: clampNumber(parseFloat(el.denoise?.value || '1'), 0, 1),
+          enable_fsampler: fsamplerActive,
+          skip_mode: el.skipMode?.value || 'h2/s4',
+          hiresfix_enable: hiresEnabled,
+          hiresfix_type: !!(el.hiresType && el.hiresType.checked),
+          hiresfix_upscale_by: clampNumber(parseFloat(el.hiresScale?.value || '1.5'), 1, 2),
+          hiresfix_seed: hiresSeed,
+          hiresfix_steps: clampNumber(parseInt(el.hiresSteps?.value || '15', 10) || 15, 10, 20),
+          hiresfix_cfg: parseFloat(parseFloat(el.hiresCfg?.value || '5.0').toFixed(1)),
+          hiresfix_sampler: el.hiresSampler?.value || '',
+          hiresfix_scheduler: el.hiresScheduler?.value || '',
+          hiresfix_denoise: clampNumber(parseFloat(el.hiresDenoise?.value || '0.56'), 0, 1),
+          use_person_detailer: !!(el.usePersonDetailer && el.usePersonDetailer.checked),
+          use_face_detailer: !!(el.useFaceDetailer && el.useFaceDetailer.checked),
+          detailer_1_seed: detailer1Seed,
+          detailer_1_steps: clampNumber(parseInt(el.detailer1Steps?.value || '20', 10) || 20, 10, 30),
+          detailer_1_cfg: parseFloat(parseFloat(el.detailer1Cfg?.value || '5.0').toFixed(1)),
+          detailer_1_sampler: el.detailer1Sampler?.value || '',
+          detailer_1_scheduler: el.detailer1Scheduler?.value || '',
+          detailer_1_denoise: clampNumber(parseFloat(el.detailer1Denoise?.value || '0.5'), 0, 1),
+          detailer_2_seed: detailer2Seed,
+          detailer_2_steps: clampNumber(parseInt(el.detailer2Steps?.value || '20', 10) || 20, 10, 30),
+          detailer_2_cfg: parseFloat(parseFloat(el.detailer2Cfg?.value || '5.0').toFixed(1)),
+          detailer_2_sampler: el.detailer2Sampler?.value || '',
+          detailer_2_scheduler: el.detailer2Scheduler?.value || '',
+          detailer_2_denoise: clampNumber(parseFloat(el.detailer2Denoise?.value || '0.5'), 0, 1),
+          face_prompt: el.useFaceDetailer && el.useFaceDetailer.checked ? (el.facePrompt?.value || el.prompt?.value || '') : '',
+          hue: parseInt(el.hue?.value || '0', 10),
+          saturation: parseInt(el.saturation?.value || '0', 10),
+          light: parseInt(el.light?.value || '0', 10),
+          use_qwen_img2img: useQwen,
+          qwen_prompt: el.qwenPrompt?.value || '',
+          qwen_width: snapTo16(clampNumber(parseInt(el.qwenWidth?.value || '1024', 10) || 1024, 64, 2048)),
+          qwen_height: snapTo16(clampNumber(parseInt(el.qwenHeight?.value || '1024', 10) || 1024, 64, 2048)),
+          qwen_seed: useQwen ? resolveSeed(el.qwenSeed) : seedVal,
+          qwen_sampler: el.qwenSampler?.value || '',
+          qwen_scheduler: el.qwenScheduler?.value || '',
+          qwen_use_8_steps: !!(el.qwen8Steps && el.qwen8Steps.checked),
+          remove_bg: !!(el.removeBg && el.removeBg.checked),
+          birefnet_model: el.birefnetModel?.value || '',
+        };
+      }
+
+      function buildPayload(){
+        const template = getWorkflowTemplate();
+        const map = buildPlaceholderMap();
+        const resolved = deepReplacePlaceholders(template, map);
+        return { input: { workflow: resolved } };
+      }
+
+      function makeCurl(payload){
+        const key = el.apiKey.value.trim() || '<api_key>';
+        return [
+          'curl -sX POST',
+          `  -H "Authorization: Bearer ${key}"`,
+          '  -H "Content-Type: application/json"',
+          `  -d '${JSON.stringify(payload)}'`,
+          `  ${ENDPOINT}`
+        ].join(' \\\n');
+      }
+
+      async function pollStatus(key, id, debugEl, statusEndpoint = STATUS_ENDPOINT){
+        let attempt = 0;
+        while(true){
+          attempt++;
+          const resp = await fetch(`${statusEndpoint}/${id}`, {
+            headers: { 'Authorization': `Bearer ${key}` }
+          });
+          const data = await resp.json();
+          if(debugEl) debugEl.textContent = JSON.stringify(data, null, 2);
+          if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          if(data.status === 'COMPLETED') return data;
+          if(data.status === 'FAILED' || data.status === 'CANCELLED') throw new Error(`Job status: ${data.status}`);
+          const delay = Number(data.delayTime) || Math.min(1000 * attempt, 5000);
+          await new Promise(r => setTimeout(r, delay));
         }
       }
-      const batchSizeVal = updateBatchSizeDisplay();
-      const rouweiSelected = isRouweiSelected();
-      const negZeroToggle = el.negZero ? !!el.negZero.checked : false;
-      const negZero = rouweiSelected ? false : negZeroToggle;
-      const hiresOn = !!(el.hiresToggle && el.hiresToggle.checked);
-      let seedVal = parseInt((el.seed && el.seed.value) || '-1', 10);
-      if(seedVal === -1){
-        seedVal = genRandomSeed();
-        if(el.seedHint) el.seedHint.textContent = `Random seed: ${seedVal}`;
-      } else if(el.seedHint){
-        el.seedHint.textContent = el.seedHintDefault;
+
+      function setBusy(b){
+        el.runBtn.disabled = b;
+        el.status.textContent = b? 'Running…' : 'Idle';
+        if(el.timer){ b ? timer.start() : timer.stop(); }
       }
-      const useHiresSeed = el.hiresSeedCustom && el.hiresSeedCustom.checked;
-      const hiresSeed = useHiresSeed && el.hiresSeed ? parseInt(el.hiresSeed.value || '-1', 10) : seedVal;
-      const enableMahiro = el.mahiroToggle ? !!el.mahiroToggle.checked : true;
-      const enableApg = el.apgToggle ? !!el.apgToggle.checked : true;
-      const rouweiPrefix = el.rouweiPrefix ? el.rouweiPrefix.value || '' : '';
-      const modelValue = el.model ? el.model.value : '';
-      const promptText = el.prompt ? el.prompt.value || '' : '';
-      const negativeText = el.negative ? el.negative.value || '' : '';
-      const samplerValue = el.sampler ? el.sampler.value : '';
-      const schedulerValue = el.scheduler ? el.scheduler.value : '';
-      const hiresSamplerValue = el.hiresSampler ? el.hiresSampler.value : '';
-      const hiresSchedulerValue = el.hiresScheduler ? el.hiresScheduler.value : '';
-      const hiresScaleVal = el.hiresScale ? parseFloat(el.hiresScale.value || '1.50') : 1.5;
-      const hiresStepsVal = parseInt((el.hiresSteps && el.hiresSteps.value) || '20', 10);
-      const hiresCfgVal = parseFloat((el.hiresCfg && el.hiresCfg.value) || '5.0');
-      const hiresDenoiseVal = parseFloat((el.hiresDenoise && el.hiresDenoise.value) || '0.56');
-      const stepsVal = parseInt((el.steps && el.steps.value) || '25', 10);
-      const cfgVal = parseFloat((el.cfg && el.cfg.value) || '5.0');
-      const hiresfixDenoise = hiresDenoiseVal;
-      const loras = loraEntries.map(entry => ({
-        toggle: !!(entry.toggle && entry.toggle.checked),
-        name: entry.select ? entry.select.value : '',
-        strength: clampLoraStrength(entry.strength ? entry.strength.value : 0.6)
-      }));
-      const defaultLora = { toggle: false, name: '', strength: 0.6 };
-      while(loras.length < MAX_LORAS){
-        loras.push({ ...defaultLora });
+
+      if(el.resetBtn) el.resetBtn.addEventListener('click', () => {
+        if(el.prompt) el.prompt.value = '';
+        if(el.negativePrompt) el.negativePrompt.value = '';
+        if(el.zeroNegative) el.zeroNegative.checked = false;
+        if(el.rouweiPrefix) el.rouweiPrefix.value = '';
+        if(el.width) el.width.value = 1024;
+        if(el.height) el.height.value = 1024;
+        if(el.seeleScale) el.seeleScale.value = 1.0;
+        updateBatchSizeDisplay();
+        if(el.useBakedVae){ el.useBakedVae.checked = true; el.useBakedVae.disabled = isRfNoobSelected(); }
+        if(el.vaeName) el.vaeName.value = 'sdxl-vae-anime-alpha-67500.safetensors';
+        if(el.lora1Enable) el.lora1Enable.checked = false;
+        if(el.lora2Enable) el.lora2Enable.checked = false;
+        if(el.lora3Enable) el.lora3Enable.checked = false;
+        if(el.lora1Strength) el.lora1Strength.value = 0.60;
+        if(el.lora2Strength) el.lora2Strength.value = 0.60;
+        if(el.lora3Strength) el.lora3Strength.value = 0.60;
+        if(el.enableMahiro) el.enableMahiro.checked = true;
+        if(el.enableApg) el.enableApg.checked = true;
+        if(el.enablePag) el.enablePag.checked = false;
+        if(el.enableEps) el.enableEps.checked = false;
+        if(el.epsilonFactor) el.epsilonFactor.value = 1.005;
+        if(el.seed){ el.seed.value = -1; if(el.seedHint) el.seedHint.textContent = el.seedHintDefault; }
+        if(el.steps) el.steps.value = 25;
+        if(el.cfg) el.cfg.value = 5.0;
+        if(el.sampler) el.sampler.value = 'euler';
+        if(el.scheduler) el.scheduler.value = 'normal';
+        if(el.denoise) el.denoise.value = 1.0;
+        if(el.enableFsampler) el.enableFsampler.checked = false;
+        if(el.skipMode) el.skipMode.value = 'h2/s4';
+        if(el.hiresEnable) el.hiresEnable.checked = false;
+        if(el.hiresType) el.hiresType.checked = false;
+        if(el.hiresScale) el.hiresScale.value = 1.50;
+        if(el.hiresSteps) el.hiresSteps.value = 15;
+        if(el.hiresCfg) el.hiresCfg.value = 5.0;
+        if(el.hiresSampler) el.hiresSampler.value = 'euler';
+        if(el.hiresScheduler) el.hiresScheduler.value = 'normal';
+        if(el.hiresDenoise) el.hiresDenoise.value = 0.56;
+        if(el.hiresSeedCustom) el.hiresSeedCustom.checked = false;
+        if(el.hiresSeedWrap) el.hiresSeedWrap.style.display = 'none';
+        if(el.hiresSeed) el.hiresSeed.value = -1;
+        if(el.usePersonDetailer) el.usePersonDetailer.checked = false;
+        if(el.useFaceDetailer) el.useFaceDetailer.checked = false;
+        if(el.detailer1Seed) el.detailer1Seed.value = -1;
+        if(el.detailer2Seed) el.detailer2Seed.value = -1;
+        if(el.detailer1Steps) el.detailer1Steps.value = 20;
+        if(el.detailer2Steps) el.detailer2Steps.value = 20;
+        if(el.detailer1Cfg) el.detailer1Cfg.value = 5.0;
+        if(el.detailer2Cfg) el.detailer2Cfg.value = 5.0;
+        if(el.detailer1Sampler) el.detailer1Sampler.value = 'euler';
+        if(el.detailer2Sampler) el.detailer2Sampler.value = 'euler';
+        if(el.detailer1Scheduler) el.detailer1Scheduler.value = 'normal';
+        if(el.detailer2Scheduler) el.detailer2Scheduler.value = 'normal';
+        if(el.detailer1Denoise) el.detailer1Denoise.value = 0.5;
+        if(el.detailer2Denoise) el.detailer2Denoise.value = 0.5;
+        if(el.facePrompt) el.facePrompt.value = '';
+        if(el.hue) el.hue.value = 0;
+        if(el.saturation) el.saturation.value = 0;
+        if(el.light) el.light.value = 0;
+        if(el.useQwen) el.useQwen.checked = false;
+        if(el.qwenPrompt) el.qwenPrompt.value = '';
+        if(el.qwenWidth) el.qwenWidth.value = 1024;
+        if(el.qwenHeight) el.qwenHeight.value = 1024;
+        if(el.qwenSeed) el.qwenSeed.value = -1;
+        if(el.qwenSampler) el.qwenSampler.value = 'euler';
+        if(el.qwenScheduler) el.qwenScheduler.value = 'normal';
+        if(el.qwen8Steps) el.qwen8Steps.checked = true;
+        if(el.removeBg) el.removeBg.checked = false;
+        if(el.birefnetModel) el.birefnetModel.value = 'BiRefNet_toonout';
+        updateSeeleScaleVisibility();
+        updateRouweiState();
+        updateNegativeVisibility();
+        updateVaeState();
+        updateEpsilonVisibility();
+        updateFsamplerVisibility();
+        updateQwenVisibility();
+        updateDetailerVisibility();
+        updateCfgRanges();
+        updateHiresVisibility();
+        el.status.textContent = 'Reset to defaults';
+      });
+
+      el.clearBtn.addEventListener('click', () => { el.gallery.innerHTML = ''; el.status.textContent = 'Gallery cleared'; });
+
+      async function run(){
+        const key = el.apiKey.value.trim();
+        if (!key){ el.status.textContent = 'API key required'; return; }
+        if(isRouweiSelected() && (!el.rouweiPrefix || !el.rouweiPrefix.value.trim())){
+          el.status.innerHTML = '<span class="error">Rouwei prefix required when using rouwei_v080Vpred.safetensors</span>';
+          return;
+        }
+        try{
+          setBusy(true);
+          const payload = buildPayload();
+          el.debugReq.textContent = JSON.stringify(payload, null, 2);
+          const resp = await fetch(ENDPOINT, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
+            body: JSON.stringify(payload)
+          });
+          let data = await resp.json();
+
+          if (el.debugResp) el.debugResp.textContent = JSON.stringify(data, null, 2);
+
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          if (data.status !== 'COMPLETED'){
+            if(data.id){
+              el.status.textContent = 'Waiting for job...';
+              data = await pollStatus(key, data.id, el.debugResp);
+            } else {
+              throw new Error(`Job status: ${data.status}`);
+            }
+          }
+          if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0) throw new Error('No images in response');
+
+          for (const item of data.output.images){
+            if (item.type === 'base64' && item.data){
+              const imgUrl = `data:image/avif;base64,${item.data}`;
+              addShot(imgUrl, item.filename || 'image.avif');
+            } else if (item.type === 's3_url' && item.data){
+              addShot(item.data, item.filename || 'image.avif');
+            }
+          }
+          el.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
+        } catch(err){
+          console.error(err);
+          el.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+        } finally{ setBusy(false); }
       }
-      return {
-        model: modelValue,
-        prompt: promptText,
-        rouwei_prefix: rouweiPrefix,
-        neg_zero_out: negZero,
-        negative_prompt: negZero ? '' : negativeText,
-        width: width, height: height,
-        batch_size: batchSizeVal,
-        remove_bg: !!(el.rmbg && el.rmbg.checked),
-        seed: seedVal,
-        steps: stepsVal,
-        cfg: cfgVal,
-        sampler: samplerValue,
-        scheduler: schedulerValue,
-        enable_mahiro: enableMahiro,
-        enable_apg: enableApg,
-        use_hiresfix: hiresOn,
-        hiresfix_scale_by: hiresScaleVal,
-        hiresfix_seed: hiresSeed,
-        hiresfix_steps: hiresStepsVal,
-        hiresfix_cfg: hiresCfgVal,
-        hiresfix_sampler: hiresSamplerValue,
-        hiresfix_scheduler: hiresSchedulerValue,
-        hiresfix_denoise: hiresfixDenoise,
-        lora1_toggle: loras[0].toggle,
-        lora1_name: loras[0].name,
-        lora1_strength: loras[0].strength,
-        lora2_toggle: loras[1].toggle,
-        lora2_name: loras[1].name,
-        lora2_strength: loras[1].strength,
-        lora3_toggle: loras[2].toggle,
-        lora3_name: loras[2].name,
-        lora3_strength: loras[2].strength,
-      };
-    }
 
-    function buildPayload(){
-      const template = getWorkflowTemplate();
-      const map = buildPlaceholderMap();
-      // Map keys used in placeholders are without % per deepReplacePlaceholders
-      const resolved = deepReplacePlaceholders(template, map);
-      return { input: { workflow: resolved } };
-    }
-
-    function makeCurl(payload){
-      const key = el.apiKey.value.trim() || '<api_key>';
-      return [
-        'curl -sX POST',
-        `  -H "Authorization: Bearer ${key}"`,
-        '  -H "Content-Type: application/json"',
-        `  -d '${JSON.stringify(payload)}'`,
-        `  ${ENDPOINT}`
-      ].join(' \n');
-    }
-
-    async function pollStatus(key, id, debugEl, statusEndpoint = STATUS_ENDPOINT){
-      let attempt = 0;
-      while(true){
-        attempt++;
-        const resp = await fetch(`${statusEndpoint}/${id}`, {
-          headers: { 'Authorization': `Bearer ${key}` }
-        });
-        const data = await resp.json();
-        if(debugEl) debugEl.textContent = JSON.stringify(data, null, 2);
-        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        if(data.status === 'COMPLETED') return data;
-        if(data.status === 'FAILED' || data.status === 'CANCELLED') throw new Error(`Job status: ${data.status}`);
-        const delay = Number(data.delayTime) || Math.min(1000 * attempt, 5000);
-        await new Promise(r => setTimeout(r, delay));
+      function addShot(url, name){
+        const wrap = document.createElement('div');
+        wrap.className = 'shot';
+        const header = document.createElement('div'); header.className = 'header';
+        header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
+        wrap.appendChild(header);
+        const img = new Image(); img.loading = 'lazy'; img.src = url; img.addEventListener('click', ()=>openLightbox(url)); wrap.appendChild(img);
+        el.gallery.prepend(wrap);
       }
-    }
 
-    function setBusy(b){
-      el.runBtn.disabled = b;
-      el.status.textContent = b? 'Running…' : 'Idle';
-      if(el.timer){ b ? timer.start() : timer.stop(); }
-    }
+      el.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); run(); });
 
-    async function run(){
-      const key = el.apiKey.value.trim();
-      if (!key){ el.status.textContent = 'API key required'; return; }
-      if(isRouweiSelected() && (!el.rouweiPrefix || !el.rouweiPrefix.value.trim())){
-        el.status.innerHTML = '<span class="error">Rouwei prefix required when using rouwei_v080Vpred.safetensors</span>';
-        return;
-      }
-      try{
-        setBusy(true);
+      el.curlBtn.addEventListener('click', ()=>{
         const payload = buildPayload();
-        el.debugReq.textContent = JSON.stringify(payload, null, 2);
-        const resp = await fetch(ENDPOINT, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type':'application/json' },
-          body: JSON.stringify(payload)
-        });
-        let data = await resp.json();
-        el.debugResp.textContent = JSON.stringify(data, null, 2);
+        const text = makeCurl(payload);
+        navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
+      });
 
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        if (data.status !== 'COMPLETED'){
-          if(data.id){
-            el.status.textContent = 'Waiting for job...';
-            data = await pollStatus(key, data.id, el.debugResp);
-          } else {
-            throw new Error(`Job status: ${data.status}`);
-          }
-        }
-        if (!data.output || !Array.isArray(data.output.images) || data.output.images.length === 0) throw new Error('No images in response');
+      function getAceTemplate(){
+        const el = document.getElementById('ace-template');
+        if(!el) throw new Error('ACE template missing');
+        return JSON.parse(el.textContent.trim());
+      }
 
-        for (const item of data.output.images){
-          if (item.type === 'base64' && item.data){
-            const imgUrl = `data:image/avif;base64,${item.data}`;
-            addShot(imgUrl, item.filename || 'image.avif');
-          } else if (item.type === 's3_url' && item.data){
-            addShot(item.data, item.filename || 'image.avif');
-          }
-        }
-        el.status.textContent = `Completed in ${data.executionTime ?? '?'} ms`;
-      } catch(err){
-        console.error(err);
-        el.status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-      } finally{ setBusy(false); }
-    }
-
-    function addShot(url, name){
-      const wrap = document.createElement('div');
-      wrap.className = 'shot';
-      const header = document.createElement('div'); header.className = 'header';
-      header.innerHTML = `<header><span class="mono" title="${name}">${name}</span><a class="btn" href="${url}" download>Download</a></header>`;
-      wrap.appendChild(header);
-      const img = new Image(); img.loading = 'lazy'; img.src = url; img.addEventListener('click', ()=>openLightbox(url)); wrap.appendChild(img);
-      el.gallery.prepend(wrap);
-    }
-
-    el.runBtn.addEventListener('click', (e)=>{ e.preventDefault(); run(); });
-
-    el.curlBtn.addEventListener('click', ()=>{
-      const payload = buildPayload();
-      const text = makeCurl(payload);
-      navigator.clipboard.writeText(text).then(()=>{ el.status.textContent = 'cURL copied'; });
-    });
-
-    // --- Regional Prompter helpers ---
+// --- Regional Prompter helpers ---
     const rp = {
       apiKey: document.getElementById('apiKey'),
       model: document.getElementById('rp-model'),
