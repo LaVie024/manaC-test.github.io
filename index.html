@@ -4627,7 +4627,7 @@
         const h = clampNumber(parseInt(el.height?.value || '1024', 10) || 1024, 512, 2048);
         const scaledW = Math.round(w * (isSeele ? scale : 1));
         const scaledH = Math.round(h * (isSeele ? scale : 1));
-        const overMegapixel = scaledW * scaledH > 1_000_000;
+        const overMegapixel = scaledW * scaledH > 1_250_000;
         const disable = (isSeele && scale > 1.25) || overMegapixel;
         if(el.hiresEnable){
           el.hiresEnable.disabled = disable;
