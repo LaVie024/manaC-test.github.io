@@ -1479,7 +1479,7 @@
       "steps": "%steps%",
       "cfg": "%cfg%",
       "scheduler": "%scheduler%",
-      "sampler": "%sampler%",
+      "sampler": "%fsampler_sampler%",
       "skip_mode": "%skip_mode%",
       "verbose": false,
       "model": [
@@ -4781,6 +4781,7 @@
         const hiresSeed = (el.hiresSeedCustom && el.hiresSeedCustom.checked) ? resolveSeed(el.hiresSeed) : seedVal;
         const detailer1Seed = el.usePersonDetailer && el.usePersonDetailer.checked ? resolveSeed(el.detailer1Seed) : seedVal;
         const detailer2Seed = el.useFaceDetailer && el.useFaceDetailer.checked ? resolveSeed(el.detailer2Seed) : seedVal;
+        const fsamplerActive = el.fsamplerWrap && el.fsamplerWrap.style.display !== 'none' ? !!(el.enableFsampler && el.enableFsampler.checked) : false;
         const loras = [
           { enable: !!(el.lora1Enable && el.lora1Enable.checked), name: el.lora1Name?.value || '', strength: clampStrength(el.lora1Strength?.value) },
           { enable: !!(el.lora2Enable && el.lora2Enable.checked), name: el.lora2Name?.value || '', strength: clampStrength(el.lora2Strength?.value) },
@@ -4816,9 +4817,10 @@
           steps: stepsVal,
           cfg: parseFloat(cfgVal.toFixed(1)),
           sampler: el.sampler?.value || '',
+          fsampler_sampler: fsamplerActive ? (el.sampler?.value || 'euler') : 'euler',
           scheduler: el.scheduler?.value || '',
           denoise: clampNumber(parseFloat(el.denoise?.value || '1'), 0, 1),
-          enable_fsampler: el.fsamplerWrap && el.fsamplerWrap.style.display !== 'none' ? !!(el.enableFsampler && el.enableFsampler.checked) : false,
+          enable_fsampler: fsamplerActive,
           skip_mode: el.skipMode?.value || 'h2/s4',
           hiresfix_enable: hiresEnabled,
           hiresfix_type: !!(el.hiresType && el.hiresType.checked),
