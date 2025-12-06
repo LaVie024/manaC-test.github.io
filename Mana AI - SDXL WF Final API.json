@@ -285,7 +285,7 @@
       "steps": "%steps%",
       "cfg": "%cfg%",
       "scheduler": "%scheduler%",
-      "sampler": "%sampler%",
+      "sampler": "%fsampler_sampler%",
       "skip_mode": "%skip_mode%",
       "verbose": false,
       "model": [
