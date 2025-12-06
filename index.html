@@ -4866,8 +4866,7 @@
           '  -H "Content-Type: application/json"',
           `  -d '${JSON.stringify(payload)}'`,
           `  ${ENDPOINT}`
-        ].join(' 
-');
+        ].join(' \\\n');
       }
 
       async function pollStatus(key, id, debugEl, statusEndpoint = STATUS_ENDPOINT){
