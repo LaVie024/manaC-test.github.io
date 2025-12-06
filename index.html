@@ -496,8 +496,17 @@
           </div>
           <label for="birefnetModel" style="margin-top:8px">BiRefNet model</label>
           <select id="birefnetModel">
-            <option value="BiRefNet_toonout.safetensors">BiRefNet_toonout.safetensors</option>
-            <option value="BiRefNet_dynamic.safetensors">BiRefNet_dynamic.safetensors</option>
+            <option value="BiRefNet-general">BiRefNet-general</option>
+            <option value="BiRefNet_512x512">BiRefNet_512x512</option>
+            <option value="BiRefNet-HR">BiRefNet-HR</option>
+            <option value="BiRefNet-portrait">BiRefNet-portrait</option>
+            <option value="BiRefNet-matting">BiRefNet-matting</option>
+            <option value="BiRefNet-HR-matting">BiRefNet-HR-matting</option>
+            <option value="BiRefNet_lite">BiRefNet_lite</option>
+            <option value="BiRefNet_lite-2K">BiRefNet_lite-2K</option>
+            <option value="BiRefNet_dynamic">BiRefNet_dynamic</option>
+            <option value="BiRefNet_lite-matting">BiRefNet_lite-matting</option>
+            <option value="BiRefNet_toonout">BiRefNet_toonout</option>
           </select>
 
           <hr style="border:0; border-top:1px solid var(--border); margin:14px 0" />
@@ -1917,7 +1926,7 @@
       "cfg": "%detailer_2_cfg%",
       "sampler_name": "%detailer_2_sampler%",
       "scheduler": "%detailer_2_scheduler%",
-      "denoise": "%detailer_2_cfg%",
+      "denoise": "%detailer_2_denoise%",
       "feather": 5,
       "noise_mask": true,
       "force_inpaint": true,
@@ -4960,7 +4969,7 @@
         if(el.qwenScheduler) el.qwenScheduler.value = 'normal';
         if(el.qwen8Steps) el.qwen8Steps.checked = true;
         if(el.removeBg) el.removeBg.checked = false;
-        if(el.birefnetModel) el.birefnetModel.value = 'BiRefNet_toonout.safetensors';
+        if(el.birefnetModel) el.birefnetModel.value = 'BiRefNet_toonout';
         updateSeeleScaleVisibility();
         updateRouweiState();
         updateNegativeVisibility();
