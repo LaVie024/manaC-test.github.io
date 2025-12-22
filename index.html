@@ -4462,9 +4462,9 @@
     const STATUS_ENDPOINT = ENDPOINT.replace('/runsync', '/status');
     const ACE_ENDPOINT = 'https://api.runpod.ai/v2/e1hyz03h6llhvn/runsync';
     const ACE_STATUS_ENDPOINT = ACE_ENDPOINT.replace('/runsync', '/status');
-    const WAN_ENDPOINT = ACE_ENDPOINT;
-    const WAN_STATUS_ENDPOINT = ACE_STATUS_ENDPOINT;
     const ACE_BASE_ENDPOINT = ACE_ENDPOINT.replace(/\/runsync$/, '');
+    const WAN_ENDPOINT = ACE_BASE_ENDPOINT + '/run';
+    const WAN_STATUS_ENDPOINT = ACE_BASE_ENDPOINT + '/status';
     const ACE_FILE_ENDPOINT = `${ACE_BASE_ENDPOINT}/file`;
     const ACE_FILES_ENDPOINT = `${ACE_BASE_ENDPOINT}/files`;
     const ACE_RUNS_ENDPOINT = `${ACE_BASE_ENDPOINT}/runs`;
