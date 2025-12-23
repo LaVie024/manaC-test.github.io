@@ -7197,6 +7197,15 @@
     ].join(' \n');
   }
 
+  async function fetchWanRun(key, jobId){
+    if(!jobId) return null;
+    const resp = await fetch(`${ACE_RUNS_ENDPOINT}/${jobId}`, {
+      headers: { 'Authorization': `Bearer ${key}` }
+    });
+    if(!resp.ok) throw new Error(`Run fetch failed (HTTP ${resp.status})`);
+    return resp.json();
+  }
+
   function setWanBusy(b){
     if(wanel.runBtn) wanel.runBtn.disabled = b;
     if(wanel.status && b) wanel.status.textContent = 'Running…';
@@ -7232,7 +7241,7 @@
         }
       }
 
-      const { ready, pending } = extractWanVideos(data);
+      let { ready, pending } = extractWanVideos(data);
       const clips = [...ready];
       if(pending.length && wanel.status) wanel.status.textContent = 'Fetching video files…';
       for(const file of pending){
@@ -7241,6 +7250,25 @@
           clips.push(downloaded);
         }
       }
+
+      if(!clips.length && jobId){
+        if(wanel.status) wanel.status.textContent = 'Re-querying run output…';
+        const runData = await fetchWanRun(key, jobId);
+        if(runData){
+          if(wanel.debugResp) wanel.debugResp.textContent = JSON.stringify(runData, null, 2);
+          ({ ready, pending } = extractWanVideos(runData));
+          for(const file of pending){
+            const downloaded = await downloadAceFile(key, jobId, file.fileId, file.filename);
+            if(downloaded){
+              clips.push(downloaded);
+            }
+          }
+          for(const item of ready){
+            clips.push(item);
+          }
+        }
+      }
+
       if(!clips.length){
         const workerStatus = data && data.output && data.output.status ? data.output.status : null;
         throw new Error(workerStatus ? `No video returned (worker status: ${workerStatus})` : 'No video returned');
