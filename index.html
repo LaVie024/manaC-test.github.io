@@ -7199,7 +7199,7 @@
 
   async function fetchWanRun(key, jobId){
     if(!jobId) return null;
-    const resp = await fetch(`${ACE_RUNS_ENDPOINT}/${jobId}`, {
+    const resp = await fetch(`${WAN_STATUS_ENDPOINT}/${jobId}`, {
       headers: { 'Authorization': `Bearer ${key}` }
     });
     if(!resp.ok) throw new Error(`Run fetch failed (HTTP ${resp.status})`);
