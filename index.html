@@ -4767,8 +4767,7 @@
         const seedVal = resolveSeed(el.seed, el.seedHint);
         const stepsVal = clampNumber(parseInt(el.steps?.value || '25', 10) || 25, 15, 35);
         const cfgVal = parseFloat(el.cfg?.value || '5.0');
-        const hiresAllowed = !(isSeele && scale > 1.25) && finalW * finalH <= 1_250_000;
-        const hiresEnabled = hiresAllowed && el.hiresEnable && el.hiresEnable.checked;
+        const hiresEnabled = !!(el.hiresEnable && el.hiresEnable.checked);
         const hiresSeed = (el.hiresSeedCustom && el.hiresSeedCustom.checked) ? resolveSeed(el.hiresSeed) : seedVal;
         const detailer1Seed = el.usePersonDetailer && el.usePersonDetailer.checked ? resolveSeed(el.detailer1Seed) : seedVal;
         const detailer2Seed = el.useFaceDetailer && el.useFaceDetailer.checked ? resolveSeed(el.detailer2Seed) : seedVal;
