@@ -4635,7 +4635,7 @@
         }
         if(el.hiresWrap) el.hiresWrap.style.display = el.hiresEnable && el.hiresEnable.checked && !disable ? '' : 'none';
         if(el.hiresHint){
-          el.hiresHint.textContent = disable ? 'HiresFix disabled for Seele scale or >1.25MP latents' : 'Enable HiresFix';
+          el.hiresHint.textContent = disable ? 'HiresFix disabled for Seele scale or >1MP latents' : 'Enable HiresFix';
         }
         if(isSeele && el.seeleScaleHint){
           el.seeleScaleHint.textContent = `${scale.toFixed(2)}x (${scaledW}x${scaledH})`;
@@ -4767,7 +4767,7 @@
         const seedVal = resolveSeed(el.seed, el.seedHint);
         const stepsVal = clampNumber(parseInt(el.steps?.value || '25', 10) || 25, 15, 35);
         const cfgVal = parseFloat(el.cfg?.value || '5.0');
-        const hiresAllowed = !(isSeele && scale > 1.25) && finalW * finalH <= 1_250_000;
+        const hiresAllowed = !(isSeele && scale > 1.0) && finalW * finalH <= 1_000_000;
         const hiresEnabled = hiresAllowed && el.hiresEnable && el.hiresEnable.checked;
         const hiresSeed = (el.hiresSeedCustom && el.hiresSeedCustom.checked) ? resolveSeed(el.hiresSeed) : seedVal;
         const detailer1Seed = el.usePersonDetailer && el.usePersonDetailer.checked ? resolveSeed(el.detailer1Seed) : seedVal;
