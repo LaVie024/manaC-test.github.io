@@ -4627,15 +4627,15 @@
         const h = clampNumber(parseInt(el.height?.value || '1024', 10) || 1024, 512, 2048);
         const scaledW = Math.round(w * (isSeele ? scale : 1));
         const scaledH = Math.round(h * (isSeele ? scale : 1));
-        const overMegapixel = scaledW * scaledH > 1_250_000;
-        const disable = (isSeele && scale > 1.25) || overMegapixel;
+        const overMegapixel = scaledW * scaledH > 1_580_000;
+        const disable = (isSeele && scale > 1.58) || overMegapixel;
         if(el.hiresEnable){
           el.hiresEnable.disabled = disable;
           if(disable) el.hiresEnable.checked = false;
         }
         if(el.hiresWrap) el.hiresWrap.style.display = el.hiresEnable && el.hiresEnable.checked && !disable ? '' : 'none';
         if(el.hiresHint){
-          el.hiresHint.textContent = disable ? 'HiresFix disabled for Seele scale or >1.25MP latents' : 'Enable HiresFix';
+          el.hiresHint.textContent = disable ? 'HiresFix disabled for Seele scale or >1.58MP latents' : 'Enable HiresFix';
         }
         if(isSeele && el.seeleScaleHint){
           el.seeleScaleHint.textContent = `${scale.toFixed(2)}x (${scaledW}x${scaledH})`;
